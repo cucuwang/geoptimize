@@ -5,10 +5,11 @@ import chalk from 'chalk';
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import { scan, scanDirectory, parseHtml, parseMarkdown, scanUrl } from '../core/scanner.js';
+import { audit } from '../core/audit.js';
 import { generate } from '../core/generator.js';
 import { detectAvailableCLIs, scoreWithAllAvailable } from '../core/external-scorers.js';
 import { mergeScores } from '../core/merger.js';
-import type { ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
+import type { AuditReport, AuditStatus, ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
 
 const HOOK_BEGIN_MARKER = '# BEGIN aeoptimize';
 const HOOK_END_MARKER = '# END aeoptimize';
@@ -54,6 +55,32 @@ program
           printReport(report);
           printSkillCta();
         }
+      }
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// ── audit command ─────────────────────────────────────────────────
+
+program
+  .command('audit <target>')
+  .description('Audit one URL or HTML/Markdown file with evidence-backed checks')
+  .option('--json', 'Output the versioned audit JSON contract')
+  .action(async (target: string, options: { json?: boolean }) => {
+    try {
+      if (!target || target.trim().length === 0) {
+        console.error(chalk.red('Error: Please provide a URL or HTML/Markdown file.'));
+        process.exit(1);
+      }
+
+      const auditTarget = resolveTarget(target);
+      const report = await audit(auditTarget);
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        printAuditReport(report);
       }
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -439,6 +466,49 @@ function printReport(report: ScanReport): void {
     }
     console.log('');
   }
+}
+
+function auditStatusColor(status: AuditStatus): (value: string) => string {
+  switch (status) {
+    case 'PASS': return chalk.green;
+    case 'WARNING': return chalk.yellow;
+    case 'FAIL': return chalk.red;
+    case 'N/A': return chalk.gray;
+  }
+}
+
+function printAuditReport(report: AuditReport): void {
+  console.log('');
+  console.log(chalk.bold('  Evidence-backed Page Audit'));
+  console.log(chalk.dim(`  Contract ${report.contractVersion} | ${report.timestamp}`));
+  console.log(chalk.dim(`  ${report.target.finalUrl ?? report.target.input}`));
+  console.log('');
+  console.log(
+    `  ${chalk.green(`PASS ${report.summary.PASS}`)}  ` +
+    `${chalk.yellow(`WARNING ${report.summary.WARNING}`)}  ` +
+    `${chalk.red(`FAIL ${report.summary.FAIL}`)}  ` +
+    `${chalk.gray(`N/A ${report.summary['N/A']}`)}`,
+  );
+  console.log('');
+
+  for (const check of report.checks) {
+    const color = auditStatusColor(check.status);
+    console.log(`  ${color(`[${check.status}]`)} ${chalk.bold(check.label)} ${chalk.dim(`(${check.id})`)}`);
+    console.log(`    ${check.explanation}`);
+    for (const item of check.evidence) {
+      const observed = JSON.stringify(item.observed);
+      console.log(chalk.dim(`    Evidence ${item.source}: ${observed}`));
+    }
+    if (check.remediation) console.log(`    ${chalk.cyan('Fix:')} ${check.remediation}`);
+    console.log(chalk.dim(`    Validate: ${check.validation}`));
+    console.log('');
+  }
+
+  console.log(chalk.bold('  Limits'));
+  for (const limitation of report.limitations) {
+    console.log(chalk.dim(`  - ${limitation}`));
+  }
+  console.log('');
 }
 
 function printDimensionBar(label: string, score: number, max: number): void {

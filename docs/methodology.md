@@ -66,6 +66,19 @@ A scoring-rule change must include:
 
 The v0.6 fixture corpus is published in [`fixtures/v0.6/rule-corpus.ts`](../fixtures/v0.6/rule-corpus.ts) and is enforced by the release-contract tests. Outcome research, if added later, will be reported separately from the readiness score.
 
+## Evidence-backed audit contract
+
+The `audit` command is separate from the v0.6 score contract. It reports one of four statuses for each bounded check:
+
+| Status | Meaning |
+| --- | --- |
+| `PASS` | The inspected evidence satisfies the check's documented condition. This is not an external-outcome guarantee. |
+| `WARNING` | A deterministic observation needs contextual review or may be intentional. |
+| `FAIL` | The inspected evidence confirms a structural or retrieval failure within the check's scope. |
+| `N/A` | The required evidence is unavailable or the check does not apply to this source type. |
+
+Each check includes observed evidence, an explanation, optional remediation, and a validation step. The contract does not derive robots.txt policy, sitemap membership, hreflang reciprocity, site-wide duplication, orphan status, Core Web Vitals, analytics, or search-engine index state from a single document.
+
 ## Primary sources
 
 - [Google Search: AI features and your website](https://developers.google.com/search/docs/appearance/ai-features)

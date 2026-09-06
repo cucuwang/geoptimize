@@ -25,7 +25,8 @@ export function parseHtml(html: string, url: string): ParsedDocument {
   const $ = cheerio.load(html);
 
   // Extract title
-  const title = $('title').first().text().trim() || $('h1').first().text().trim() || url;
+  const documentTitle = $('title').first().text().trim();
+  const title = documentTitle || $('h1').first().text().trim() || url;
 
   // Extract headings
   const headings: Heading[] = [];
@@ -46,16 +47,22 @@ export function parseHtml(html: string, url: string): ParsedDocument {
 
   // Extract JSON-LD
   const jsonLd: JsonLdObject[] = [];
-  $('script[type="application/ld+json"]').each((_, el) => {
+  const jsonLdErrors: string[] = [];
+  $('script[type="application/ld+json"]').each((index, el) => {
     try {
       const parsed = JSON.parse($(el).html() || '');
-      if (Array.isArray(parsed)) {
-        jsonLd.push(...parsed);
-      } else {
-        jsonLd.push(parsed);
+      const candidates = Array.isArray(parsed) ? parsed : [parsed];
+      for (const [candidateIndex, candidate] of candidates.entries()) {
+        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+          jsonLd.push(candidate as JsonLdObject);
+        } else {
+          const location = Array.isArray(parsed) ? ` item ${candidateIndex + 1}` : '';
+          jsonLdErrors.push(`JSON-LD block ${index + 1}${location}: expected an object`);
+        }
       }
-    } catch {
-      // Ignore malformed JSON-LD
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown JSON parse error';
+      jsonLdErrors.push(`JSON-LD block ${index + 1}: ${message}`);
     }
   });
 
@@ -76,6 +83,17 @@ export function parseHtml(html: string, url: string): ParsedDocument {
     if (href) links.push({ href, text, rel });
   });
 
+  const images = $('img').map((_, el) => ({
+    src: $(el).attr('src') || '',
+    alt: $(el).attr('alt'),
+    width: $(el).attr('width'),
+    height: $(el).attr('height'),
+    loading: $(el).attr('loading'),
+  })).get();
+
+  const language = $('html').attr('lang')?.trim() || undefined;
+  const canonicalLinks = $('link[rel~="canonical"]').map((_, el) => $(el).attr('href') || '').get();
+
   // Extract raw text (content area preferred)
   const contentArea = $('main, article, [role="main"]').first();
   const rawText = (contentArea.length > 0 ? contentArea.text() : $('body').text()).replace(/\s+/g, ' ').trim();
@@ -83,12 +101,17 @@ export function parseHtml(html: string, url: string): ParsedDocument {
   return {
     url,
     title,
+    documentTitle,
     html,
     headings,
     paragraphs,
     jsonLd,
+    jsonLdErrors,
     metaTags,
     links,
+    images,
+    language,
+    canonicalLinks,
     rawText,
   };
 }
@@ -149,16 +172,36 @@ export function parseMarkdown(md: string, url: string): ParsedDocument {
     .replace(/\s+/g, ' ')
     .trim();
 
+  const links: Link[] = [];
+  const images = [];
+  for (const match of content.matchAll(/(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g)) {
+    const [, imageMarker, text, href] = match;
+    if (imageMarker) {
+      images.push({ src: href, alt: text });
+    } else {
+      links.push({ href, text });
+    }
+  }
+
+  const canonicalValue = frontmatter.canonical;
+  const canonicalLinks = typeof canonicalValue === 'string' ? [canonicalValue] : [];
+  const languageValue = frontmatter.lang ?? frontmatter.language;
+  const language = typeof languageValue === 'string' ? languageValue : undefined;
+
   return {
     url,
     title: finalTitle,
+    documentTitle: typeof frontmatter.title === 'string' ? frontmatter.title : undefined,
     markdown: md,
     frontmatter: frontmatter as Record<string, unknown>,
     headings,
     paragraphs,
     jsonLd: [],
     metaTags: {},
-    links: [],
+    links,
+    images,
+    language,
+    canonicalLinks,
     rawText,
   };
 }
@@ -280,13 +323,36 @@ function isBlockedHostname(hostname: string): boolean {
   return blocked.test(hostname);
 }
 
-async function fetchWithSafeRedirects(input: string | URL, init?: RequestInit, maxRedirects = 10): Promise<Response> {
+export interface RedirectHop {
+  from: string;
+  to: string;
+  status: number;
+}
+
+export interface UrlResource {
+  requestedUrl: string;
+  finalUrl: string;
+  status: number;
+  statusText: string;
+  redirects: RedirectHop[];
+  contentType: string | null;
+  xRobotsTag: string | null;
+  html: string;
+  renderedWithBrowser: boolean;
+}
+
+async function fetchWithSafeRedirects(
+  input: string | URL,
+  init?: RequestInit,
+  maxRedirects = 10,
+): Promise<{ response: Response; finalUrl: string; redirects: RedirectHop[] }> {
   let currentUrl = typeof input === 'string' ? validateUrl(input) : validateUrl(input.toString());
+  const redirects: RedirectHop[] = [];
 
   for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount += 1) {
     const response = await fetch(currentUrl, { ...init, redirect: 'manual' });
     if (response.status < 300 || response.status >= 400) {
-      return response;
+      return { response, finalUrl: currentUrl.toString(), redirects };
     }
 
     if (redirectCount === maxRedirects) {
@@ -298,7 +364,13 @@ async function fetchWithSafeRedirects(input: string | URL, init?: RequestInit, m
       throw new Error(`Redirect response from ${currentUrl.toString()} missing Location header`);
     }
 
-    currentUrl = validateUrl(new URL(location, currentUrl).toString());
+    const nextUrl = validateUrl(new URL(location, currentUrl).toString());
+    redirects.push({
+      from: currentUrl.toString(),
+      to: nextUrl.toString(),
+      status: response.status,
+    });
+    currentUrl = nextUrl;
   }
 
   throw new Error(`Too many redirects while fetching ${currentUrl.toString()}`);
@@ -349,30 +421,47 @@ function isSpaLikely(html: string): boolean {
   return contentTags < 10 && scripts > 3;
 }
 
-export async function scanUrl(url: string): Promise<ScanReport> {
+export async function fetchUrlResource(url: string): Promise<UrlResource> {
   validateUrl(url);
-  const response = await fetchWithSafeRedirects(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
-  }
+  const { response, finalUrl, redirects } = await fetchWithSafeRedirects(url);
 
   let html = await response.text();
   let renderedWithBrowser = false;
 
-  // If page looks like an SPA, try puppeteer for full rendering
-  if (isSpaLikely(html)) {
-    const result = await fetchWithPuppeteer(url);
+  if (response.ok && isSpaLikely(html)) {
+    const result = await fetchWithPuppeteer(finalUrl);
     if (result.rendered) {
       html = result.html;
       renderedWithBrowser = true;
-    } else {
-      console.warn('[aeoptimize] This page appears to be a JavaScript-rendered SPA.');
-      console.warn('[aeoptimize] Install Chrome/Chromium for accurate scoring of JS-rendered sites.');
-      console.warn('[aeoptimize] Without a browser, scores may be lower than actual content quality.\n');
     }
   }
 
-  const doc = parseHtml(html, url);
+  return {
+    requestedUrl: url,
+    finalUrl,
+    status: response.status,
+    statusText: response.statusText,
+    redirects,
+    contentType: response.headers.get('content-type'),
+    xRobotsTag: response.headers.get('x-robots-tag'),
+    html,
+    renderedWithBrowser,
+  };
+}
+
+export async function scanUrl(url: string): Promise<ScanReport> {
+  const resource = await fetchUrlResource(url);
+  if (resource.status < 200 || resource.status >= 300) {
+    throw new Error(`Failed to fetch ${url}: ${resource.status} ${resource.statusText}`);
+  }
+
+  if (isSpaLikely(resource.html) && !resource.renderedWithBrowser) {
+    console.warn('[aeoptimize] This page appears to be a JavaScript-rendered SPA.');
+    console.warn('[aeoptimize] Install Chrome/Chromium for accurate scoring of JS-rendered sites.');
+    console.warn('[aeoptimize] Without a browser, scores may be lower than actual content quality.\n');
+  }
+
+  const doc = parseHtml(resource.html, url);
 
   const analysis = scanDocument(doc);
 

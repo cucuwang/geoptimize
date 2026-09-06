@@ -24,6 +24,7 @@ npm install --save-dev aeoptimize
 npx aeoptimize scan https://example.com
 npx aeoptimize scan ./dist --dir
 npx aeoptimize scan ./dist --dir --json
+npx aeoptimize audit https://example.com --json
 ```
 
 Example output:
@@ -57,6 +58,25 @@ Two often-promoted AEO signals are deliberately excluded from the score:
 - `llms.txt` is an experimental proposal. Generating or publishing it does not add points.
 
 Every rule, its evidence class, and known false-positive boundary is documented in [docs/methodology.md](docs/methodology.md) and exercised by the [versioned public fixture corpus](fixtures/v0.6/rule-corpus.ts).
+
+## Evidence-backed page audit
+
+`audit` inspects one public URL or one local HTML/Markdown file. It is a separate, versioned contract and does not change the v0.6 readiness score or `scan --json` output.
+
+```bash
+npx aeoptimize audit https://example.com
+npx aeoptimize audit ./dist/index.html --json
+```
+
+The first audit contract checks:
+
+- HTTP status, final URL, and redirect evidence for URL targets;
+- document title, meta description, headings, language, canonical, and page-level robots directives;
+- discovered links, image alt attributes, and JSON-LD structural validity.
+
+Each check returns `PASS`, `WARNING`, `FAIL`, or `N/A`, the observed evidence, an explanation, an optional remediation, and a validation step. `PASS` is bounded to the inspected evidence. It does not establish ranking, indexing, rich-result display, traffic, conversion, or AI citation.
+
+The command intentionally reports unavailable site-wide and external measurements as limitations. It does not infer robots.txt policy, sitemap membership, hreflang reciprocity, broken-link status, Core Web Vitals, analytics, or actual search-engine index state from one page.
 
 ## How it compares
 

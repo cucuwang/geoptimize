@@ -2,6 +2,17 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## Unreleased
+
+### Added
+
+- Added an evidence-backed `audit` command for one URL or HTML/Markdown file, with versioned `PASS`, `WARNING`, `FAIL`, and `N/A` checks.
+- Added structured observations, remediation, validation guidance, and explicit limitations for HTTP, metadata, headings, canonical, robots directives, links, images, and JSON-LD.
+
+### Compatibility
+
+- Kept the v0.6 readiness score and existing `scan --json` contract unchanged.
+
 ## 0.6.2
 
 ### Fixed
