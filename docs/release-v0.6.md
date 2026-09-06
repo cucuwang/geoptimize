@@ -1,6 +1,6 @@
 # v0.6 release and rollback guide
 
-Version 0.6.2 is the provenance-corrective release for the v0.6 evidence-bounded scoring, packaging, and GitHub Action contracts. npm 0.6.1 contained the verified candidate bytes but exposed the pre-squash PR commit as `gitHead`, so no v0.6.1 Git tag or GitHub Release was created. Version 0.6.2 is not released until npm, the Git tag, and the GitHub Release are each created and read back independently.
+Version 0.6.3 packages the documentation improvements made after the v0.6.2 provenance correction and prepares the existing root composite Action for its first GitHub Marketplace listing. It does not change scoring rules, runtime behavior, Action inputs, or Action outputs. Version 0.6.3 is not released until npm, the Git tag, the GitHub Release, and the Marketplace listing are each created and read back independently.
 
 ## Release acceptance
 
@@ -16,6 +16,8 @@ Before publication, run `npm ci` and `npm run release:check` from the intended r
 CI runs the same candidate gate on Node.js 22 and 24 and compares version, filename, SHA-256, file count, and unpacked size. `prepublishOnly` invokes the candidate gate again, refuses a dirty worktree, and refuses publication unless `HEAD` matches `origin/main` exactly. Run `git fetch origin main` immediately before the authorized publish so the remote-tracking ref is current.
 
 Publishing, tagging, creating a GitHub Release, changing npm dist-tags, and deprecating a version are separate external mutations and require separate maintainer authorization.
+
+Marketplace publication also requires a browser release flow. Confirm that the public repository has one root `action.yml`, the Action name is accepted as unique, the Marketplace Developer Agreement is accepted, and the release page reports that the metadata is valid. Select an accurate primary category and enable **Publish this Action to the GitHub Marketplace** before publishing the release. The final release submission requires maintainer-controlled two-factor authentication.
 
 ## Release notes
 
@@ -36,16 +38,16 @@ After an authorized npm publication:
 
 ```bash
 npm view aeoptimize version dist-tags --json
-npm view aeoptimize@0.6.2 version gitHead repository homepage bugs dist --json
-consumer_root=$(mktemp -d "${TMPDIR:-/tmp}/aeoptimize-v0.6.2-consumer.XXXXXX")
-npm install --prefix "$consumer_root" aeoptimize@0.6.2
+npm view aeoptimize@0.6.3 version gitHead repository homepage bugs dist --json
+consumer_root=$(mktemp -d "${TMPDIR:-/tmp}/aeoptimize-v0.6.3-consumer.XXXXXX")
+npm install --prefix "$consumer_root" aeoptimize@0.6.3
 "$consumer_root/node_modules/.bin/aeoptimize" --version
 "$consumer_root/node_modules/.bin/aeo" --version
 "$consumer_root/node_modules/.bin/aeo-cli" --version
 rm -rf -- "$consumer_root"
 ```
 
-After separately authorized tag and GitHub Release creation, verify that `v0.6.2` points to the tested release commit and that the Release is published rather than draft or prerelease.
+After separately authorized tag and GitHub Release creation, verify that `v0.6.3` points to the tested release commit, that the Release is published rather than draft or prerelease, and that the release appears on GitHub Marketplace.
 
 The fail-closed public verifier checks npm `latest`, the exact version, public repository identity, the downloaded tarball SHA-256, all three installed CLI aliases, the tag target, and the published GitHub Release. The tarball hash is the required artifact-identity gate. If npm exposes `gitHead`, it must match the expected release commit; absence is reported as informational because npm's publish contract guarantees tarball integrity but does not guarantee that metadata field.
 
@@ -57,11 +59,11 @@ bash scripts/verify-release-v0.6.sh <verified-release-commit> <verified-package-
 
 An npm dist-tag rollback changes what `npm install aeoptimize` selects; it does not remove exact-version installs. Never silently move an existing Git tag to different code.
 
-If npm 0.6.2 is unsuitable, request separate authorization for each mutation and restore `latest` to the last fully released version rather than the provenance-mismatched 0.6.1 artifact:
+If npm 0.6.3 is unsuitable, request separate authorization for each mutation and restore `latest` to the last fully released version:
 
 ```bash
-npm dist-tag add aeoptimize@0.6.0 latest
-npm deprecate aeoptimize@0.6.2 "Use 0.6.0 until the corrective release is available."
+npm dist-tag add aeoptimize@0.6.2 latest
+npm deprecate aeoptimize@0.6.3 "Use 0.6.2 while the corrective release is prepared."
 ```
 
-Mark the GitHub Release with the same warning. Never create or retarget `v0.6.1` merely to mask its npm `gitHead` mismatch. Preserve immutable versions as evidence, fix forward in 0.6.3, rerun the complete release acceptance suite, and only then move npm `latest` to the corrective version.
+Mark the GitHub Release and Marketplace listing with the same warning. Never create or retarget `v0.6.1` merely to mask its npm `gitHead` mismatch. Preserve immutable versions as evidence, prepare a new patch release, rerun the complete release acceptance suite, and only then move npm `latest` to the corrective version.

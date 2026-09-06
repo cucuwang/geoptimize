@@ -2,6 +2,14 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## 0.6.3
+
+### Changed
+
+- Added a concise install path, terminal demo, comparison table, and first-contribution guidance to the public documentation.
+- Documented immutable Action pins and cross-agent skill discovery.
+- Prepared the existing root composite Action for its first GitHub Marketplace release without changing scoring, runtime behavior, inputs, or outputs.
+
 ## 0.6.2
 
 ### Fixed

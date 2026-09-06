@@ -192,7 +192,7 @@ describe('v0.6 JSON automation contract', () => {
       'npm run release:check && bash scripts/verify-publish-source.sh',
     );
     expect(releaseGuide).toContain('## Rollback');
-    expect(releaseGuide).toContain('npm dist-tag add aeoptimize@0.6.0 latest');
+    expect(releaseGuide).toContain('npm dist-tag add aeoptimize@0.6.2 latest');
     expect(releaseGuide).toContain('<verified-package-sha256>');
     expect(publicVerifier).toContain('.gitHead');
     expect(publicVerifier).toContain('EXPECTED_REPOSITORY_URL');

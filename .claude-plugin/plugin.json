@@ -1,7 +1,7 @@
 {
   "name": "aeoptimize",
   "description": "Content-readiness lint and evidence-bounded discovery experiments",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "author": {
     "name": "Te-Shu Wang"
   },

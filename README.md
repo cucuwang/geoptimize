@@ -79,10 +79,10 @@ npx aeoptimize scan ./dist --dir --json > aeoptimize-report.json
 node -e "const r=require('./aeoptimize-report.json'); process.exit(r.overall.total < 60 ? 1 : 0)"
 ```
 
-The v0.6 GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
+The v0.6 GitHub Action is advisory by default. Consume it from the immutable repository pin; the v0.6.3 release is prepared for the first GitHub Marketplace listing. It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.6.2
+- uses: cucuwang/aeoptimize@v0.6.3
   with:
     path: dist
 ```
@@ -90,7 +90,7 @@ The v0.6 GitHub Action is advisory by default. Consume it from the repository pi
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.6.2
+- uses: cucuwang/aeoptimize@v0.6.3
   with:
     path: dist
     fail-on-low-score: 'true'
