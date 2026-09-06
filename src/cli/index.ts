@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name('aeoptimize')
   .description('Deterministic content-readiness lint for websites and documentation')
-  .version('0.6.2');
+  .version('0.6.3');
 
 // ── scan command ───────────────────────────────────────────────────
 
