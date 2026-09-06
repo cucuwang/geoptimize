@@ -48,6 +48,14 @@ export interface Link {
   rel?: string;
 }
 
+export interface ImageReference {
+  src: string;
+  alt?: string;
+  width?: string;
+  height?: string;
+  loading?: string;
+}
+
 export interface JsonLdObject {
   '@type'?: string;
   '@context'?: string;
@@ -57,15 +65,101 @@ export interface JsonLdObject {
 export interface ParsedDocument {
   url: string;
   title: string;
+  documentTitle?: string;
   html?: string;
   markdown?: string;
   frontmatter?: Record<string, unknown>;
   headings: Heading[];
   paragraphs: string[];
   jsonLd: JsonLdObject[];
+  jsonLdBlockCount?: number;
+  jsonLdErrors?: string[];
   metaTags: Record<string, string>;
+  metaTagValues?: Record<string, string[]>;
   links: Link[];
+  images?: ImageReference[];
+  language?: string;
+  canonicalLinks?: string[];
   rawText: string;
+}
+
+export type AuditStatus = 'PASS' | 'WARNING' | 'FAIL' | 'N/A';
+
+export type AuditEvidenceSource = 'http' | 'html' | 'markdown' | 'derived';
+
+export type AuditEvidenceValue = string | number | boolean | null | string[];
+
+export interface AuditEvidence {
+  source: AuditEvidenceSource;
+  observed: Record<string, AuditEvidenceValue>;
+}
+
+export interface AuditCheck {
+  id: string;
+  label: string;
+  status: AuditStatus;
+  evidence: AuditEvidence[];
+  explanation: string;
+  remediation: string | null;
+  validation: string;
+}
+
+export interface AuditReport {
+  contractVersion: '1.0';
+  target: {
+    type: 'url' | 'file';
+    input: string;
+    finalUrl?: string;
+  };
+  rendering: 'response-html' | 'browser' | 'local-html' | 'markdown';
+  checks: AuditCheck[];
+  summary: Record<AuditStatus, number>;
+  limitations: string[];
+  timestamp: string;
+}
+
+export interface SiteAuditPage {
+  requestedUrl: string;
+  finalUrl: string;
+  status: number;
+  statusText: string;
+  redirects: string[];
+  contentType: string | null;
+  title: string | null;
+  language: string | null;
+  canonicalLinks: string[];
+  internalLinkCount: number;
+  externalLinkCount: number;
+  discoveredFrom: string[];
+}
+
+export interface SiteAuditSitemap {
+  url: string;
+  status: number;
+  kind: 'urlset' | 'index' | 'unknown';
+  urlCount: number;
+}
+
+export interface SiteAuditReport {
+  contractVersion: '1.0';
+  startUrl: string;
+  origin: string;
+  maxPages: number;
+  crawledPages: number;
+  truncated: boolean;
+  robots: {
+    url: string;
+    status: number;
+    applicableRules: string[];
+    sitemapUrls: string[];
+    skippedUrls: string[];
+  };
+  sitemaps: SiteAuditSitemap[];
+  pages: SiteAuditPage[];
+  checks: AuditCheck[];
+  summary: Record<AuditStatus, number>;
+  limitations: string[];
+  timestamp: string;
 }
 
 export interface RuleResult {

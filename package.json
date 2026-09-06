@@ -1,6 +1,6 @@
 {
   "name": "aeoptimize",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Deterministic content-readiness lint for static websites and documentation",
   "type": "module",
   "main": "./dist/core/index.js",
@@ -26,6 +26,7 @@
     ".claude-plugin/",
     "docs/methodology.md",
     "docs/release-v0.6.md",
+    "docs/release-v0.7.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "ROADMAP.md",

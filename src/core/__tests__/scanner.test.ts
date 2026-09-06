@@ -31,6 +31,14 @@ describe('parseHtml', () => {
     expect(doc.paragraphs).toEqual(['This is a test paragraph with enough words.']);
     expect(doc.jsonLd).toEqual([]);
   });
+
+  it('preserves the v0.6 score for a non-object JSON-LD value while exposing an audit error', () => {
+    const doc = parseHtml('<script type="application/ld+json">42</script>', 'test.html');
+
+    expect(doc.jsonLd).toEqual([42]);
+    expect(doc.jsonLdErrors).toHaveLength(1);
+    expect(scanDocument(doc).scores.schema).toBe(8);
+  });
 });
 
 describe('parseMarkdown', () => {

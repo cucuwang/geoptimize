@@ -66,6 +66,27 @@ A scoring-rule change must include:
 
 The v0.6 fixture corpus is published in [`fixtures/v0.6/rule-corpus.ts`](../fixtures/v0.6/rule-corpus.ts) and is enforced by the release-contract tests. Outcome research, if added later, will be reported separately from the readiness score.
 
+## Evidence-backed audit contract
+
+The `audit` command is separate from the v0.6 score contract. It reports one of four statuses for each bounded check:
+
+| Status | Meaning |
+| --- | --- |
+| `PASS` | The inspected evidence satisfies the check's documented condition. This is not an external-outcome guarantee. |
+| `WARNING` | A deterministic observation needs contextual review or may be intentional. |
+| `FAIL` | The inspected evidence confirms a structural or retrieval failure within the check's scope. |
+| `N/A` | The required evidence is unavailable or the check does not apply to this source type. |
+
+Each check includes observed evidence, an explanation, optional remediation, and a validation step. The contract does not derive robots.txt policy, sitemap membership, hreflang reciprocity, site-wide duplication, orphan status, Core Web Vitals, analytics, or search-engine index state from a single document.
+
+### Bounded site audit
+
+The `audit-site` contract uses a same-origin, sequential queue with an explicit 1–200 page limit. It processes links in discovery order before sitemap-only seeds, reads applicable `aeoptimize` or wildcard robots rules, and does not follow subsequent redirects outside the audited origin.
+
+The crawler uses response HTML without browser rendering. A Sitemap-only URL with no internal inlink is reported as an orphan candidate because JavaScript navigation, pages beyond the configured limit, and other discovery sources may still link to it. Broken-link findings require an observed failed response; queued but unfetched links remain warnings.
+
+robots.txt matching covers applicable user-agent groups, `Allow`, `Disallow`, `*` wildcards, and `$` endings. Unusual policies need manual review. An unavailable robots.txt response that is not an ordinary 404 causes conservative skipping of subsequent matching URLs.
+
 ## Primary sources
 
 - [Google Search: AI features and your website](https://developers.google.com/search/docs/appearance/ai-features)

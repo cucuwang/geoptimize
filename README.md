@@ -24,6 +24,8 @@ npm install --save-dev aeoptimize
 npx aeoptimize scan https://example.com
 npx aeoptimize scan ./dist --dir
 npx aeoptimize scan ./dist --dir --json
+npx aeoptimize audit https://example.com --json
+npx aeoptimize audit-site https://example.com --max-pages 20 --json
 ```
 
 Example output:
@@ -58,6 +60,38 @@ Two often-promoted AEO signals are deliberately excluded from the score:
 
 Every rule, its evidence class, and known false-positive boundary is documented in [docs/methodology.md](docs/methodology.md) and exercised by the [versioned public fixture corpus](fixtures/v0.6/rule-corpus.ts).
 
+## Evidence-backed page audit
+
+`audit` inspects one public URL or one local HTML/Markdown file. It is a separate, versioned contract and does not change the v0.6 readiness score or `scan --json` output.
+
+```bash
+npx aeoptimize audit https://example.com
+npx aeoptimize audit ./dist/index.html --json
+```
+
+The first audit contract checks:
+
+- HTTP status, final URL, and redirect evidence for URL targets;
+- document title, meta description, headings, language, canonical, and page-level robots directives;
+- discovered links, image alt attributes, and JSON-LD structural validity.
+
+Each check returns `PASS`, `WARNING`, `FAIL`, or `N/A`, the observed evidence, an explanation, an optional remediation, and a validation step. `PASS` is bounded to the inspected evidence. It does not establish ranking, indexing, rich-result display, traffic, conversion, or AI citation.
+
+The command intentionally reports unavailable site-wide and external measurements as limitations. It does not infer robots.txt policy, sitemap membership, hreflang reciprocity, broken-link status, Core Web Vitals, analytics, or actual search-engine index state from one page.
+
+## Bounded site audit
+
+`audit-site` follows same-origin links in deterministic order and stops at an explicit page limit. It reads robots.txt before subsequent page requests, discovers same-origin sitemap files, and uses response HTML without browser rendering.
+
+```bash
+npx aeoptimize audit-site https://example.com
+npx aeoptimize audit-site https://example.com --max-pages 50 --json
+```
+
+The site contract reports bounded crawl coverage, robots policy, page status, redirect chains, internal link targets, canonical consistency, sitemap discrepancies, sitemap-only orphan candidates, and duplicate titles. Sitemap-only pages remain candidates until a sufficiently complete crawl or server-log evidence confirms their discovery state.
+
+The default limit is 20 page requests and the accepted range is 1–200. Cross-origin page links are recorded only as counts, and subsequent redirects outside the audited origin are not followed. JavaScript-inserted links, actual search-engine crawl/index state, rankings, traffic, and conversions remain outside this contract.
+
 ## How it compares
 
 | | aeoptimize | Lighthouse-style SEO audits | Hosted AEO/GEO platforms |
@@ -79,10 +113,10 @@ npx aeoptimize scan ./dist --dir --json > aeoptimize-report.json
 node -e "const r=require('./aeoptimize-report.json'); process.exit(r.overall.total < 60 ? 1 : 0)"
 ```
 
-The v0.6 GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
+The GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.6.2
+- uses: cucuwang/aeoptimize@v0.7.0
   with:
     path: dist
 ```
@@ -90,7 +124,7 @@ The v0.6 GitHub Action is advisory by default. Consume it from the repository pi
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.6.2
+- uses: cucuwang/aeoptimize@v0.7.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -100,6 +134,43 @@ Projects can explicitly choose blocking mode after accepting a baseline:
 The Action exposes `score` and `report` outputs in both modes. Its release is reproducible only when the Action tag and matching npm package version both exist. Before pinning a version, verify both artifacts; if either is missing, use the CLI directly.
 
 A copyable advisory workflow and controlled input are available in the [end-to-end Action sample](examples/github-action-sample/README.md).
+
+## Audit built HTML before deployment
+
+The `audit-build` command checks a local HTML file or build directory and reports evidence,
+remediation and validation for each finding. It leaves the existing `scan` score and
+JSON contract unchanged.
+
+```bash
+npx aeoptimize audit-build ./dist --json
+npx aeoptimize audit-build ./dist --base-url https://example.com/ --expect-indexable --fail-on-error --json > audit.json
+```
+
+Malformed JSON-LD and invalid or multiple canonical declarations produce `FAIL`.
+HTML `noindex` and `none` are warnings unless `--expect-indexable` is supplied.
+Missing or repeated titles/descriptions and cross-page title/canonical reuse are
+advisory. Shared canonicals can be intentional; they are never automatically rewritten.
+
+`--fail-on-error` exits with code 1 when a `FAIL` is present, while still writing the
+complete report. Input errors also exit 1. Without it, a completed audit is advisory.
+Use `--expect-indexable` only for pages intended for standalone search indexing.
+
+This command reads source HTML without fetching URLs or launching a browser.
+HTTP headers, robots.txt and actual indexing are explicitly unassessed. JSON-LD
+checks cover JSON syntax and root shape; schema semantics and visible-content
+consistency require separate validation. Missing JSON-LD is `N/A`.
+
+For a file, `--base-url` is its deployed page URL. For a directory, it is the
+deployment root; relative file paths are appended without inferring hosting rewrites.
+An HTML `base` element is respected. Relative canonicals without a resolvable base
+are `N/A`. Hidden entries, `node_modules` and symlinks are excluded from traversal;
+an explicit symlink input is rejected. Unreadable files and files over 5 MB stop
+the audit instead of silently dropping pages.
+
+Rules follow the [robots meta specification](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)
+and [canonical URL guidance](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls).
+A syntax pass does not establish eligibility under the
+[structured-data policies](https://developers.google.com/search/docs/appearance/structured-data/sd-policies).
 
 ## Optional generators
 
@@ -175,7 +246,7 @@ npx skills add cucuwang/aeoptimize
 
 ## Project status
 
-The v0.6 evidence baseline focuses on methodology, reproducible fixtures, CI compatibility, packaging, and external adoption—not more scoring rules. Release acceptance and rollback are documented in [docs/release-v0.6.md](docs/release-v0.6.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
+Version 0.7 adds page, build, and bounded site audits while retaining the v0.6 scoring contract. Release acceptance and rollback are documented in [docs/release-v0.7.md](docs/release-v0.7.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 

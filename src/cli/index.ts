@@ -5,10 +5,13 @@ import chalk from 'chalk';
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import { scan, scanDirectory, parseHtml, parseMarkdown, scanUrl } from '../core/scanner.js';
+import { audit } from '../core/audit.js';
+import { auditSite } from '../core/site-audit.js';
 import { generate } from '../core/generator.js';
 import { detectAvailableCLIs, scoreWithAllAvailable } from '../core/external-scorers.js';
 import { mergeScores } from '../core/merger.js';
-import type { ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
+import { auditPath } from '../core/static-audit.js';
+import type { AuditReport, AuditStatus, SiteAuditReport, ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
 
 const HOOK_BEGIN_MARKER = '# BEGIN aeoptimize';
 const HOOK_END_MARKER = '# END aeoptimize';
@@ -18,7 +21,7 @@ const program = new Command();
 program
   .name('aeoptimize')
   .description('Deterministic content-readiness lint for websites and documentation')
-  .version('0.6.2');
+  .version('0.7.0');
 
 // ── scan command ───────────────────────────────────────────────────
 
@@ -58,6 +61,90 @@ program
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
+    }
+  });
+
+// ── audit command ─────────────────────────────────────────────────
+
+program
+  .command('audit <target>')
+  .description('Audit one URL or HTML/Markdown file with evidence-backed checks')
+  .option('--json', 'Output the versioned audit JSON contract')
+  .action(async (target: string, options: { json?: boolean }) => {
+    try {
+      if (!target || target.trim().length === 0) {
+        console.error(chalk.red('Error: Please provide a URL or HTML/Markdown file.'));
+        process.exit(1);
+      }
+
+      const auditTarget = resolveTarget(target);
+      const report = await audit(auditTarget);
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        printAuditReport(report);
+      }
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('audit-site <target>')
+  .description('Crawl one origin with bounded evidence-backed site checks')
+  .option('--max-pages <count>', 'Maximum page requests from 1 to 200', '20')
+  .option('--json', 'Output the versioned site-audit JSON contract')
+  .action(async (target: string, options: { maxPages: string; json?: boolean }) => {
+    try {
+      const resolved = resolveTarget(target);
+      if (resolved.type !== 'url') {
+        throw new Error('Site audit requires an http or https URL.');
+      }
+      const report = await auditSite(resolved.path, { maxPages: Number(options.maxPages) });
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        printSiteAuditReport(report);
+      }
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('audit-build <path>')
+  .description('Audit local built HTML with evidence and optional CI failure on errors')
+  .option('--json', 'Output the versioned static audit report as JSON')
+  .option('--base-url <url>', 'Deployed page URL, or deployment root for a directory')
+  .option('--expect-indexable', 'Treat HTML noindex/none as a failure for this target')
+  .option('--fail-on-error', 'Exit 1 when the audit contains FAIL checks; warnings remain advisory')
+  .action(async (path: string, options: {
+    json?: boolean; baseUrl?: string; expectIndexable?: boolean; failOnError?: boolean;
+  }) => {
+    try {
+      const report = await auditPath(path, options);
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        console.log('Static HTML Audit');
+        console.log(`${report.pages.length} pages | ${report.summary.FAIL} failed | ${report.summary.WARNING} warnings | ${report.summary.PASS} passed | ${report.summary['N/A']} not assessed`);
+        for (const page of report.pages) {
+          console.log(`\n${page.target}`);
+          for (const check of page.checks) {
+            console.log(`  [${check.status}] ${check.id}: ${check.message}`);
+            for (const evidence of check.evidence) console.log(`    Evidence: ${evidence}`);
+            if (check.remediation) console.log(`    Fix: ${check.remediation}`);
+            console.log(`    Verify: ${check.validation}`);
+          }
+        }
+        console.log(`\nScope: ${report.limitations.join(' ')}`);
+      }
+      if (options.failOnError && report.summary.FAIL > 0) process.exitCode = 1;
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
     }
   });
 
@@ -439,6 +526,86 @@ function printReport(report: ScanReport): void {
     }
     console.log('');
   }
+}
+
+function auditStatusColor(status: AuditStatus): (value: string) => string {
+  switch (status) {
+    case 'PASS': return chalk.green;
+    case 'WARNING': return chalk.yellow;
+    case 'FAIL': return chalk.red;
+    case 'N/A': return chalk.gray;
+  }
+}
+
+function printAuditReport(report: AuditReport): void {
+  console.log('');
+  console.log(chalk.bold('  Evidence-backed Page Audit'));
+  console.log(chalk.dim(`  Contract ${report.contractVersion} | ${report.timestamp}`));
+  console.log(chalk.dim(`  ${report.target.finalUrl ?? report.target.input}`));
+  console.log('');
+  console.log(
+    `  ${chalk.green(`PASS ${report.summary.PASS}`)}  ` +
+    `${chalk.yellow(`WARNING ${report.summary.WARNING}`)}  ` +
+    `${chalk.red(`FAIL ${report.summary.FAIL}`)}  ` +
+    `${chalk.gray(`N/A ${report.summary['N/A']}`)}`,
+  );
+  console.log('');
+
+  for (const check of report.checks) {
+    const color = auditStatusColor(check.status);
+    console.log(`  ${color(`[${check.status}]`)} ${chalk.bold(check.label)} ${chalk.dim(`(${check.id})`)}`);
+    console.log(`    ${check.explanation}`);
+    for (const item of check.evidence) {
+      const observed = JSON.stringify(item.observed);
+      console.log(chalk.dim(`    Evidence ${item.source}: ${observed}`));
+    }
+    if (check.remediation) console.log(`    ${chalk.cyan('Fix:')} ${check.remediation}`);
+    console.log(chalk.dim(`    Validate: ${check.validation}`));
+    console.log('');
+  }
+
+  console.log(chalk.bold('  Limits'));
+  for (const limitation of report.limitations) {
+    console.log(chalk.dim(`  - ${limitation}`));
+  }
+  console.log('');
+}
+
+function printSiteAuditReport(report: SiteAuditReport): void {
+  console.log('');
+  console.log(chalk.bold('  Bounded Site Audit'));
+  console.log(chalk.dim(`  Contract ${report.contractVersion} | ${report.timestamp}`));
+  console.log(chalk.dim(`  ${report.startUrl} | ${report.crawledPages}/${report.maxPages} pages`));
+  console.log('');
+  console.log(
+    `  ${chalk.green(`PASS ${report.summary.PASS}`)}  ` +
+    `${chalk.yellow(`WARNING ${report.summary.WARNING}`)}  ` +
+    `${chalk.red(`FAIL ${report.summary.FAIL}`)}  ` +
+    `${chalk.gray(`N/A ${report.summary['N/A']}`)}`,
+  );
+  console.log('');
+
+  for (const item of report.checks) {
+    const color = auditStatusColor(item.status);
+    console.log(`  ${color(`[${item.status}]`)} ${chalk.bold(item.label)} ${chalk.dim(`(${item.id})`)}`);
+    console.log(`    ${item.explanation}`);
+    for (const itemEvidence of item.evidence) {
+      console.log(chalk.dim(`    Evidence ${itemEvidence.source}: ${JSON.stringify(itemEvidence.observed)}`));
+    }
+    if (item.remediation) console.log(`    ${chalk.cyan('Fix:')} ${item.remediation}`);
+    console.log(chalk.dim(`    Validate: ${item.validation}`));
+    console.log('');
+  }
+
+  console.log(chalk.bold('  Pages'));
+  for (const page of report.pages) {
+    const status = page.status >= 200 && page.status < 300 ? chalk.green(String(page.status)) : chalk.red(String(page.status));
+    console.log(`  ${status} ${page.requestedUrl}${page.finalUrl !== page.requestedUrl ? ` -> ${page.finalUrl}` : ''}`);
+  }
+  console.log('');
+  console.log(chalk.bold('  Limits'));
+  for (const limitation of report.limitations) console.log(chalk.dim(`  - ${limitation}`));
+  console.log('');
 }
 
 function printDimensionBar(label: string, score: number, max: number): void {

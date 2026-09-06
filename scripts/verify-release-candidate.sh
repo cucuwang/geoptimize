@@ -52,6 +52,10 @@ PACKAGE_SHA256=$(node -e "const crypto=require('node:crypto');const fs=require('
 
 jq -e '
   (.[0].files | map(.path) | index("dist/cli/index.js")) != null and
+  (.[0].files | map(.path) | index("dist/core/audit.js")) != null and
+  (.[0].files | map(.path) | index("dist/core/static-audit.js")) != null and
+  (.[0].files | map(.path) | index("dist/core/site-audit.js")) != null and
+  (.[0].files | map(.path) | index("docs/release-v0.7.md")) != null and
   (.[0].files | map(.path) | index("fixtures/v0.6/rule-corpus.ts")) != null and
   (.[0].files | map(.path) | index("examples/github-action-sample/.github/workflows/aeoptimize.yml")) != null and
   (.[0].files | map(.path) | index("scripts/verify-release-candidate.sh")) != null and
@@ -69,6 +73,19 @@ for binary in aeoptimize aeo aeo-cli; do
     exit 1
   fi
 done
+
+for audit_command in audit audit-build audit-site; do
+  "$CONSUMER_ROOT/node_modules/.bin/aeoptimize" "$audit_command" --help >/dev/null
+done
+
+"$CONSUMER_ROOT/node_modules/.bin/aeoptimize" audit \
+  "$CONSUMER_ROOT/node_modules/aeoptimize/examples/github-action-sample/site/index.html" \
+  --json > "$VERIFY_ROOT/page-audit.json"
+"$CONSUMER_ROOT/node_modules/.bin/aeoptimize" audit-build \
+  "$CONSUMER_ROOT/node_modules/aeoptimize/examples/github-action-sample/site" \
+  --json > "$VERIFY_ROOT/build-audit.json"
+jq -e '.contractVersion == "1.0" and (.checks | length > 0)' "$VERIFY_ROOT/page-audit.json" >/dev/null
+jq -e '.contractVersion == "1.0" and .source == "local-html" and (.pages | length == 1)' "$VERIFY_ROOT/build-audit.json" >/dev/null
 
 MANIFEST=$(jq -n \
   --arg version "$PACKAGE_VERSION" \

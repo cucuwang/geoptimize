@@ -2,6 +2,19 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## 0.7.0
+
+### Added
+
+- Added `audit-build` for local HTML directories with cross-page title/canonical review, syntax checks and optional `--expect-indexable --fail-on-error` CI gates.
+- Added an evidence-backed `audit` command for one URL or HTML/Markdown file, with versioned `PASS`, `WARNING`, `FAIL`, and `N/A` checks.
+- Added structured observations, remediation, validation guidance, and explicit limitations for HTTP, metadata, headings, canonical, robots directives, links, images, and JSON-LD.
+- Added a bounded, same-origin `audit-site` command for robots-aware page discovery, sitemap comparison, HTTP failures, redirect chains, internal-link targets, canonical conflicts, orphan candidates, and duplicate titles.
+
+### Compatibility
+
+- Kept the v0.6 readiness score and existing `scan --json` contract unchanged.
+
 ## 0.6.2
 
 ### Fixed
