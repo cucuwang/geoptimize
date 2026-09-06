@@ -217,7 +217,9 @@ function checkLanguage(doc: ParsedDocument, context: AuditContext): AuditCheck {
 
 function resolveCanonical(value: string, baseUrl?: string): string | null {
   try {
-    return baseUrl ? new URL(value, baseUrl).toString() : new URL(value).toString();
+    const url = baseUrl ? new URL(value, baseUrl) : new URL(value);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return url.toString();
   } catch {
     return null;
   }
@@ -247,25 +249,45 @@ function checkCanonical(doc: ParsedDocument, context: AuditContext): AuditCheck 
   }
 
   const baseUrl = context.target.finalUrl;
-  const resolved = canonicals.map((value) => resolveCanonical(value, baseUrl));
-  if (canonicals.length > 1 || resolved.some((value) => value === null)) {
+  if (canonicals.length > 1) {
     return makeCheck(
       'canonical-link',
       'Canonical link',
       'FAIL',
       [evidence(sourceFor(context), {
         canonicals,
-        resolved: resolved.map((value) => value ?? 'INVALID'),
+        resolved: canonicals.map((value) => resolveCanonical(value, baseUrl) ?? 'INVALID'),
       })],
-      canonicals.length > 1
-        ? 'Multiple canonical links were found, so the canonical signal is ambiguous.'
-        : 'The canonical value could not be resolved as a URL.',
+      'Multiple canonical links were found, so the canonical signal is ambiguous.',
       'Emit exactly one valid canonical link that represents the intended indexable URL.',
       'Fetch the built page and verify one canonical element plus its resolved destination.',
     );
   }
 
-  const canonical = resolved[0]!;
+  const declared = canonicals[0];
+  const canonical = resolveCanonical(declared, baseUrl);
+  if (!baseUrl && declared.trim() !== '' && canonical === null && !/^[a-z][a-z\d+.-]*:/i.test(declared)) {
+    return makeCheck(
+      'canonical-link',
+      'Canonical link',
+      'N/A',
+      [evidence(sourceFor(context), { declared, resolved: null, finalUrl: null })],
+      'A relative canonical was found, but a local-file audit has no deployed base URL for resolution.',
+      null,
+      'Audit the deployed URL and verify the resolved canonical destination.',
+    );
+  }
+  if (canonical === null) {
+    return makeCheck(
+      'canonical-link',
+      'Canonical link',
+      'FAIL',
+      [evidence(sourceFor(context), { declared, resolved: 'INVALID' })],
+      'The canonical value could not be resolved to an HTTP or HTTPS URL.',
+      'Emit exactly one valid canonical link that represents the intended indexable URL.',
+      'Fetch the built page and verify one canonical element plus its resolved destination.',
+    );
+  }
   if (!baseUrl) {
     return makeCheck(
       'canonical-link',
@@ -293,7 +315,9 @@ function checkCanonical(doc: ParsedDocument, context: AuditContext): AuditCheck 
 }
 
 function checkRobots(doc: ParsedDocument, context: AuditContext): AuditCheck {
-  const metaRobots = [doc.metaTags.robots, doc.metaTags.googlebot].filter(Boolean).join(', ');
+  const valuesFor = (name: string): string[] => doc.metaTagValues?.[name]
+    ?? (doc.metaTags[name] ? [doc.metaTags[name]] : []);
+  const metaRobots = [...valuesFor('robots'), ...valuesFor('googlebot')].join(', ');
   const xRobotsTag = context.http?.xRobotsTag ?? '';
   const combined = `${metaRobots}, ${xRobotsTag}`;
   const blocksIndexing = /(?:^|[,\s])(?:noindex|none)(?:$|[,\s])/i.test(combined);
@@ -386,21 +410,23 @@ function checkImages(doc: ParsedDocument, context: AuditContext): AuditCheck {
 
 function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
   const errors = doc.jsonLdErrors ?? [];
-  const missingUniversalFields = doc.jsonLd.filter((value) => !value['@context'] || !value['@type']);
+  const parsedObjects = doc.jsonLd.filter((value) =>
+    value !== null && typeof value === 'object' && !Array.isArray(value));
+  const invalidValueCount = doc.jsonLd.length - parsedObjects.length;
 
-  if (errors.length > 0 || missingUniversalFields.length > 0) {
+  if (errors.length > 0 || invalidValueCount > 0) {
     return makeCheck(
       'json-ld-structure',
       'JSON-LD structure',
       'FAIL',
       [evidence(sourceFor(context), {
-        blockCount: doc.jsonLd.length + errors.length,
-        parsedCount: doc.jsonLd.length,
+        blockCount: doc.jsonLdBlockCount ?? doc.jsonLd.length,
+        parsedObjectCount: parsedObjects.length,
+        invalidValueCount,
         parseErrors: errors,
-        missingContextOrTypeCount: missingUniversalFields.length,
       })],
-      'Malformed JSON-LD or a missing @context/@type field was detected. Feature-specific eligibility and visible-content agreement remain outside this structural check.',
-      'Correct the JSON syntax and universal fields, then validate the specific schema type against the applicable primary documentation and visible content.',
+      'Malformed JSON-LD or a non-object top-level value was detected. Feature-specific eligibility and visible-content agreement remain outside this structural check.',
+      'Correct the JSON syntax and top-level structure, then validate the specific schema type against the applicable primary documentation and visible content.',
       'Parse every JSON-LD block again and run the relevant structured-data validator for the page type.',
     );
   }
@@ -422,10 +448,10 @@ function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
     'JSON-LD structure',
     'PASS',
     [evidence(sourceFor(context), {
-      blockCount: doc.jsonLd.length,
-      schemaTypes: doc.jsonLd.map((value) => value['@type'] || '[unknown]'),
+      blockCount: doc.jsonLdBlockCount ?? doc.jsonLd.length,
+      schemaTypes: parsedObjects.map((value) => value['@type'] || '[unknown]'),
     })],
-    'Every parsed JSON-LD object includes @context and @type. This does not establish feature eligibility or guarantee rich results.',
+    'Every JSON-LD value parsed to an object. Context, type, feature eligibility, and visible-content agreement require schema-specific validation.',
     null,
     'Compare each structured-data field with visible content and the current documentation for its intended feature.',
   );

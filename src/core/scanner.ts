@@ -48,13 +48,19 @@ export function parseHtml(html: string, url: string): ParsedDocument {
   // Extract JSON-LD
   const jsonLd: JsonLdObject[] = [];
   const jsonLdErrors: string[] = [];
-  $('script[type="application/ld+json"]').each((index, el) => {
+  const jsonLdScripts = $('script[type="application/ld+json"]');
+  jsonLdScripts.each((index, el) => {
     try {
       const parsed = JSON.parse($(el).html() || '');
       const candidates = Array.isArray(parsed) ? parsed : [parsed];
       for (const [candidateIndex, candidate] of candidates.entries()) {
-        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+        if (candidate !== null) {
+          // Keep the v0.6 scoring input compatible. The audit contract records
+          // non-object values separately, but the score historically counted them.
           jsonLd.push(candidate as JsonLdObject);
+        }
+        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+          continue;
         } else {
           const location = Array.isArray(parsed) ? ` item ${candidateIndex + 1}` : '';
           jsonLdErrors.push(`JSON-LD block ${index + 1}${location}: expected an object`);
@@ -68,10 +74,18 @@ export function parseHtml(html: string, url: string): ParsedDocument {
 
   // Extract meta tags
   const metaTags: Record<string, string> = {};
+  const metaTagValues: Record<string, string[]> = {};
   $('meta').each((_, el) => {
-    const name = $(el).attr('name') || $(el).attr('property') || '';
+    const declaredName = $(el).attr('name') || '';
+    const name = declaredName || $(el).attr('property') || '';
     const content = $(el).attr('content') || '';
     if (name && content) metaTags[name] = content;
+    if (declaredName && content) {
+      const normalizedName = declaredName.trim().toLowerCase();
+      const values = metaTagValues[normalizedName] ?? [];
+      values.push(content);
+      metaTagValues[normalizedName] = values;
+    }
   });
 
   // Extract links
@@ -106,8 +120,10 @@ export function parseHtml(html: string, url: string): ParsedDocument {
     headings,
     paragraphs,
     jsonLd,
+    jsonLdBlockCount: jsonLdScripts.length,
     jsonLdErrors,
     metaTags,
+    metaTagValues,
     links,
     images,
     language,
@@ -198,6 +214,7 @@ export function parseMarkdown(md: string, url: string): ParsedDocument {
     paragraphs,
     jsonLd: [],
     metaTags: {},
+    metaTagValues: {},
     links,
     images,
     language,

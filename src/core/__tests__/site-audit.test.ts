@@ -35,6 +35,18 @@ describe('robots policy', () => {
     expect(robotsAllows('https://example.com/private/public', policy)).toBe(true);
     expect(robotsAllows('https://example.com/private/public/child', policy)).toBe(false);
   });
+
+  it('prefers the exact crawler product token over its shorter prefix', () => {
+    const policy = parseRobotsTxt(`
+      User-agent: aeoptimize
+      Allow: /private
+
+      User-agent: aeoptimize-site-audit
+      Disallow: /private
+    `);
+
+    expect(robotsAllows('https://example.com/private', policy)).toBe(false);
+  });
 });
 
 describe('sitemap parsing', () => {
@@ -203,7 +215,40 @@ describe('auditSite', () => {
     const report = await auditSite('https://example.com/', { maxPages: 5 });
 
     expect(report.pages.find((page) => page.requestedUrl.endsWith('/leave'))).toMatchObject({ status: 0 });
+    expect(report.checks.find((check) => check.id === 'site-http-status')?.status).toBe('WARNING');
+    const linkCheck = report.checks.find((check) => check.id === 'internal-link-targets');
+    expect(linkCheck?.status).toBe('WARNING');
+    expect(linkCheck?.evidence[0].observed).toMatchObject({
+      brokenTargets: [],
+      uncheckedTargets: ['https://example.com/leave'],
+    });
     expect(fetchMock.mock.calls.some(([url]) => url.toString() === 'https://outside.example/')).toBe(false);
+  });
+
+  it('reports a malformed successful sitemap response as a confirmed failure', async () => {
+    const fetchMock = vi.fn(async (input: string | URL) => {
+      const url = input.toString();
+      if (url === 'https://example.com/') {
+        return new Response('<html><head><title>Home</title></head><body><h1>Home</h1></body></html>', {
+          status: 200,
+          headers: { 'content-type': 'text/html' },
+        });
+      }
+      if (url === 'https://example.com/robots.txt') return new Response('', { status: 404 });
+      if (url === 'https://example.com/sitemap.xml') {
+        return new Response('<html><body>Not a sitemap</body></html>', { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const report = await auditSite('https://example.com/', { maxPages: 5 });
+    const sitemapCheck = report.checks.find((check) => check.id === 'sitemap-consistency');
+
+    expect(sitemapCheck?.status).toBe('FAIL');
+    expect(sitemapCheck?.evidence[0].observed).toMatchObject({
+      invalidSitemaps: ['https://example.com/sitemap.xml'],
+    });
   });
 
   it('stops subsequent page crawling when robots policy is temporarily unavailable', async () => {

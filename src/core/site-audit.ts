@@ -15,6 +15,7 @@ const DEFAULT_MAX_PAGES = 20;
 const MAX_ALLOWED_PAGES = 200;
 const MAX_SITEMAPS = 5;
 const REQUEST_TIMEOUT_MS = 15_000;
+const SITE_AUDIT_USER_AGENT = 'aeoptimize-site-audit';
 
 export interface SiteAuditOptions {
   maxPages?: number;
@@ -83,7 +84,7 @@ export function robotsAllows(urlValue: string, policy: RobotsPolicy): boolean {
   return matches[0].directive === 'allow';
 }
 
-export function parseRobotsTxt(text: string, userAgent = 'aeoptimize'): RobotsPolicy {
+export function parseRobotsTxt(text: string, userAgent = SITE_AUDIT_USER_AGENT): RobotsPolicy {
   const groups: RobotsGroup[] = [];
   const sitemapUrls: string[] = [];
   let current: RobotsGroup | null = null;
@@ -188,7 +189,12 @@ function isHtmlResource(resource: UrlResource): boolean {
 }
 
 function blocksIndexing(document: ParsedDocument, xRobotsTag: string | null): boolean {
-  const directives = [document.metaTags.robots, document.metaTags.googlebot, xRobotsTag]
+  const metaValues = document.metaTagValues;
+  const directives = [
+    ...(metaValues?.robots ?? (document.metaTags.robots ? [document.metaTags.robots] : [])),
+    ...(metaValues?.googlebot ?? (document.metaTags.googlebot ? [document.metaTags.googlebot] : [])),
+    xRobotsTag,
+  ]
     .filter(Boolean)
     .join(', ');
   return /(?:^|[,\s])(?:noindex|none)(?:$|[,\s])/i.test(directives);
@@ -207,7 +213,7 @@ async function fetchForSite(url: string, allowedOrigin?: string): Promise<UrlRes
   return fetchUrlResource(url, {
     render: false,
     init: {
-      headers: { 'user-agent': 'aeoptimize-site-audit' },
+      headers: { 'user-agent': SITE_AUDIT_USER_AGENT },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     },
     allowedOrigin,
@@ -223,7 +229,7 @@ async function loadRobots(origin: string): Promise<{
   try {
     const resource = await fetchForSite(url, origin);
     if (resource.status === 200) {
-      return { url, status: 200, policy: parseRobotsTxt(resource.html) };
+      return { url, status: 200, policy: parseRobotsTxt(resource.html, SITE_AUDIT_USER_AGENT) };
     }
     if (resource.status === 401 || resource.status === 403 || resource.status === 429 || resource.status >= 500) {
       return {
@@ -456,14 +462,15 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
     pageLookup.set(normalizeUrl(page.output.finalUrl), page);
   }
 
-  const failedPages = pages.filter((page) => page.output.status === 0 || page.output.status >= 400);
+  const failedPages = pages.filter((page) => page.output.status >= 400);
+  const unavailablePages = pages.filter((page) => page.output.status === 0);
   const longRedirectChains = pages.filter((page) => page.output.redirects.length > 1);
   const brokenInternalTargets = [...allInternalTargets].filter((url) => {
     const page = pageLookup.get(url);
-    return page ? page.output.status === 0 || page.output.status >= 400 : false;
+    return page ? page.output.status >= 400 : false;
   });
   const uncheckedInternalTargets = [...allInternalTargets].filter((url) =>
-    !pageLookup.has(url) && !robotsSkipped.has(url),
+    (!pageLookup.has(url) || pageLookup.get(url)?.output.status === 0) && !robotsSkipped.has(url),
   );
 
   const htmlPages = pages.filter((page) => page.document !== null);
@@ -510,10 +517,17 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
 
   const brokenSitemapPages = [...sitemapUrls].filter((url) => {
     const page = pageLookup.get(url);
-    return page ? page.output.status === 0 || page.output.status >= 400 : false;
+    return page ? page.output.status >= 400 : false;
   });
+  const unavailableSitemapPages = [...sitemapUrls].filter((url) =>
+    pageLookup.get(url)?.output.status === 0,
+  );
   const failedSitemaps = sitemapResult.reports.filter((sitemap) =>
-    sitemap.status !== 200 && sitemap.status !== 404,
+    sitemap.status !== 0 && sitemap.status !== 200 && sitemap.status !== 404,
+  );
+  const unavailableSitemaps = sitemapResult.reports.filter((sitemap) => sitemap.status === 0);
+  const invalidSitemaps = sitemapResult.reports.filter((sitemap) =>
+    sitemap.status === 200 && sitemap.kind === 'unknown',
   );
   const indexableCrawledUrls = pages
     .filter((page) => page.document && page.output.status >= 200 && page.output.status < 300 && !page.blocksIndexing)
@@ -539,13 +553,13 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
       : missingCanonicals.length > 0 || nonSelfCanonicals.length > 0 || duplicateCanonicals.length > 0
         ? 'WARNING'
         : 'PASS';
-  const sitemapStatus: AuditStatus = sitemapUrls.size === 0 && failedSitemaps.length === 0
-    ? 'N/A'
-    : failedSitemaps.length > 0 || brokenSitemapPages.length > 0
+  const sitemapStatus: AuditStatus = failedSitemaps.length > 0 || invalidSitemaps.length > 0 || brokenSitemapPages.length > 0
       ? 'FAIL'
-      : missingFromSitemap.length > 0
+      : unavailableSitemaps.length > 0 || unavailableSitemapPages.length > 0 || missingFromSitemap.length > 0
         ? 'WARNING'
-        : 'PASS';
+        : sitemapUrls.size === 0
+          ? 'N/A'
+          : 'PASS';
 
   const checks: AuditCheck[] = [
     check(
@@ -581,15 +595,23 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
     check(
       'site-http-status',
       'Page HTTP status',
-      failedPages.length > 0 ? 'FAIL' : pages.length > 0 ? 'PASS' : 'N/A',
+      failedPages.length > 0 ? 'FAIL' : unavailablePages.length > 0 ? 'WARNING' : pages.length > 0 ? 'PASS' : 'N/A',
       {
         failedCount: failedPages.length,
         failedPages: failedPages.slice(0, 20).map((page) => `${page.output.status} ${page.output.requestedUrl}`),
+        unavailableCount: unavailablePages.length,
+        unavailablePages: unavailablePages.slice(0, 20).map((page) => page.output.requestedUrl),
       },
       failedPages.length > 0
         ? 'One or more crawled URLs failed to return a successful final response.'
+        : unavailablePages.length > 0
+          ? 'One or more page requests did not yield an HTTP response, so their status is unavailable.'
         : 'Every crawled page returned a successful final response.',
-      failedPages.length > 0 ? 'Repair, remove, or intentionally retire failed URLs and update links or sitemap entries that reference them.' : null,
+      failedPages.length > 0
+        ? 'Repair, remove, or intentionally retire failed URLs and update links or sitemap entries that reference them.'
+        : unavailablePages.length > 0
+          ? 'Retry unavailable URLs and diagnose request or redirect-policy failures before classifying them.'
+          : null,
       'Request each failed URL with redirects disabled and confirm the intended final status.',
       'http',
     ),
@@ -667,7 +689,10 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
         sitemapCount: sitemapResult.reports.length,
         sitemapUrlCount: sitemapUrls.size,
         failedSitemaps: failedSitemaps.map((sitemap) => `${sitemap.status} ${sitemap.url}`).slice(0, 20),
+        invalidSitemaps: invalidSitemaps.map((sitemap) => sitemap.url).slice(0, 20),
+        unavailableSitemaps: unavailableSitemaps.map((sitemap) => sitemap.url).slice(0, 20),
         brokenSitemapPages: brokenSitemapPages.slice(0, 20),
+        unavailableSitemapPages: unavailableSitemapPages.slice(0, 20),
         crawledButMissing: missingFromSitemap.slice(0, 20),
       },
       sitemapStatus === 'N/A'
@@ -678,7 +703,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
       sitemapStatus === 'FAIL'
         ? 'Repair unreadable sitemap files and remove or restore failed listed URLs.'
         : sitemapStatus === 'WARNING'
-          ? 'Review whether the omitted crawled URLs belong in the sitemap and keep canonical URL forms consistent.'
+          ? 'Retry unavailable URLs, review omissions, and keep canonical URL forms consistent.'
           : null,
       'Fetch every reported sitemap, validate its XML, and request affected page URLs independently.',
       'http',

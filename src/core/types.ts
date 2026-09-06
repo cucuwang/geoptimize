@@ -72,8 +72,10 @@ export interface ParsedDocument {
   headings: Heading[];
   paragraphs: string[];
   jsonLd: JsonLdObject[];
+  jsonLdBlockCount?: number;
   jsonLdErrors?: string[];
   metaTags: Record<string, string>;
+  metaTagValues?: Record<string, string[]>;
   links: Link[];
   images?: ImageReference[];
   language?: string;

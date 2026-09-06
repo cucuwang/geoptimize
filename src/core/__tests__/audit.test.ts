@@ -87,6 +87,29 @@ describe('auditDocument', () => {
     expect(report.checks.find((check) => check.id === 'http-status')?.status).toBe('N/A');
   });
 
+  it('keeps unavailable canonical evidence separate and reads every robots directive', () => {
+    const document = parseHtml(`<html><head>
+      <title>Local page</title>
+      <link rel="canonical" href="../page">
+      <meta name="RoBoTs" content="index,follow">
+      <meta name="GOOGLEBOT" content="NoIndex,nofollow">
+      <meta name="robots" content="index">
+      <script type="application/ld+json">{"name":"A structurally valid object"}</script>
+      </head><body><h1>Local page</h1></body></html>`, 'page.html');
+    const report = auditDocument(document, {
+      target: { type: 'file', input: 'page.html' },
+      rendering: 'local-html',
+    });
+
+    expect(document.metaTagValues).toMatchObject({
+      robots: ['index,follow', 'index'],
+      googlebot: ['NoIndex,nofollow'],
+    });
+    expect(report.checks.find((check) => check.id === 'canonical-link')?.status).toBe('N/A');
+    expect(report.checks.find((check) => check.id === 'robots-directives')?.status).toBe('WARNING');
+    expect(report.checks.find((check) => check.id === 'json-ld-structure')?.status).toBe('PASS');
+  });
+
   it('does not claim rendered metadata for Markdown source files', () => {
     const report = auditDocument(parseMarkdown('# Guide\n\nSee [details](/details).', 'guide.md'), {
       target: { type: 'file', input: 'guide.md' },
