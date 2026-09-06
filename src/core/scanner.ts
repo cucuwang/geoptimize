@@ -341,10 +341,17 @@ export interface UrlResource {
   renderedWithBrowser: boolean;
 }
 
+export interface UrlFetchOptions {
+  render?: boolean;
+  init?: RequestInit;
+  allowedOrigin?: string;
+}
+
 async function fetchWithSafeRedirects(
   input: string | URL,
   init?: RequestInit,
   maxRedirects = 10,
+  allowedOrigin?: string,
 ): Promise<{ response: Response; finalUrl: string; redirects: RedirectHop[] }> {
   let currentUrl = typeof input === 'string' ? validateUrl(input) : validateUrl(input.toString());
   const redirects: RedirectHop[] = [];
@@ -365,6 +372,9 @@ async function fetchWithSafeRedirects(
     }
 
     const nextUrl = validateUrl(new URL(location, currentUrl).toString());
+    if (allowedOrigin && nextUrl.origin !== allowedOrigin) {
+      throw new Error(`Redirect left the allowed origin: ${nextUrl.origin}`);
+    }
     redirects.push({
       from: currentUrl.toString(),
       to: nextUrl.toString(),
@@ -421,14 +431,19 @@ function isSpaLikely(html: string): boolean {
   return contentTags < 10 && scripts > 3;
 }
 
-export async function fetchUrlResource(url: string): Promise<UrlResource> {
+export async function fetchUrlResource(url: string, options: UrlFetchOptions = {}): Promise<UrlResource> {
   validateUrl(url);
-  const { response, finalUrl, redirects } = await fetchWithSafeRedirects(url);
+  const { response, finalUrl, redirects } = await fetchWithSafeRedirects(
+    url,
+    options.init,
+    10,
+    options.allowedOrigin,
+  );
 
   let html = await response.text();
   let renderedWithBrowser = false;
 
-  if (response.ok && isSpaLikely(html)) {
+  if (options.render !== false && response.ok && isSpaLikely(html)) {
     const result = await fetchWithPuppeteer(finalUrl);
     if (result.rendered) {
       html = result.html;

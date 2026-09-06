@@ -116,6 +116,50 @@ export interface AuditReport {
   timestamp: string;
 }
 
+export interface SiteAuditPage {
+  requestedUrl: string;
+  finalUrl: string;
+  status: number;
+  statusText: string;
+  redirects: string[];
+  contentType: string | null;
+  title: string | null;
+  language: string | null;
+  canonicalLinks: string[];
+  internalLinkCount: number;
+  externalLinkCount: number;
+  discoveredFrom: string[];
+}
+
+export interface SiteAuditSitemap {
+  url: string;
+  status: number;
+  kind: 'urlset' | 'index' | 'unknown';
+  urlCount: number;
+}
+
+export interface SiteAuditReport {
+  contractVersion: '1.0';
+  startUrl: string;
+  origin: string;
+  maxPages: number;
+  crawledPages: number;
+  truncated: boolean;
+  robots: {
+    url: string;
+    status: number;
+    applicableRules: string[];
+    sitemapUrls: string[];
+    skippedUrls: string[];
+  };
+  sitemaps: SiteAuditSitemap[];
+  pages: SiteAuditPage[];
+  checks: AuditCheck[];
+  summary: Record<AuditStatus, number>;
+  limitations: string[];
+  timestamp: string;
+}
+
 export interface RuleResult {
   score: number;
   maxScore: number;

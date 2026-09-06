@@ -25,6 +25,7 @@ npx aeoptimize scan https://example.com
 npx aeoptimize scan ./dist --dir
 npx aeoptimize scan ./dist --dir --json
 npx aeoptimize audit https://example.com --json
+npx aeoptimize audit-site https://example.com --max-pages 20 --json
 ```
 
 Example output:
@@ -77,6 +78,19 @@ The first audit contract checks:
 Each check returns `PASS`, `WARNING`, `FAIL`, or `N/A`, the observed evidence, an explanation, an optional remediation, and a validation step. `PASS` is bounded to the inspected evidence. It does not establish ranking, indexing, rich-result display, traffic, conversion, or AI citation.
 
 The command intentionally reports unavailable site-wide and external measurements as limitations. It does not infer robots.txt policy, sitemap membership, hreflang reciprocity, broken-link status, Core Web Vitals, analytics, or actual search-engine index state from one page.
+
+## Bounded site audit
+
+`audit-site` follows same-origin links in deterministic order and stops at an explicit page limit. It reads robots.txt before subsequent page requests, discovers same-origin sitemap files, and uses response HTML without browser rendering.
+
+```bash
+npx aeoptimize audit-site https://example.com
+npx aeoptimize audit-site https://example.com --max-pages 50 --json
+```
+
+The site contract reports bounded crawl coverage, robots policy, page status, redirect chains, internal link targets, canonical consistency, sitemap discrepancies, sitemap-only orphan candidates, and duplicate titles. Sitemap-only pages remain candidates until a sufficiently complete crawl or server-log evidence confirms their discovery state.
+
+The default limit is 20 page requests and the accepted range is 1–200. Cross-origin page links are recorded only as counts, and subsequent redirects outside the audited origin are not followed. JavaScript-inserted links, actual search-engine crawl/index state, rankings, traffic, and conversions remain outside this contract.
 
 ## How it compares
 

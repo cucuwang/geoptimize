@@ -6,11 +6,12 @@ import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import { scan, scanDirectory, parseHtml, parseMarkdown, scanUrl } from '../core/scanner.js';
 import { audit } from '../core/audit.js';
+import { auditSite } from '../core/site-audit.js';
 import { generate } from '../core/generator.js';
 import { detectAvailableCLIs, scoreWithAllAvailable } from '../core/external-scorers.js';
 import { mergeScores } from '../core/merger.js';
 import { auditPath } from '../core/static-audit.js';
-import type { AuditReport, AuditStatus, ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
+import type { AuditReport, AuditStatus, SiteAuditReport, ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
 
 const HOOK_BEGIN_MARKER = '# BEGIN aeoptimize';
 const HOOK_END_MARKER = '# END aeoptimize';
@@ -82,6 +83,29 @@ program
         console.log(JSON.stringify(report, null, 2));
       } else {
         printAuditReport(report);
+      }
+    } catch (err) {
+      console.error(chalk.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('audit-site <target>')
+  .description('Crawl one origin with bounded evidence-backed site checks')
+  .option('--max-pages <count>', 'Maximum page requests from 1 to 200', '20')
+  .option('--json', 'Output the versioned site-audit JSON contract')
+  .action(async (target: string, options: { maxPages: string; json?: boolean }) => {
+    try {
+      const resolved = resolveTarget(target);
+      if (resolved.type !== 'url') {
+        throw new Error('Site audit requires an http or https URL.');
+      }
+      const report = await auditSite(resolved.path, { maxPages: Number(options.maxPages) });
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        printSiteAuditReport(report);
       }
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -544,6 +568,43 @@ function printAuditReport(report: AuditReport): void {
   for (const limitation of report.limitations) {
     console.log(chalk.dim(`  - ${limitation}`));
   }
+  console.log('');
+}
+
+function printSiteAuditReport(report: SiteAuditReport): void {
+  console.log('');
+  console.log(chalk.bold('  Bounded Site Audit'));
+  console.log(chalk.dim(`  Contract ${report.contractVersion} | ${report.timestamp}`));
+  console.log(chalk.dim(`  ${report.startUrl} | ${report.crawledPages}/${report.maxPages} pages`));
+  console.log('');
+  console.log(
+    `  ${chalk.green(`PASS ${report.summary.PASS}`)}  ` +
+    `${chalk.yellow(`WARNING ${report.summary.WARNING}`)}  ` +
+    `${chalk.red(`FAIL ${report.summary.FAIL}`)}  ` +
+    `${chalk.gray(`N/A ${report.summary['N/A']}`)}`,
+  );
+  console.log('');
+
+  for (const item of report.checks) {
+    const color = auditStatusColor(item.status);
+    console.log(`  ${color(`[${item.status}]`)} ${chalk.bold(item.label)} ${chalk.dim(`(${item.id})`)}`);
+    console.log(`    ${item.explanation}`);
+    for (const itemEvidence of item.evidence) {
+      console.log(chalk.dim(`    Evidence ${itemEvidence.source}: ${JSON.stringify(itemEvidence.observed)}`));
+    }
+    if (item.remediation) console.log(`    ${chalk.cyan('Fix:')} ${item.remediation}`);
+    console.log(chalk.dim(`    Validate: ${item.validation}`));
+    console.log('');
+  }
+
+  console.log(chalk.bold('  Pages'));
+  for (const page of report.pages) {
+    const status = page.status >= 200 && page.status < 300 ? chalk.green(String(page.status)) : chalk.red(String(page.status));
+    console.log(`  ${status} ${page.requestedUrl}${page.finalUrl !== page.requestedUrl ? ` -> ${page.finalUrl}` : ''}`);
+  }
+  console.log('');
+  console.log(chalk.bold('  Limits'));
+  for (const limitation of report.limitations) console.log(chalk.dim(`  - ${limitation}`));
   console.log('');
 }
 

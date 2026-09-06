@@ -79,6 +79,14 @@ The `audit` command is separate from the v0.6 score contract. It reports one of 
 
 Each check includes observed evidence, an explanation, optional remediation, and a validation step. The contract does not derive robots.txt policy, sitemap membership, hreflang reciprocity, site-wide duplication, orphan status, Core Web Vitals, analytics, or search-engine index state from a single document.
 
+### Bounded site audit
+
+The `audit-site` contract uses a same-origin, sequential queue with an explicit 1–200 page limit. It processes links in discovery order before sitemap-only seeds, reads applicable `aeoptimize` or wildcard robots rules, and does not follow subsequent redirects outside the audited origin.
+
+The crawler uses response HTML without browser rendering. A Sitemap-only URL with no internal inlink is reported as an orphan candidate because JavaScript navigation, pages beyond the configured limit, and other discovery sources may still link to it. Broken-link findings require an observed failed response; queued but unfetched links remain warnings.
+
+robots.txt matching covers applicable user-agent groups, `Allow`, `Disallow`, `*` wildcards, and `$` endings. Unusual policies need manual review. An unavailable robots.txt response that is not an ordinary 404 causes conservative skipping of subsequent matching URLs.
+
 ## Primary sources
 
 - [Google Search: AI features and your website](https://developers.google.com/search/docs/appearance/ai-features)
