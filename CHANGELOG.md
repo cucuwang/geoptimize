@@ -2,7 +2,7 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
-## Unreleased
+## 0.7.0
 
 ### Added
 

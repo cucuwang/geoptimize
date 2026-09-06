@@ -83,7 +83,7 @@ describe('public metadata', () => {
     const action = await readFile(join(root, 'action.yml'), 'utf8');
     const compatibilityAction = await readFile(join(root, 'action/action.yml'), 'utf8');
 
-    expect(packageJson.version).toBe('0.6.2');
+    expect(packageJson.version).toBe('0.7.0');
     expect(pluginJson.version).toBe(packageJson.version);
     expect(marketplaceJson.metadata.version).toBe(packageJson.version);
     expect(cli).toContain(`.version('${packageJson.version}')`);

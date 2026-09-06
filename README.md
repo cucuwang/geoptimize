@@ -113,10 +113,10 @@ npx aeoptimize scan ./dist --dir --json > aeoptimize-report.json
 node -e "const r=require('./aeoptimize-report.json'); process.exit(r.overall.total < 60 ? 1 : 0)"
 ```
 
-The v0.6 GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
+The GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.6.2
+- uses: cucuwang/aeoptimize@v0.7.0
   with:
     path: dist
 ```
@@ -124,7 +124,7 @@ The v0.6 GitHub Action is advisory by default. Consume it from the repository pi
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.6.2
+- uses: cucuwang/aeoptimize@v0.7.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -246,7 +246,7 @@ npx skills add cucuwang/aeoptimize
 
 ## Project status
 
-The v0.6 evidence baseline focuses on methodology, reproducible fixtures, CI compatibility, packaging, and external adoption—not more scoring rules. Release acceptance and rollback are documented in [docs/release-v0.6.md](docs/release-v0.6.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
+Version 0.7 adds page, build, and bounded site audits while retaining the v0.6 scoring contract. Release acceptance and rollback are documented in [docs/release-v0.7.md](docs/release-v0.7.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 

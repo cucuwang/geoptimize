@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Content-readiness lint with evidence-bounded AI discovery experiments",
-    "version": "0.6.2"
+    "version": "0.7.0"
   },
   "plugins": [
     {
