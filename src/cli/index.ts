@@ -9,6 +9,7 @@ import { audit } from '../core/audit.js';
 import { generate } from '../core/generator.js';
 import { detectAvailableCLIs, scoreWithAllAvailable } from '../core/external-scorers.js';
 import { mergeScores } from '../core/merger.js';
+import { auditPath } from '../core/static-audit.js';
 import type { AuditReport, AuditStatus, ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
 
 const HOOK_BEGIN_MARKER = '# BEGIN aeoptimize';
@@ -85,6 +86,41 @@ program
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
+    }
+  });
+
+program
+  .command('audit-build <path>')
+  .description('Audit local built HTML with evidence and optional CI failure on errors')
+  .option('--json', 'Output the versioned static audit report as JSON')
+  .option('--base-url <url>', 'Deployed page URL, or deployment root for a directory')
+  .option('--expect-indexable', 'Treat HTML noindex/none as a failure for this target')
+  .option('--fail-on-error', 'Exit 1 when the audit contains FAIL checks; warnings remain advisory')
+  .action(async (path: string, options: {
+    json?: boolean; baseUrl?: string; expectIndexable?: boolean; failOnError?: boolean;
+  }) => {
+    try {
+      const report = await auditPath(path, options);
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        console.log('Static HTML Audit');
+        console.log(`${report.pages.length} pages | ${report.summary.FAIL} failed | ${report.summary.WARNING} warnings | ${report.summary.PASS} passed | ${report.summary['N/A']} not assessed`);
+        for (const page of report.pages) {
+          console.log(`\n${page.target}`);
+          for (const check of page.checks) {
+            console.log(`  [${check.status}] ${check.id}: ${check.message}`);
+            for (const evidence of check.evidence) console.log(`    Evidence: ${evidence}`);
+            if (check.remediation) console.log(`    Fix: ${check.remediation}`);
+            console.log(`    Verify: ${check.validation}`);
+          }
+        }
+        console.log(`\nScope: ${report.limitations.join(' ')}`);
+      }
+      if (options.failOnError && report.summary.FAIL > 0) process.exitCode = 1;
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
     }
   });
 

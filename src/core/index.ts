@@ -6,3 +6,4 @@ export * from './generator.js';
 export * from './ai-prompt.js';
 export * from './external-scorers.js';
 export * from './merger.js';
+export * from './static-audit.js';

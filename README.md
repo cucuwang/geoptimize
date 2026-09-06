@@ -121,6 +121,43 @@ The Action exposes `score` and `report` outputs in both modes. Its release is re
 
 A copyable advisory workflow and controlled input are available in the [end-to-end Action sample](examples/github-action-sample/README.md).
 
+## Audit built HTML before deployment
+
+The `audit-build` command checks a local HTML file or build directory and reports evidence,
+remediation and validation for each finding. It leaves the existing `scan` score and
+JSON contract unchanged.
+
+```bash
+npx aeoptimize audit-build ./dist --json
+npx aeoptimize audit-build ./dist --base-url https://example.com/ --expect-indexable --fail-on-error --json > audit.json
+```
+
+Malformed JSON-LD and invalid or multiple canonical declarations produce `FAIL`.
+HTML `noindex` and `none` are warnings unless `--expect-indexable` is supplied.
+Missing or repeated titles/descriptions and cross-page title/canonical reuse are
+advisory. Shared canonicals can be intentional; they are never automatically rewritten.
+
+`--fail-on-error` exits with code 1 when a `FAIL` is present, while still writing the
+complete report. Input errors also exit 1. Without it, a completed audit is advisory.
+Use `--expect-indexable` only for pages intended for standalone search indexing.
+
+This command reads source HTML without fetching URLs or launching a browser.
+HTTP headers, robots.txt and actual indexing are explicitly unassessed. JSON-LD
+checks cover JSON syntax and root shape; schema semantics and visible-content
+consistency require separate validation. Missing JSON-LD is `N/A`.
+
+For a file, `--base-url` is its deployed page URL. For a directory, it is the
+deployment root; relative file paths are appended without inferring hosting rewrites.
+An HTML `base` element is respected. Relative canonicals without a resolvable base
+are `N/A`. Hidden entries, `node_modules` and symlinks are excluded from traversal;
+an explicit symlink input is rejected. Unreadable files and files over 5 MB stop
+the audit instead of silently dropping pages.
+
+Rules follow the [robots meta specification](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)
+and [canonical URL guidance](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls).
+A syntax pass does not establish eligibility under the
+[structured-data policies](https://developers.google.com/search/docs/appearance/structured-data/sd-policies).
+
 ## Optional generators
 
 ```bash
