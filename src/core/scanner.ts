@@ -488,9 +488,9 @@ export async function scanUrl(url: string): Promise<ScanReport> {
   }
 
   if (isSpaLikely(resource.html) && !resource.renderedWithBrowser) {
-    console.warn('[aeoptimize] This page appears to be a JavaScript-rendered SPA.');
-    console.warn('[aeoptimize] Install Chrome/Chromium for accurate scoring of JS-rendered sites.');
-    console.warn('[aeoptimize] Without a browser, scores may be lower than actual content quality.\n');
+    console.warn('[geoptimize] This page appears to be a JavaScript-rendered SPA.');
+    console.warn('[geoptimize] Install Chrome/Chromium for accurate scoring of JS-rendered sites.');
+    console.warn('[geoptimize] Without a browser, scores may be lower than actual content quality.\n');
   }
 
   const doc = parseHtml(resource.html, url);

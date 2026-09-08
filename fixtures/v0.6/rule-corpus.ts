@@ -116,7 +116,7 @@ export const ruleFixtureCorpus: Record<string, RuleFixtureSet> = {
       purpose: 'Paragraphs that name their subject remain independently understandable.',
       document: {
         paragraphs: [
-          'Aeoptimize reports deterministic content-readiness findings.',
+          'Geoptimize reports deterministic content-readiness findings.',
           'The GitHub Action is advisory by default.',
           'Project owners choose whether a threshold should block CI.',
         ],
@@ -319,7 +319,7 @@ export const ruleFixtureCorpus: Record<string, RuleFixtureSet> = {
     },
     boundary: {
       purpose: 'A code sample alone adds one point but cannot masquerade as original research.',
-      document: { rawText: 'Run the documented command.', html: '<pre><code>aeoptimize --version</code></pre>' },
+      document: { rawText: 'Run the documented command.', html: '<pre><code>geoptimize --version</code></pre>' },
       expected: { score: 3, issues: 0, suggestions: 1 },
     },
   },

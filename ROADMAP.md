@@ -2,7 +2,7 @@
 
 ## v0.6 — Evidence Release
 
-The release goal is a trustworthy CI lint contract, not additional AEO claims.
+The release goal is a trustworthy CI lint contract, not additional GEO claims.
 
 Release gates:
 

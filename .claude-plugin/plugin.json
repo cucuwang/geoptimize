@@ -1,17 +1,17 @@
 {
-  "name": "aeoptimize",
+  "name": "geoptimize",
   "description": "Content-readiness lint and evidence-bounded discovery experiments",
   "version": "0.7.0",
   "author": {
     "name": "Te-Shu Wang"
   },
-  "homepage": "https://github.com/cucuwang/aeoptimize",
-  "repository": "https://github.com/cucuwang/aeoptimize",
+  "homepage": "https://github.com/cucuwang/geoptimize",
+  "repository": "https://github.com/cucuwang/geoptimize",
   "license": "MIT",
-  "keywords": ["aeo", "seo", "ai-search", "llms-txt", "structured-data", "claude-code-skill"],
+  "keywords": ["geo", "seo", "ai-search", "llms-txt", "structured-data", "claude-code-skill"],
   "commands": [
-    "./skills/aeo-scan/SKILL.md",
-    "./skills/aeo-generate/SKILL.md",
-    "./skills/aeo-transform/SKILL.md"
+    "./skills/geo-scan/SKILL.md",
+    "./skills/geo-generate/SKILL.md",
+    "./skills/geo-transform/SKILL.md"
   ]
 }

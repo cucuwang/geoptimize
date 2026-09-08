@@ -8,7 +8,7 @@ Before publication, run `npm ci` and `npm run release:check` from the intended r
 
 1. `npm run check`, `npm audit --audit-level=high`, and `bash action/test-contract.sh` pass.
 2. The public v0.6 rule corpus covers the positive, negative, and false-positive boundary for every scored rule.
-3. An actual `npm pack` candidate contains the required public files, its SHA-256 is recorded, and a clean consumer can invoke `aeoptimize`, `aeo`, and `aeo-cli` from that exact tarball.
+3. An actual `npm pack` candidate contains the required public files, its SHA-256 is recorded, and a clean consumer can invoke `geoptimize`, `geo`, and `geo-cli` from that exact tarball.
 4. CI succeeds on Node.js 22 and 24 for the release commit.
 5. The JSON automation contract and Action sample tests pass.
 6. The npm account is verified immediately before publishing, and the publish source gate confirms that `HEAD` is the exact fetched `origin/main` commit.
@@ -35,13 +35,13 @@ No scoring rule, rule weight, JSON field, Action input, or Action output changes
 After an authorized npm publication:
 
 ```bash
-npm view aeoptimize version dist-tags --json
-npm view aeoptimize@0.6.2 version gitHead repository homepage bugs dist --json
-consumer_root=$(mktemp -d "${TMPDIR:-/tmp}/aeoptimize-v0.6.2-consumer.XXXXXX")
-npm install --prefix "$consumer_root" aeoptimize@0.6.2
-"$consumer_root/node_modules/.bin/aeoptimize" --version
-"$consumer_root/node_modules/.bin/aeo" --version
-"$consumer_root/node_modules/.bin/aeo-cli" --version
+npm view geoptimize version dist-tags --json
+npm view geoptimize@0.6.2 version gitHead repository homepage bugs dist --json
+consumer_root=$(mktemp -d "${TMPDIR:-/tmp}/geoptimize-v0.6.2-consumer.XXXXXX")
+npm install --prefix "$consumer_root" geoptimize@0.6.2
+"$consumer_root/node_modules/.bin/geoptimize" --version
+"$consumer_root/node_modules/.bin/geo" --version
+"$consumer_root/node_modules/.bin/geo-cli" --version
 rm -rf -- "$consumer_root"
 ```
 
@@ -55,13 +55,13 @@ bash scripts/verify-release-v0.6.sh <verified-release-commit> <verified-package-
 
 ## Rollback
 
-An npm dist-tag rollback changes what `npm install aeoptimize` selects; it does not remove exact-version installs. Never silently move an existing Git tag to different code.
+An npm dist-tag rollback changes what `npm install geoptimize` selects; it does not remove exact-version installs. Never silently move an existing Git tag to different code.
 
 If npm 0.6.2 is unsuitable, request separate authorization for each mutation and restore `latest` to the last fully released version rather than the provenance-mismatched 0.6.1 artifact:
 
 ```bash
-npm dist-tag add aeoptimize@0.6.0 latest
-npm deprecate aeoptimize@0.6.2 "Use 0.6.0 until the corrective release is available."
+npm dist-tag add geoptimize@0.6.0 latest
+npm deprecate geoptimize@0.6.2 "Use 0.6.0 until the corrective release is available."
 ```
 
 Mark the GitHub Release with the same warning. Never create or retarget `v0.6.1` merely to mask its npm `gitHead` mismatch. Preserve immutable versions as evidence, fix forward in 0.6.3, rerun the complete release acceptance suite, and only then move npm `latest` to the corrective version.

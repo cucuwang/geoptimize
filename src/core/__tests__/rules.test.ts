@@ -154,7 +154,7 @@ describe('self-contained-statements', () => {
   it('gives full score for self-contained paragraphs', () => {
     const doc = makeDoc({
       paragraphs: [
-        'AEO stands for Answer Engine Optimization.',
+        'GEO stands for Generative Engine Optimization.',
         'The practice focuses on reproducible content readiness.',
         'Structured data should match visible page content.',
       ],

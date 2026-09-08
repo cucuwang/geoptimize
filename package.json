@@ -1,13 +1,13 @@
 {
-  "name": "aeoptimize",
+  "name": "geoptimize",
   "version": "0.7.0",
   "description": "Deterministic content-readiness lint for static websites and documentation",
   "type": "module",
   "main": "./dist/core/index.js",
   "bin": {
-    "aeoptimize": "dist/cli/index.js",
-    "aeo": "dist/cli/index.js",
-    "aeo-cli": "dist/cli/index.js"
+    "geoptimize": "dist/cli/index.js",
+    "geo": "dist/cli/index.js",
+    "geo-cli": "dist/cli/index.js"
   },
   "exports": {
     ".": "./dist/core/index.js",
@@ -44,7 +44,7 @@
     "prepublishOnly": "npm run release:check && bash scripts/verify-publish-source.sh"
   },
   "keywords": [
-    "aeo",
+    "geo",
     "seo",
     "ai-search",
     "llms-txt",
@@ -55,13 +55,13 @@
     "vite-plugin",
     "nextjs-plugin"
   ],
-  "homepage": "https://github.com/cucuwang/aeoptimize",
+  "homepage": "https://github.com/cucuwang/geoptimize",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cucuwang/aeoptimize.git"
+    "url": "git+https://github.com/cucuwang/geoptimize.git"
   },
   "bugs": {
-    "url": "https://github.com/cucuwang/aeoptimize/issues"
+    "url": "https://github.com/cucuwang/geoptimize/issues"
   },
   "license": "MIT",
   "engines": {

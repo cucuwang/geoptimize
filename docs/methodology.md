@@ -1,6 +1,6 @@
 # Methodology and limitations
 
-This document describes the v0.6.0 scoring contract. `aeoptimize` is a deterministic content-readiness linter. Its score is not a forecast of ranking, indexing, rich-result eligibility, AI visibility, or citation.
+This document describes the v0.6.0 scoring contract. `geoptimize` is a deterministic content-readiness linter. Its score is not a forecast of ranking, indexing, rich-result eligibility, AI visibility, or citation.
 
 ## Evidence classes
 
@@ -15,7 +15,7 @@ Every rule belongs to one of four classes:
 
 ## Score contract
 
-The total remains 0–100 for backward-compatible CI output. Compare scores only for the same project, aeoptimize version, configuration, and fixture set. A higher score means fewer findings under this rule set; it does not mean a higher probability of an external outcome.
+The total remains 0–100 for backward-compatible CI output. Compare scores only for the same project, geoptimize version, configuration, and fixture set. A higher score means fewer findings under this rule set; it does not mean a higher probability of an external outcome.
 
 | Rule | Points | Class | What is actually checked |
 | --- | ---: | --- | --- |
@@ -81,7 +81,7 @@ Each check includes observed evidence, an explanation, optional remediation, and
 
 ### Bounded site audit
 
-The `audit-site` contract uses a same-origin, sequential queue with an explicit 1–200 page limit. It processes links in discovery order before sitemap-only seeds, reads applicable `aeoptimize` or wildcard robots rules, and does not follow subsequent redirects outside the audited origin.
+The `audit-site` contract uses a same-origin, sequential queue with an explicit 1–200 page limit. It processes links in discovery order before sitemap-only seeds, reads applicable `geoptimize` or wildcard robots rules, and does not follow subsequent redirects outside the audited origin.
 
 The crawler uses response HTML without browser rendering. A Sitemap-only URL with no internal inlink is reported as an orphan candidate because JavaScript navigation, pages beyond the configured limit, and other discovery sources may still link to it. Broken-link findings require an observed failed response; queued but unfetched links remain warnings.
 

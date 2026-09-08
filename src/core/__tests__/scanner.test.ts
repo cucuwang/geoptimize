@@ -14,11 +14,11 @@ afterEach(() => {
 describe('parseHtml', () => {
   it('extracts title, headings, paragraphs, and JSON-LD', async () => {
     const html = await readFile(join(fixtures, 'good-page.html'), 'utf-8');
-    const doc = parseHtml(html, 'https://example.com/aeo-guide');
+    const doc = parseHtml(html, 'https://example.com/geo-guide');
 
-    expect(doc.title).toBe('What is Answer Engine Optimization (AEO)? An Evidence Guide');
+    expect(doc.title).toBe('What is Generative Engine Optimization (GEO)? An Evidence Guide');
     expect(doc.headings.length).toBeGreaterThan(3);
-    expect(doc.headings[0]).toEqual({ level: 1, text: 'What is Answer Engine Optimization (AEO)?' });
+    expect(doc.headings[0]).toEqual({ level: 1, text: 'What is Generative Engine Optimization (GEO)?' });
     expect(doc.paragraphs.length).toBeGreaterThan(5);
     expect(doc.jsonLd.length).toBe(2);
     expect(doc.metaTags['description']).toContain('content readiness');
@@ -63,7 +63,7 @@ describe('parseMarkdown', () => {
 describe('scanDocument', () => {
   it('scores a well-structured page above 70', async () => {
     const html = await readFile(join(fixtures, 'good-page.html'), 'utf-8');
-    const doc = parseHtml(html, 'https://example.com/aeo-guide');
+    const doc = parseHtml(html, 'https://example.com/geo-guide');
     const result = scanDocument(doc);
 
     expect(result.scores.total).toBeGreaterThanOrEqual(70);
@@ -106,7 +106,7 @@ describe('scanFile', () => {
   it('scans an HTML file', async () => {
     const result = await scanFile(join(fixtures, 'good-page.html'));
     expect(result.scores.total).toBeGreaterThan(0);
-    expect(result.title).toContain('AEO');
+    expect(result.title).toContain('GEO');
   });
 
   it('scans a Markdown file', async () => {

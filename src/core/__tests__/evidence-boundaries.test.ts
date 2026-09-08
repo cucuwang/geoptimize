@@ -72,7 +72,7 @@ describe('public metadata', () => {
     const publicSurface = contents.join('\n');
 
     expect(publicSurface).not.toContain('dexuwang627-cloud');
-    expect(publicSurface).toContain('cucuwang/aeoptimize');
+    expect(publicSurface).toContain('cucuwang/geoptimize');
   });
 
   it('keeps v0.6 package, CLI, plugin, and Action versions aligned', async () => {
@@ -87,21 +87,21 @@ describe('public metadata', () => {
     expect(pluginJson.version).toBe(packageJson.version);
     expect(marketplaceJson.metadata.version).toBe(packageJson.version);
     expect(cli).toContain(`.version('${packageJson.version}')`);
-    expect(action).toContain(`default: 'aeoptimize@${packageJson.version}'`);
+    expect(action).toContain(`default: 'geoptimize@${packageJson.version}'`);
     expect(action).toContain("fail-on-low-score:\n    description:");
     expect(action).toContain("default: 'false'");
-    expect(compatibilityAction).toContain(`default: 'aeoptimize@${packageJson.version}'`);
+    expect(compatibilityAction).toContain(`default: 'geoptimize@${packageJson.version}'`);
     expect(compatibilityAction).toContain("default: 'false'");
   });
 
   it('keeps npm publisher metadata normalized and exposes every CLI alias', async () => {
     const packageJson = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 
-    expect(packageJson.repository.url).toBe('git+https://github.com/cucuwang/aeoptimize.git');
+    expect(packageJson.repository.url).toBe('git+https://github.com/cucuwang/geoptimize.git');
     expect(packageJson.bin).toEqual({
-      aeoptimize: 'dist/cli/index.js',
-      aeo: 'dist/cli/index.js',
-      'aeo-cli': 'dist/cli/index.js',
+      geoptimize: 'dist/cli/index.js',
+      geo: 'dist/cli/index.js',
+      'geo-cli': 'dist/cli/index.js',
     });
   });
 });

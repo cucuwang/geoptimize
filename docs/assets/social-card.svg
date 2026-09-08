@@ -17,7 +17,7 @@
   <rect x="72" y="76" width="68" height="68" rx="16" fill="url(#accent)"/>
   <text x="106" y="124" font-family="Menlo, monospace" font-size="34" font-weight="bold" fill="#10121a" text-anchor="middle">&gt;_</text>
 
-  <text x="72" y="228" font-family="'Helvetica Neue', Arial, sans-serif" font-size="92" font-weight="bold" fill="#f2f4f8">aeoptimize</text>
+  <text x="72" y="228" font-family="'Helvetica Neue', Arial, sans-serif" font-size="92" font-weight="bold" fill="#f2f4f8">geoptimize</text>
 
   <text x="72" y="286" font-family="'Helvetica Neue', Arial, sans-serif" font-size="28" fill="#98a0b3">AI crawlers read your pages</text>
   <text x="72" y="326" font-family="'Helvetica Neue', Arial, sans-serif" font-size="28" fill="#98a0b3">before humans do.</text>
@@ -41,7 +41,7 @@
   <circle cx="740" cy="122" r="7" fill="#28c840"/>
 
   <g font-family="Menlo, monospace" font-size="17">
-    <text x="688" y="196"><tspan fill="#4ade80">$</tspan><tspan fill="#e6e9f0" dx="10">npx aeoptimize scan ./dist --dir</tspan></text>
+    <text x="688" y="196"><tspan fill="#4ade80">$</tspan><tspan fill="#e6e9f0" dx="10">npx geoptimize scan ./dist --dir</tspan></text>
     <text x="688" y="240" fill="#c9cfdd">Content Readiness Report</text>
     <text x="688" y="280" fill="#c9cfdd">Score: <tspan fill="#4ade80" font-weight="bold" font-size="22">96/100</tspan></text>
   </g>
@@ -73,5 +73,5 @@
     <text x="1178" y="514" fill="#cdd4e4" text-anchor="end">13/15</text>
   </g>
 
-  <text x="72" y="566" font-family="Menlo, monospace" font-size="22" fill="#6b7385">github.com/cucuwang/aeoptimize</text>
+  <text x="72" y="566" font-family="Menlo, monospace" font-size="22" fill="#6b7385">github.com/cucuwang/geoptimize</text>
 </svg>

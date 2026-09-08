@@ -1,9 +1,9 @@
 ---
-name: aeo-generate
+name: geo-generate
 description: Use when previewing optional llms.txt proposal files, candidate JSON-LD, or crawler-control suggestions for a website build
 ---
 
-# AEO Generate — Optional Discovery Artifacts
+# GEO Generate — Optional Discovery Artifacts
 
 Generate reviewable candidate artifacts. These files do not guarantee crawling, indexing, search features, visibility, or citation.
 
@@ -13,7 +13,7 @@ Generate reviewable candidate artifacts. These files do not guarantee crawling, 
 2. Preview without writing:
 
    ```bash
-   npx aeoptimize generate <directory> --dry-run
+   npx geoptimize generate <directory> --dry-run
    ```
 
 3. Review every output:
@@ -23,7 +23,7 @@ Generate reviewable candidate artifacts. These files do not guarantee crawling, 
 4. Write only after the user approves the exact directory:
 
    ```bash
-   npx aeoptimize generate <directory>
+   npx geoptimize generate <directory>
    ```
 
 ## Boundaries

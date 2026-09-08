@@ -10,7 +10,7 @@ const testDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(testDirectory, '../../..');
 const verifier = join(repositoryRoot, 'scripts/verify-release-v0.6.sh');
 const expectedCommit = '0123456789abcdef0123456789abcdef01234567';
-const tarballContent = 'verified aeoptimize v0.7.0 candidate';
+const tarballContent = 'verified geoptimize v0.7.0 candidate';
 const expectedTarballHash = createHash('sha256').update(tarballContent).digest('hex');
 
 interface CommandResult {
@@ -31,7 +31,7 @@ function runVerifier(
         PATH: `${mockBin}:${process.env.PATH}`,
         MOCK_LATEST: '0.7.0',
         MOCK_NPM_GIT_HEAD: expectedCommit,
-        MOCK_REPOSITORY_URL: 'git+https://github.com/cucuwang/aeoptimize.git',
+        MOCK_REPOSITORY_URL: 'git+https://github.com/cucuwang/geoptimize.git',
         MOCK_TAG_COMMIT: expectedCommit,
         MOCK_TARBALL_CONTENT: tarballContent,
         MOCK_RELEASE_DRAFT: 'false',
@@ -61,7 +61,7 @@ describe('v0.6 public release verifier', () => {
   let mockBin: string;
 
   beforeEach(async () => {
-    testRoot = await mkdtemp(join(tmpdir(), 'aeoptimize-release-verifier-test-'));
+    testRoot = await mkdtemp(join(tmpdir(), 'geoptimize-release-verifier-test-'));
     mockBin = join(testRoot, 'bin');
     await mkdir(mockBin);
 
@@ -79,13 +79,13 @@ while [ "$#" -gt 0 ]; do
 done
 
 case "$url" in
-  https://registry.npmjs.org/aeoptimize)
-    printf '{"dist-tags":{"latest":"%s"},"versions":{"0.7.0":{"gitHead":"%s","repository":{"url":"%s"},"homepage":"https://github.com/cucuwang/aeoptimize","bugs":{"url":"https://github.com/cucuwang/aeoptimize/issues"},"dist":{"tarball":"https://registry.npmjs.org/aeoptimize/-/aeoptimize-0.7.0.tgz"}}}}' "$MOCK_LATEST" "$MOCK_NPM_GIT_HEAD" "$MOCK_REPOSITORY_URL"
+  https://registry.npmjs.org/geoptimize)
+    printf '{"dist-tags":{"latest":"%s"},"versions":{"0.7.0":{"gitHead":"%s","repository":{"url":"%s"},"homepage":"https://github.com/cucuwang/geoptimize","bugs":{"url":"https://github.com/cucuwang/geoptimize/issues"},"dist":{"tarball":"https://registry.npmjs.org/geoptimize/-/geoptimize-0.7.0.tgz"}}}}' "$MOCK_LATEST" "$MOCK_NPM_GIT_HEAD" "$MOCK_REPOSITORY_URL"
     ;;
-  https://registry.npmjs.org/aeoptimize/-/aeoptimize-0.7.0.tgz)
+  https://registry.npmjs.org/geoptimize/-/geoptimize-0.7.0.tgz)
     printf '%s' "$MOCK_TARBALL_CONTENT" > "$output_file"
     ;;
-  https://api.github.com/repos/cucuwang/aeoptimize/releases/tags/v0.7.0)
+  https://api.github.com/repos/cucuwang/geoptimize/releases/tags/v0.7.0)
     printf '{"tag_name":"v0.7.0","draft":%s,"prerelease":%s}' "$MOCK_RELEASE_DRAFT" "$MOCK_RELEASE_PRERELEASE" > "$output_file"
     printf '200'
     ;;
@@ -112,7 +112,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 mkdir -p "$prefix/node_modules/.bin"
-for binary in aeoptimize aeo aeo-cli; do
+for binary in geoptimize geo geo-cli; do
   if [ "$binary" = "$MOCK_MISSING_BINARY" ]; then
     continue
   fi
@@ -135,8 +135,8 @@ done
     expect(result.stdout).toContain('PASS: npm gitHead matches');
     expect(result.stdout).toContain('PASS: npm tarball SHA-256 matches the verified candidate');
     expect(result.stdout).toContain('All public release checks passed.');
-    expect(npmArgs).toMatch(/aeoptimize-0\.7\.0\.tgz/);
-    expect(npmArgs).not.toContain('aeoptimize@0.7.0');
+    expect(npmArgs).toMatch(/geoptimize-0\.7\.0\.tgz/);
+    expect(npmArgs).not.toContain('geoptimize@0.7.0');
   });
 
   it('fails closed when npm serves a different tarball', async () => {
@@ -165,10 +165,10 @@ done
   });
 
   it('fails closed when an alias is missing from the verified tarball', async () => {
-    const result = await runVerifier(mockBin, expectedTarballHash, { MOCK_MISSING_BINARY: 'aeo-cli' });
+    const result = await runVerifier(mockBin, expectedTarballHash, { MOCK_MISSING_BINARY: 'geo-cli' });
 
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('FAIL: aeo-cli returned no version');
+    expect(result.stderr).toContain('FAIL: geo-cli returned no version');
   });
 
   it('fails closed when the Git tag points to a different commit', async () => {

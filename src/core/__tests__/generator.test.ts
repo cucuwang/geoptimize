@@ -10,8 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(__dirname, 'fixtures');
 
 const siteInfo: SiteInfo = {
-  name: 'AEO Guide',
-  description: 'Learn about Answer Engine Optimization',
+  name: 'GEO Guide',
+  description: 'Learn about Generative Engine Optimization',
   baseUrl: 'https://example.com',
 };
 
@@ -19,7 +19,7 @@ describe('generateLlmsTxt', () => {
   it('produces valid llms.txt format', () => {
     const report: ScanReport = {
       pages: [
-        { url: 'https://example.com/guide', title: 'AEO Guide', scores: { structure: 20, citability: 20, schema: 15, aiMetadata: 10, contentDensity: 10, total: 75 }, issues: [], suggestions: [] },
+        { url: 'https://example.com/guide', title: 'GEO Guide', scores: { structure: 20, citability: 20, schema: 15, aiMetadata: 10, contentDensity: 10, total: 75 }, issues: [], suggestions: [] },
       ],
       overall: { structure: 20, citability: 20, schema: 15, aiMetadata: 10, contentDensity: 10, total: 75 },
       summary: 'Good',
@@ -28,10 +28,10 @@ describe('generateLlmsTxt', () => {
 
     const result = generateLlmsTxt(report, siteInfo);
 
-    expect(result).toContain('# AEO Guide');
-    expect(result).toContain('> Learn about Answer Engine Optimization');
+    expect(result).toContain('# GEO Guide');
+    expect(result).toContain('> Learn about Generative Engine Optimization');
     expect(result).toContain('## Pages');
-    expect(result).toContain('[AEO Guide](https://example.com/guide)');
+    expect(result).toContain('[GEO Guide](https://example.com/guide)');
   });
 
   it('handles empty pages', () => {
@@ -43,7 +43,7 @@ describe('generateLlmsTxt', () => {
     };
 
     const result = generateLlmsTxt(report, siteInfo);
-    expect(result).toContain('# AEO Guide');
+    expect(result).toContain('# GEO Guide');
     expect(result).not.toContain('## Pages');
   });
 });
@@ -51,7 +51,7 @@ describe('generateLlmsTxt', () => {
 describe('generateLlmsFullTxt', () => {
   it('includes page content', async () => {
     const html = await readFile(join(fixtures, 'good-page.html'), 'utf-8');
-    const doc = parseHtml(html, 'https://example.com/aeo');
+    const doc = parseHtml(html, 'https://example.com/geo');
     const report: ScanReport = {
       pages: [scanDocument(doc)],
       overall: scanDocument(doc).scores,
@@ -60,7 +60,7 @@ describe('generateLlmsFullTxt', () => {
     };
 
     const result = generateLlmsFullTxt(report, [doc]);
-    expect(result).toContain('## What is Answer Engine Optimization');
+    expect(result).toContain('## What is Generative Engine Optimization');
     expect(result).toContain('---');
   });
 });
@@ -114,10 +114,10 @@ describe('generateJsonLd', () => {
       title: 'FAQ',
       headings: [
         { level: 1, text: 'FAQ' },
-        { level: 2, text: 'What is AEO?' },
+        { level: 2, text: 'What is GEO?' },
         { level: 2, text: 'How does it work?' },
       ],
-      paragraphs: ['Intro.', 'AEO is answer engine optimization.', 'It works by restructuring content.'],
+      paragraphs: ['Intro.', 'GEO is generative engine optimization.', 'It works by restructuring content.'],
       jsonLd: [],
       metaTags: {},
       links: [],

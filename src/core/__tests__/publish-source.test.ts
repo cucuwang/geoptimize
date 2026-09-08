@@ -43,7 +43,7 @@ describe('publish source gate', () => {
   let mockBin: string;
 
   beforeEach(async () => {
-    testRoot = await mkdtemp(join(tmpdir(), 'aeoptimize-publish-source-test-'));
+    testRoot = await mkdtemp(join(tmpdir(), 'geoptimize-publish-source-test-'));
     mockBin = join(testRoot, 'bin');
     await mkdir(mockBin);
     const gitMock = join(mockBin, 'git');

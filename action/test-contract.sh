@@ -6,7 +6,7 @@ RUNNER="$REPO_ROOT/action/run.sh"
 FIXTURE="$REPO_ROOT/.github/fixtures/action-low"
 SAMPLE_FIXTURE="$REPO_ROOT/examples/github-action-sample/site"
 CLI="$REPO_ROOT/dist/cli/index.js"
-TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/aeoptimize-action-contract.XXXXXX")
+TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/geoptimize-action-contract.XXXXXX")
 trap 'rm -rf "$TEST_ROOT"' EXIT
 
 run_case() {
@@ -22,7 +22,7 @@ run_case() {
   MIN_SCORE="$min_score" \
   FAIL_ON_LOW_SCORE="$fail_on_low_score" \
   GITHUB_OUTPUT="$output_file" \
-  AEOPTIMIZE_CLI_PATH="$CLI" \
+  GEOPTIMIZE_CLI_PATH="$CLI" \
     bash "$RUNNER" > "$TEST_ROOT/$name.log" 2>&1 || status=$?
 
   if [ "$status" -ne "$expected_status" ]; then
@@ -41,12 +41,12 @@ run_case invalid-choice sometimes 60 2
 run_case sample-advisory false 100 0 "$SAMPLE_FIXTURE"
 
 grep -Eq '^score=[0-9]+$' "$TEST_ROOT/advisory.output"
-grep -q '^report<<AEOPTIMIZE_REPORT$' "$TEST_ROOT/advisory.output"
+grep -q '^report<<GEOPTIMIZE_REPORT$' "$TEST_ROOT/advisory.output"
 grep -Eq '^score=[0-9]+$' "$TEST_ROOT/blocking-passes.output"
-grep -q '^report<<AEOPTIMIZE_REPORT$' "$TEST_ROOT/blocking-passes.output"
+grep -q '^report<<GEOPTIMIZE_REPORT$' "$TEST_ROOT/blocking-passes.output"
 grep -Eq '^score=[0-9]+$' "$TEST_ROOT/sample-advisory.output"
-grep -q '^report<<AEOPTIMIZE_REPORT$' "$TEST_ROOT/sample-advisory.output"
-grep -q 'aeoptimize advisory mode' "$TEST_ROOT/advisory.log"
-grep -q 'aeoptimize blocking mode' "$TEST_ROOT/blocking-fails.log"
+grep -q '^report<<GEOPTIMIZE_REPORT$' "$TEST_ROOT/sample-advisory.output"
+grep -q 'geoptimize advisory mode' "$TEST_ROOT/advisory.log"
+grep -q 'geoptimize blocking mode' "$TEST_ROOT/blocking-fails.log"
 
 echo "Action contract checks passed."

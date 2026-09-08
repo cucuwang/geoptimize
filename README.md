@@ -1,14 +1,14 @@
-# aeoptimize
+# geoptimize
 
-[![npm version](https://img.shields.io/npm/v/aeoptimize.svg)](https://www.npmjs.com/package/aeoptimize)
-[![CI](https://github.com/cucuwang/aeoptimize/actions/workflows/ci.yml/badge.svg)](https://github.com/cucuwang/aeoptimize/actions/workflows/ci.yml)
-[![license](https://img.shields.io/npm/l/aeoptimize.svg)](https://github.com/cucuwang/aeoptimize/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/geoptimize.svg)](https://www.npmjs.com/package/geoptimize)
+[![CI](https://github.com/cucuwang/geoptimize/actions/workflows/ci.yml/badge.svg)](https://github.com/cucuwang/geoptimize/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/geoptimize.svg)](https://github.com/cucuwang/geoptimize/blob/main/LICENSE)
 
 **AI crawlers read your pages before humans do. Lint them like code.**
 
-`aeoptimize` is a deterministic content-readiness lint for static websites and documentation. It checks reproducible properties such as document structure, sourced quantitative claims, structured-data hygiene, indexing controls, metadata quality, and repetitive wording — locally, in CI, or pre-commit.
+`geoptimize` is a deterministic content-readiness lint for static websites and documentation. It checks reproducible properties such as document structure, sourced quantitative claims, structured-data hygiene, indexing controls, metadata quality, and repetitive wording — locally, in CI, or pre-commit.
 
-![aeoptimize terminal demo](docs/assets/demo.gif)
+![geoptimize terminal demo](docs/assets/demo.gif)
 
 It does **not** predict ranking, indexing, rich results, Google AI Overviews, or citation by ChatGPT, Perplexity, or another AI system. Google states that its AI search features need no special AI text file or schema, and valid structured data does not guarantee a search feature. See [methodology and limitations](docs/methodology.md).
 
@@ -17,15 +17,15 @@ It does **not** predict ranking, indexing, rich results, Google AI Overviews, or
 Requires Node.js 22.12 or newer.
 
 ```bash
-npm install --save-dev aeoptimize
+npm install --save-dev geoptimize
 ```
 
 ```bash
-npx aeoptimize scan https://example.com
-npx aeoptimize scan ./dist --dir
-npx aeoptimize scan ./dist --dir --json
-npx aeoptimize audit https://example.com --json
-npx aeoptimize audit-site https://example.com --max-pages 20 --json
+npx geoptimize scan https://example.com
+npx geoptimize scan ./dist --dir
+npx geoptimize scan ./dist --dir --json
+npx geoptimize audit https://example.com --json
+npx geoptimize audit-site https://example.com --max-pages 20 --json
 ```
 
 Example output:
@@ -53,7 +53,7 @@ The score is a versioned heuristic for catching regressions within the same proj
 | AI Metadata | 15 | Page-level indexing control and description quality |
 | Content Density | 15 | Content/boilerplate and repetition heuristics |
 
-Two often-promoted AEO signals are deliberately excluded from the score:
+Two often-promoted GEO signals are deliberately excluded from the score:
 
 - FAQ content and `FAQPage` schema are optional. The generator does not infer FAQ schema from question headings.
 - `llms.txt` is an experimental proposal. Generating or publishing it does not add points.
@@ -65,8 +65,8 @@ Every rule, its evidence class, and known false-positive boundary is documented 
 `audit` inspects one public URL or one local HTML/Markdown file. It is a separate, versioned contract and does not change the v0.6 readiness score or `scan --json` output.
 
 ```bash
-npx aeoptimize audit https://example.com
-npx aeoptimize audit ./dist/index.html --json
+npx geoptimize audit https://example.com
+npx geoptimize audit ./dist/index.html --json
 ```
 
 The first audit contract checks:
@@ -84,8 +84,8 @@ The command intentionally reports unavailable site-wide and external measurement
 `audit-site` follows same-origin links in deterministic order and stops at an explicit page limit. It reads robots.txt before subsequent page requests, discovers same-origin sitemap files, and uses response HTML without browser rendering.
 
 ```bash
-npx aeoptimize audit-site https://example.com
-npx aeoptimize audit-site https://example.com --max-pages 50 --json
+npx geoptimize audit-site https://example.com
+npx geoptimize audit-site https://example.com --max-pages 50 --json
 ```
 
 The site contract reports bounded crawl coverage, robots policy, page status, redirect chains, internal link targets, canonical consistency, sitemap discrepancies, sitemap-only orphan candidates, and duplicate titles. Sitemap-only pages remain candidates until a sufficiently complete crawl or server-log evidence confirms their discovery state.
@@ -94,7 +94,7 @@ The default limit is 20 page requests and the accepted range is 1–200. Cross-o
 
 ## How it compares
 
-| | aeoptimize | Lighthouse-style SEO audits | Hosted AEO/GEO platforms |
+| | geoptimize | Lighthouse-style SEO audits | Hosted GEO platforms |
 | --- | --- | --- | --- |
 | Question it answers | Is this content machine-readable and citable? | Does the page pass classic SEO checks? | Did my AI visibility change this week? |
 | Deterministic | Yes — versioned rules, fixture-tested | Partially | No — model output varies run to run |
@@ -102,21 +102,21 @@ The default limit is 20 page requests and the accepted range is 1–200. Cross-o
 | Blocks regressions in CI | Yes, via a stable `--json` contract | Possible with extra wiring | Rarely |
 | Cost | Free, MIT | Free | Typically $95+/mo |
 
-Visibility trackers answer "did rankings change?". aeoptimize answers the question you can act on in a pull request: "is this page ready?". The two compose rather than compete.
+Visibility trackers answer "did rankings change?". geoptimize answers the question you can act on in a pull request: "is this page ready?". The two compose rather than compete.
 
 ## CI contract
 
 `--json` is the stable automation surface. A non-zero threshold is useful only after your team reviews the baseline and accepts the current methodology version.
 
 ```bash
-npx aeoptimize scan ./dist --dir --json > aeoptimize-report.json
-node -e "const r=require('./aeoptimize-report.json'); process.exit(r.overall.total < 60 ? 1 : 0)"
+npx geoptimize scan ./dist --dir --json > geoptimize-report.json
+node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.total < 60 ? 1 : 0)"
 ```
 
 The GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.7.0
+- uses: cucuwang/geoptimize@v0.7.0
   with:
     path: dist
 ```
@@ -124,7 +124,7 @@ The GitHub Action is advisory by default. Consume it from the repository pin unt
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.7.0
+- uses: cucuwang/geoptimize@v0.7.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -142,8 +142,8 @@ remediation and validation for each finding. It leaves the existing `scan` score
 JSON contract unchanged.
 
 ```bash
-npx aeoptimize audit-build ./dist --json
-npx aeoptimize audit-build ./dist --base-url https://example.com/ --expect-indexable --fail-on-error --json > audit.json
+npx geoptimize audit-build ./dist --json
+npx geoptimize audit-build ./dist --base-url https://example.com/ --expect-indexable --fail-on-error --json > audit.json
 ```
 
 Malformed JSON-LD and invalid or multiple canonical declarations produce `FAIL`.
@@ -175,8 +175,8 @@ A syntax pass does not establish eligibility under the
 ## Optional generators
 
 ```bash
-npx aeoptimize generate ./dist --dry-run
-npx aeoptimize generate ./dist
+npx geoptimize generate ./dist --dry-run
+npx geoptimize generate ./dist
 ```
 
 The generator can create:
@@ -193,19 +193,19 @@ Generated structured data must be reviewed against visible content and the appli
 
 ```ts
 import { defineConfig } from 'vite';
-import { aeoPlugin } from 'aeoptimize/vite';
+import { geoPlugin } from 'geoptimize/vite';
 
 export default defineConfig({
-  plugins: [aeoPlugin()],
+  plugins: [geoPlugin()],
 });
 ```
 
 ### Next.js
 
 ```js
-import { withAeo } from 'aeoptimize/next';
+import { withGeo } from 'geoptimize/next';
 
-export default withAeo({});
+export default withGeo({});
 ```
 
 Both integrations scan the build output and generate the same optional artifacts as the CLI. Options: `{ silent?: boolean; outDir?: string }`.
@@ -213,7 +213,7 @@ Both integrations scan the build output and generate the same optional artifacts
 ## Experimental AI review
 
 ```bash
-npx aeoptimize scan https://example.com --multi-ai
+npx geoptimize scan https://example.com --multi-ai
 ```
 
 When supported local AI CLIs are available, this adds a subjective review and reports an experimental blend. Model output can vary and is not ground truth. The deterministic rule score remains visible separately.
@@ -221,9 +221,9 @@ When supported local AI CLIs are available, this adds a subjective review and re
 ## Pre-commit hook
 
 ```bash
-npx aeoptimize hook install
-npx aeoptimize hook install --min-score 60
-npx aeoptimize hook uninstall
+npx geoptimize hook install
+npx geoptimize hook install --min-score 60
+npx geoptimize hook uninstall
 ```
 
 The hook checks staged `.html`, `.htm`, `.md`, and `.mdx` content. Review the baseline before using a threshold to block commits; `git commit --no-verify` remains an explicit escape hatch.
@@ -231,18 +231,18 @@ The hook checks staged `.html`, `.htm`, `.md`, and `.mdx` content. Review the ba
 ## Claude Code skills
 
 ```bash
-claude plugin marketplace add cucuwang/aeoptimize
+claude plugin marketplace add cucuwang/geoptimize
 ```
 
 Or install the same reusable skills through the cross-agent Agent Skills CLI (skills.sh indexes installs from this command; there is no separate submit form):
 
 ```bash
-npx skills add cucuwang/aeoptimize
+npx skills add cucuwang/geoptimize
 ```
 
-- `/aeo-scan` — deterministic readiness audit with optional experimental review
-- `/aeo-generate` — preview optional discovery artifacts
-- `/aeo-transform` — propose content edits without inventing claims
+- `/geo-scan` — deterministic readiness audit with optional experimental review
+- `/geo-generate` — preview optional discovery artifacts
+- `/geo-transform` — propose content edits without inventing claims
 
 ## Project status
 
@@ -254,4 +254,4 @@ Contributions are welcome. Rule changes require an evidence note and positive/ne
 
 MIT
 
-If aeoptimize catches something real in your build, a star helps other teams find it.
+If geoptimize catches something real in your build, a star helps other teams find it.

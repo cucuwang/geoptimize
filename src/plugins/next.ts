@@ -10,7 +10,7 @@ interface NextConfig {
   [key: string]: unknown;
 }
 
-export function withAeo(nextConfig: NextConfig = {}, options?: { silent?: boolean; outDir?: string }) {
+export function withGeo(nextConfig: NextConfig = {}, options?: { silent?: boolean; outDir?: string }) {
   const userWebpack = nextConfig.webpack;
   return {
     ...nextConfig,
@@ -18,7 +18,7 @@ export function withAeo(nextConfig: NextConfig = {}, options?: { silent?: boolea
       if (ctx.isServer && !ctx.dev) {
         config.plugins.push({
           apply(compiler: any) {
-            compiler.hooks.afterEmit.tapPromise('AeoPlugin', async () => {
+            compiler.hooks.afterEmit.tapPromise('GeoPlugin', async () => {
               const cwd = process.cwd();
               const outDir = options?.outDir ?? (existsSync(join(cwd, 'out')) ? join(cwd, 'out') : join(cwd, '.next'));
               const report = await scanDirectory(outDir);
@@ -38,12 +38,12 @@ export function withAeo(nextConfig: NextConfig = {}, options?: { silent?: boolea
               await writeFile(join(outDir, 'llms.txt'), output.llmsTxt, 'utf-8');
               await writeFile(join(outDir, 'llms-full.txt'), output.llmsFullTxt, 'utf-8');
               if (output.jsonLd.length > 0) {
-                await mkdir(join(outDir, '_aeo'), { recursive: true });
-                await writeFile(join(outDir, '_aeo', 'generated-schemas.json'), JSON.stringify(output.jsonLd, null, 2), 'utf-8');
+                await mkdir(join(outDir, '_geo'), { recursive: true });
+                await writeFile(join(outDir, '_geo', 'generated-schemas.json'), JSON.stringify(output.jsonLd, null, 2), 'utf-8');
               }
               if (!options?.silent) {
-                console.log(`[aeoptimize] Readiness score: ${report.overall.total}/100 (${report.pages.length} pages)`);
-                console.log(`[aeoptimize] Generated optional artifacts: llms.txt, llms-full.txt${output.jsonLd.length ? ', _aeo/generated-schemas.json' : ''}`);
+                console.log(`[geoptimize] Readiness score: ${report.overall.total}/100 (${report.pages.length} pages)`);
+                console.log(`[geoptimize] Generated optional artifacts: llms.txt, llms-full.txt${output.jsonLd.length ? ', _geo/generated-schemas.json' : ''}`);
               }
             });
           },
