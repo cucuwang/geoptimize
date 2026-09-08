@@ -22,6 +22,7 @@ VERIFY_ROOT=$(mktemp -d "$VERIFY_BASE/geoptimize-release-candidate.XXXXXX")
 PACK_ROOT="$VERIFY_ROOT/pack"
 CONSUMER_ROOT="$VERIFY_ROOT/consumer"
 PACK_JSON="$VERIFY_ROOT/pack.json"
+NORMALIZED_PACK_JSON="$VERIFY_ROOT/pack-normalized.json"
 
 cleanup() {
   case "$VERIFY_ROOT" in
@@ -42,6 +43,9 @@ bash action/test-contract.sh
 npm --cache "$VERIFY_ROOT/npm-cache" audit --audit-level=high
 npm_config_dry_run=false npm --cache "$VERIFY_ROOT/npm-cache" \
   pack --json --pack-destination "$PACK_ROOT" > "$PACK_JSON"
+jq 'if type == "array" then . else [to_entries[0].value] end' \
+  "$PACK_JSON" > "$NORMALIZED_PACK_JSON"
+mv "$NORMALIZED_PACK_JSON" "$PACK_JSON"
 
 PACKAGE_FILENAME=$(jq -er '.[0].filename' "$PACK_JSON")
 PACKAGE_VERSION=$(jq -er '.[0].version' "$PACK_JSON")
