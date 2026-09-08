@@ -1,28 +1,28 @@
 # Framework Plugins Design — Vite + Next.js
 
-> Historical design note. The v0.6 methodology supersedes AEO outcome language in this document; current behavior and limitations are defined in `docs/methodology.md`.
+> Historical design note. The v0.6 methodology supersedes GEO outcome language in this document; current behavior and limitations are defined in `docs/methodology.md`.
 
 ## Goal
 
-Add build-time AEO optimization to Vite and Next.js projects. On build, automatically scan output, generate llms.txt + JSON-LD, and print AEO score. Zero config required.
+Add build-time GEO optimization to Vite and Next.js projects. On build, automatically scan output, generate llms.txt + JSON-LD, and print GEO score. Zero config required.
 
 ## User Experience
 
 ```ts
 // vite.config.ts
-import { aeoPlugin } from 'geoptimize/vite';
-export default defineConfig({ plugins: [aeoPlugin()] });
+import { geoPlugin } from 'geoptimize/vite';
+export default defineConfig({ plugins: [geoPlugin()] });
 
 // next.config.mjs
-import { withAeo } from 'geoptimize/next';
-export default withAeo({});
+import { withGeo } from 'geoptimize/next';
+export default withGeo({});
 ```
 
 Build output:
 ```
 [geoptimize] Scanning build output...
-[geoptimize] AEO Score: 72/100 (3 pages)
-[geoptimize] Generated: llms.txt, llms-full.txt, _aeo/generated-schemas.json
+[geoptimize] GEO Score: 72/100 (3 pages)
+[geoptimize] Generated: llms.txt, llms-full.txt, _geo/generated-schemas.json
 ```
 
 ## Architecture
@@ -50,7 +50,7 @@ src/plugins/
 ### Plugin Options
 
 ```ts
-interface AeoPluginOptions {
+interface GeoPluginOptions {
   silent?: boolean;   // suppress console output (default: false)
   outDir?: string;    // override output directory (auto-detected by default)
 }
@@ -63,12 +63,12 @@ No other options. YAGNI.
 - Uses `closeBundle` hook (runs after all files written to dist/)
 - Resolves output dir from Vite's `resolvedConfig.build.outDir`
 - Calls `scanDirectory(outDir)` → `generate(report, pages, siteInfo)`
-- Writes llms.txt, llms-full.txt, _aeo/ to outDir
+- Writes llms.txt, llms-full.txt, _geo/ to outDir
 - Prints one-line score summary to console
 
 ### Next.js Plugin (`src/plugins/next.ts`)
 
-- Wraps next.config via `withAeo(nextConfig)`
+- Wraps next.config via `withGeo(nextConfig)`
 - Uses webpack plugin `afterEmit` hook (runs after build output written)
 - Detects output dir: `.next/` for server, `out/` for static export
 - Same core logic: scan → generate → print score
@@ -91,6 +91,6 @@ No other options. YAGNI.
 
 1. `tsc --noEmit` passes
 2. `vitest run` — all tests pass
-3. `import { aeoPlugin } from 'geoptimize/vite'` resolves correctly
-4. `import { withAeo } from 'geoptimize/next'` resolves correctly
+3. `import { geoPlugin } from 'geoptimize/vite'` resolves correctly
+4. `import { withGeo } from 'geoptimize/next'` resolves correctly
 5. Build a minimal Vite project with plugin → llms.txt appears in dist/

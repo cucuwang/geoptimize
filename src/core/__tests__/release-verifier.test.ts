@@ -112,7 +112,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 mkdir -p "$prefix/node_modules/.bin"
-for binary in geoptimize aeo aeo-cli; do
+for binary in geoptimize geo geo-cli; do
   if [ "$binary" = "$MOCK_MISSING_BINARY" ]; then
     continue
   fi
@@ -165,10 +165,10 @@ done
   });
 
   it('fails closed when an alias is missing from the verified tarball', async () => {
-    const result = await runVerifier(mockBin, expectedTarballHash, { MOCK_MISSING_BINARY: 'aeo-cli' });
+    const result = await runVerifier(mockBin, expectedTarballHash, { MOCK_MISSING_BINARY: 'geo-cli' });
 
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('FAIL: aeo-cli returned no version');
+    expect(result.stderr).toContain('FAIL: geo-cli returned no version');
   });
 
   it('fails closed when the Git tag points to a different commit', async () => {

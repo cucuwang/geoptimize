@@ -128,7 +128,7 @@ if curl -fsS "https://registry.npmjs.org/$PACKAGE_NAME" > "$REGISTRY_JSON"; then
     if npm --cache "$VERIFY_ROOT/npm-cache" install \
       --ignore-scripts --no-audit --no-fund \
       --prefix "$CONSUMER_ROOT" "$PACKAGE_TARBALL" >/dev/null; then
-      for binary in geoptimize aeo aeo-cli; do
+      for binary in geoptimize geo geo-cli; do
         binary_version=$("$CONSUMER_ROOT/node_modules/.bin/$binary" --version 2>/dev/null || true)
         if [ "$binary_version" = "$EXPECTED_VERSION" ]; then
           pass "$binary resolves to $EXPECTED_VERSION from the public package"

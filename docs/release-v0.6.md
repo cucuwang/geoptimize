@@ -8,7 +8,7 @@ Before publication, run `npm ci` and `npm run release:check` from the intended r
 
 1. `npm run check`, `npm audit --audit-level=high`, and `bash action/test-contract.sh` pass.
 2. The public v0.6 rule corpus covers the positive, negative, and false-positive boundary for every scored rule.
-3. An actual `npm pack` candidate contains the required public files, its SHA-256 is recorded, and a clean consumer can invoke `geoptimize`, `aeo`, and `aeo-cli` from that exact tarball.
+3. An actual `npm pack` candidate contains the required public files, its SHA-256 is recorded, and a clean consumer can invoke `geoptimize`, `geo`, and `geo-cli` from that exact tarball.
 4. CI succeeds on Node.js 22 and 24 for the release commit.
 5. The JSON automation contract and Action sample tests pass.
 6. The npm account is verified immediately before publishing, and the publish source gate confirms that `HEAD` is the exact fetched `origin/main` commit.
@@ -40,8 +40,8 @@ npm view geoptimize@0.6.2 version gitHead repository homepage bugs dist --json
 consumer_root=$(mktemp -d "${TMPDIR:-/tmp}/geoptimize-v0.6.2-consumer.XXXXXX")
 npm install --prefix "$consumer_root" geoptimize@0.6.2
 "$consumer_root/node_modules/.bin/geoptimize" --version
-"$consumer_root/node_modules/.bin/aeo" --version
-"$consumer_root/node_modules/.bin/aeo-cli" --version
+"$consumer_root/node_modules/.bin/geo" --version
+"$consumer_root/node_modules/.bin/geo-cli" --version
 rm -rf -- "$consumer_root"
 ```
 

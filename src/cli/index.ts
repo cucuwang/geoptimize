@@ -241,7 +241,7 @@ program
       await writeFile(join(outDir, 'llms-full.txt'), output.llmsFullTxt, 'utf-8');
 
       if (output.jsonLd.length > 0) {
-        const jsonLdDir = join(outDir, '_aeo');
+        const jsonLdDir = join(outDir, '_geo');
         await mkdir(jsonLdDir, { recursive: true });
         await writeFile(join(jsonLdDir, 'generated-schemas.json'), JSON.stringify(output.jsonLd, null, 2), 'utf-8');
       }
@@ -250,7 +250,7 @@ program
       console.log(`  ${chalk.white('llms.txt')}         — Experimental site summary (llmstxt.org proposal)`);
       console.log(`  ${chalk.white('llms-full.txt')}    — Experimental full-content companion`);
       if (output.jsonLd.length > 0) {
-        console.log(`  ${chalk.white('_aeo/generated-schemas.json')} — ${output.jsonLd.length} JSON-LD schemas`);
+        console.log(`  ${chalk.white('_geo/generated-schemas.json')} — ${output.jsonLd.length} JSON-LD schemas`);
       }
       console.log(chalk.dim('\nrobots.txt suggestions (not auto-applied):'));
       for (const line of output.robotsTxtSuggestions.filter((l) => l.startsWith('User-agent:'))) {
@@ -266,7 +266,7 @@ program
 
 const hookCmd = program
   .command('hook')
-  .description('Manage pre-commit hook for AEO scoring');
+  .description('Manage pre-commit hook for GEO scoring');
 
 hookCmd
   .command('install')
@@ -321,7 +321,7 @@ done
 IFS=$OLD_IFS
 if [ "$FAILED" = "1" ]; then
   echo ""
-  echo "[geoptimize] Commit blocked. Fix AEO issues or bypass with: git commit --no-verify"
+  echo "[geoptimize] Commit blocked. Fix GEO issues or bypass with: git commit --no-verify"
   exit 1
 fi
 ${HOOK_END_MARKER}
@@ -754,6 +754,6 @@ function printSkillCta(): void {
   console.log(chalk.dim('  ─────────────────────────────────────────'));
   console.log(chalk.dim('  Want AI-powered fixes? Install as Claude Code skill:'));
   console.log(chalk.white('    claude plugin marketplace add cucuwang/geoptimize'));
-  console.log(chalk.dim('  Then use: /aeo-scan, /aeo-generate, /aeo-transform'));
+  console.log(chalk.dim('  Then use: /geo-scan, /geo-generate, /geo-transform'));
   console.log('');
 }

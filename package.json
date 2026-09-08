@@ -6,8 +6,8 @@
   "main": "./dist/core/index.js",
   "bin": {
     "geoptimize": "dist/cli/index.js",
-    "aeo": "dist/cli/index.js",
-    "aeo-cli": "dist/cli/index.js"
+    "geo": "dist/cli/index.js",
+    "geo-cli": "dist/cli/index.js"
   },
   "exports": {
     ".": "./dist/core/index.js",
@@ -44,7 +44,7 @@
     "prepublishOnly": "npm run release:check && bash scripts/verify-publish-source.sh"
   },
   "keywords": [
-    "aeo",
+    "geo",
     "seo",
     "ai-search",
     "llms-txt",

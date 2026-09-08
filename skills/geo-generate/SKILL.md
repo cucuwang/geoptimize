@@ -1,9 +1,9 @@
 ---
-name: aeo-generate
+name: geo-generate
 description: Use when previewing optional llms.txt proposal files, candidate JSON-LD, or crawler-control suggestions for a website build
 ---
 
-# AEO Generate — Optional Discovery Artifacts
+# GEO Generate — Optional Discovery Artifacts
 
 Generate reviewable candidate artifacts. These files do not guarantee crawling, indexing, search features, visibility, or citation.
 

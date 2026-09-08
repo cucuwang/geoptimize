@@ -53,7 +53,7 @@ The score is a versioned heuristic for catching regressions within the same proj
 | AI Metadata | 15 | Page-level indexing control and description quality |
 | Content Density | 15 | Content/boilerplate and repetition heuristics |
 
-Two often-promoted AEO signals are deliberately excluded from the score:
+Two often-promoted GEO signals are deliberately excluded from the score:
 
 - FAQ content and `FAQPage` schema are optional. The generator does not infer FAQ schema from question headings.
 - `llms.txt` is an experimental proposal. Generating or publishing it does not add points.
@@ -94,7 +94,7 @@ The default limit is 20 page requests and the accepted range is 1–200. Cross-o
 
 ## How it compares
 
-| | geoptimize | Lighthouse-style SEO audits | Hosted AEO/GEO platforms |
+| | geoptimize | Lighthouse-style SEO audits | Hosted GEO platforms |
 | --- | --- | --- | --- |
 | Question it answers | Is this content machine-readable and citable? | Does the page pass classic SEO checks? | Did my AI visibility change this week? |
 | Deterministic | Yes — versioned rules, fixture-tested | Partially | No — model output varies run to run |
@@ -193,19 +193,19 @@ Generated structured data must be reviewed against visible content and the appli
 
 ```ts
 import { defineConfig } from 'vite';
-import { aeoPlugin } from 'geoptimize/vite';
+import { geoPlugin } from 'geoptimize/vite';
 
 export default defineConfig({
-  plugins: [aeoPlugin()],
+  plugins: [geoPlugin()],
 });
 ```
 
 ### Next.js
 
 ```js
-import { withAeo } from 'geoptimize/next';
+import { withGeo } from 'geoptimize/next';
 
-export default withAeo({});
+export default withGeo({});
 ```
 
 Both integrations scan the build output and generate the same optional artifacts as the CLI. Options: `{ silent?: boolean; outDir?: string }`.
@@ -240,9 +240,9 @@ Or install the same reusable skills through the cross-agent Agent Skills CLI (sk
 npx skills add cucuwang/geoptimize
 ```
 
-- `/aeo-scan` — deterministic readiness audit with optional experimental review
-- `/aeo-generate` — preview optional discovery artifacts
-- `/aeo-transform` — propose content edits without inventing claims
+- `/geo-scan` — deterministic readiness audit with optional experimental review
+- `/geo-generate` — preview optional discovery artifacts
+- `/geo-transform` — propose content edits without inventing claims
 
 ## Project status
 

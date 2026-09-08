@@ -4,7 +4,7 @@ import { scanDirectory, parseHtml, parseMarkdown } from '../core/scanner.js';
 import { generate } from '../core/generator.js';
 import type { ParsedDocument, SiteInfo } from '../core/types.js';
 
-export function aeoPlugin(options?: { silent?: boolean; outDir?: string }) {
+export function geoPlugin(options?: { silent?: boolean; outDir?: string }) {
   let resolvedOutDir = 'dist';
   return {
     name: 'geoptimize',
@@ -38,13 +38,13 @@ export function aeoPlugin(options?: { silent?: boolean; outDir?: string }) {
       await writeFile(join(outDir, 'llms.txt'), output.llmsTxt, 'utf-8');
       await writeFile(join(outDir, 'llms-full.txt'), output.llmsFullTxt, 'utf-8');
       if (output.jsonLd.length > 0) {
-        await mkdir(join(outDir, '_aeo'), { recursive: true });
-        await writeFile(join(outDir, '_aeo', 'generated-schemas.json'), JSON.stringify(output.jsonLd, null, 2), 'utf-8');
+        await mkdir(join(outDir, '_geo'), { recursive: true });
+        await writeFile(join(outDir, '_geo', 'generated-schemas.json'), JSON.stringify(output.jsonLd, null, 2), 'utf-8');
       }
 
       if (!options?.silent) {
         console.log(`[geoptimize] Readiness score: ${report.overall.total}/100 (${report.pages.length} pages)`);
-        console.log(`[geoptimize] Generated optional artifacts: llms.txt, llms-full.txt${output.jsonLd.length ? ', _aeo/generated-schemas.json' : ''}`);
+        console.log(`[geoptimize] Generated optional artifacts: llms.txt, llms-full.txt${output.jsonLd.length ? ', _geo/generated-schemas.json' : ''}`);
       }
     },
   };

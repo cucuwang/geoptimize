@@ -1,9 +1,9 @@
 ---
-name: aeo-transform
+name: geo-transform
 description: Use when proposing evidence-bounded readability and structure edits without inventing content, ranking claims, or structured data
 ---
 
-# AEO Transform — Evidence-Bounded Content Restructuring
+# GEO Transform — Evidence-Bounded Content Restructuring
 
 Propose focused edits while preserving meaning, voice, provenance, and recoverability.
 

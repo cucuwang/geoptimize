@@ -1,5 +1,5 @@
 ---
-name: aeo-ai-scorer
+name: geo-ai-scorer
 description: Use only for an explicitly requested experimental content-quality review alongside the deterministic geoptimize report
 model: inherit
 ---

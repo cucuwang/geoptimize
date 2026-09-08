@@ -100,8 +100,8 @@ describe('public metadata', () => {
     expect(packageJson.repository.url).toBe('git+https://github.com/cucuwang/geoptimize.git');
     expect(packageJson.bin).toEqual({
       geoptimize: 'dist/cli/index.js',
-      aeo: 'dist/cli/index.js',
-      'aeo-cli': 'dist/cli/index.js',
+      geo: 'dist/cli/index.js',
+      'geo-cli': 'dist/cli/index.js',
     });
   });
 });

@@ -70,7 +70,7 @@ npm_config_dry_run=false npm --cache "$VERIFY_ROOT/npm-cache" install \
   --ignore-scripts --no-audit --no-fund \
   --prefix "$CONSUMER_ROOT" "$PACKAGE_TARBALL" >/dev/null
 
-for binary in geoptimize aeo aeo-cli; do
+for binary in geoptimize geo geo-cli; do
   BINARY_VERSION=$("$CONSUMER_ROOT/node_modules/.bin/$binary" --version)
   if [ "$BINARY_VERSION" != "$PACKAGE_VERSION" ]; then
     echo "$binary returned $BINARY_VERSION; expected $PACKAGE_VERSION" >&2

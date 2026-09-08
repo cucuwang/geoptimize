@@ -1,5 +1,5 @@
 ---
-name: aeo-analyzer
+name: geo-analyzer
 description: Use when an explicit qualitative review is needed for a page after the deterministic readiness scan
 model: inherit
 ---
