@@ -42,8 +42,8 @@ export function withAeo(nextConfig: NextConfig = {}, options?: { silent?: boolea
                 await writeFile(join(outDir, '_aeo', 'generated-schemas.json'), JSON.stringify(output.jsonLd, null, 2), 'utf-8');
               }
               if (!options?.silent) {
-                console.log(`[aeoptimize] Readiness score: ${report.overall.total}/100 (${report.pages.length} pages)`);
-                console.log(`[aeoptimize] Generated optional artifacts: llms.txt, llms-full.txt${output.jsonLd.length ? ', _aeo/generated-schemas.json' : ''}`);
+                console.log(`[geoptimize] Readiness score: ${report.overall.total}/100 (${report.pages.length} pages)`);
+                console.log(`[geoptimize] Generated optional artifacts: llms.txt, llms-full.txt${output.jsonLd.length ? ', _aeo/generated-schemas.json' : ''}`);
               }
             });
           },

@@ -35,7 +35,7 @@ Useful engineering checks include:
 Preview the generated file before writing it:
 
 ```bash
-npx aeoptimize generate ./dist --dry-run
+npx geoptimize generate ./dist --dry-run
 ```
 
 Review the site name, description, page selection, and every URL. Publish the draft only when the team accepts its experimental status.

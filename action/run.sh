@@ -21,30 +21,30 @@ case "$FAIL_ON_LOW_SCORE" in
     ;;
 esac
 
-run_aeoptimize() {
-  if [ -n "${AEOPTIMIZE_CLI_PATH:-}" ]; then
-    node "$AEOPTIMIZE_CLI_PATH" "$@"
+run_geoptimize() {
+  if [ -n "${GEOPTIMIZE_CLI_PATH:-}" ]; then
+    node "$GEOPTIMIZE_CLI_PATH" "$@"
   else
-    aeoptimize "$@"
+    geoptimize "$@"
   fi
 }
 
-REPORT=$(run_aeoptimize scan "$INPUT_PATH" --dir --json 2>/dev/null)
+REPORT=$(run_geoptimize scan "$INPUT_PATH" --dir --json 2>/dev/null)
 SCORE=$(printf '%s' "$REPORT" | node -e "const fs=require('node:fs');const r=JSON.parse(fs.readFileSync(0,'utf8'));const s=r?.overall?.total;if(!Number.isInteger(s)||s<0||s>100)process.exit(2);console.log(s)")
 
 echo "score=$SCORE" >> "$GITHUB_OUTPUT"
 {
-  echo 'report<<AEOPTIMIZE_REPORT'
+  echo 'report<<GEOPTIMIZE_REPORT'
   echo "$REPORT"
-  echo 'AEOPTIMIZE_REPORT'
+  echo 'GEOPTIMIZE_REPORT'
 } >> "$GITHUB_OUTPUT"
 
 if [ "$FAIL_ON_LOW_SCORE" = 'true' ]; then
-  echo "::notice::aeoptimize blocking mode: score $SCORE/100 (project threshold: $MIN_SCORE)"
+  echo "::notice::geoptimize blocking mode: score $SCORE/100 (project threshold: $MIN_SCORE)"
   if [ "$SCORE" -lt "$MIN_SCORE" ]; then
     echo "::error::Readiness score $SCORE is below the project threshold $MIN_SCORE"
     exit 1
   fi
 else
-  echo "::notice::aeoptimize advisory mode: score $SCORE/100 (no blocking threshold applied)"
+  echo "::notice::geoptimize advisory mode: score $SCORE/100 (no blocking threshold applied)"
 fi

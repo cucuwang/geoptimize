@@ -75,7 +75,7 @@ function htmlPage({
 }
 
 async function makeTempDir(): Promise<string> {
-  ownedTempDir = await mkdtemp(join(tmpdir(), 'aeoptimize-static-audit-'));
+  ownedTempDir = await mkdtemp(join(tmpdir(), 'geoptimize-static-audit-'));
   return ownedTempDir;
 }
 

@@ -1,6 +1,6 @@
 # Contributing
 
-Contributions that make `aeoptimize` more reproducible, explainable, or easier to adopt are welcome.
+Contributions that make `geoptimize` more reproducible, explainable, or easier to adopt are welcome.
 
 ## Development setup
 

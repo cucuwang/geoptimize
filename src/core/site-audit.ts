@@ -15,7 +15,7 @@ const DEFAULT_MAX_PAGES = 20;
 const MAX_ALLOWED_PAGES = 200;
 const MAX_SITEMAPS = 5;
 const REQUEST_TIMEOUT_MS = 15_000;
-const SITE_AUDIT_USER_AGENT = 'aeoptimize-site-audit';
+const SITE_AUDIT_USER_AGENT = 'geoptimize-site-audit';
 
 export interface SiteAuditOptions {
   maxPages?: number;
@@ -584,7 +584,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
         skippedUrls: [...robotsSkipped].slice(0, 20),
       },
       robotsResult.status === 200
-        ? 'Applicable aeoptimize or wildcard rules were evaluated before subsequent page requests.'
+        ? 'Applicable geoptimize or wildcard rules were evaluated before subsequent page requests.'
         : robotsResult.status === 404
           ? 'No robots.txt file was found. Absence is not an error.'
           : 'robots.txt could not be used reliably, so the crawler conservatively avoided matching subsequent URLs.',

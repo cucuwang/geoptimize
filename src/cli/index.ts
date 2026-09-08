@@ -13,13 +13,13 @@ import { mergeScores } from '../core/merger.js';
 import { auditPath } from '../core/static-audit.js';
 import type { AuditReport, AuditStatus, SiteAuditReport, ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
 
-const HOOK_BEGIN_MARKER = '# BEGIN aeoptimize';
-const HOOK_END_MARKER = '# END aeoptimize';
+const HOOK_BEGIN_MARKER = '# BEGIN geoptimize';
+const HOOK_END_MARKER = '# END geoptimize';
 
 const program = new Command();
 
 program
-  .name('aeoptimize')
+  .name('geoptimize')
   .description('Deterministic content-readiness lint for websites and documentation')
   .version('0.7.0');
 
@@ -35,8 +35,8 @@ program
     try {
       if (!target || target.trim().length === 0) {
         console.error(chalk.red('Error: Please provide a URL or directory path.'));
-        console.error(chalk.dim('  npx aeoptimize scan example.com'));
-        console.error(chalk.dim('  npx aeoptimize scan ./dist --dir'));
+        console.error(chalk.dim('  npx geoptimize scan example.com'));
+        console.error(chalk.dim('  npx geoptimize scan ./dist --dir'));
         process.exit(1);
       }
       const scanTarget = resolveTarget(target, options.dir);
@@ -280,7 +280,7 @@ hookCmd
     }
 
     const hookScript = `${HOOK_BEGIN_MARKER}
-# aeoptimize pre-commit hook — checks readiness of staged HTML/MD files
+# geoptimize pre-commit hook — checks readiness of staged HTML/MD files
 MIN_SCORE=${minScore}
 
 # Find staged HTML and MD files
@@ -289,7 +289,7 @@ if [ -z "$FILES" ]; then
   exit 0
 fi
 
-echo "[aeoptimize] Checking content readiness of staged files..."
+echo "[geoptimize] Checking content readiness of staged files..."
 
 FAILED=0
 OLD_IFS=$IFS
@@ -297,13 +297,13 @@ IFS='
 '
 for FILE in $FILES; do
   [ -n "$FILE" ] || continue
-  TEMP_FILE=$(mktemp "\${TMPDIR:-/tmp}/aeoptimize.XXXXXX") || exit 1
+  TEMP_FILE=$(mktemp "\${TMPDIR:-/tmp}/geoptimize.XXXXXX") || exit 1
   if ! git show ":$FILE" > "$TEMP_FILE" 2>/dev/null; then
     rm -f "$TEMP_FILE"
-    echo "[aeoptimize] WARN: Could not read staged version of $FILE"
+    echo "[geoptimize] WARN: Could not read staged version of $FILE"
     continue
   fi
-  SCORE=$(npx aeoptimize scan "$TEMP_FILE" --json 2>/dev/null | node -e "
+  SCORE=$(npx geoptimize scan "$TEMP_FILE" --json 2>/dev/null | node -e "
     try { const j=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); console.log(j.overall.total); }
     catch(e) { console.log(-1); }
   ")
@@ -312,16 +312,16 @@ for FILE in $FILES; do
     continue
   fi
   if [ "$SCORE" -lt "$MIN_SCORE" ]; then
-    echo "[aeoptimize] FAIL: $FILE scored $SCORE/100 (minimum: $MIN_SCORE)"
+    echo "[geoptimize] FAIL: $FILE scored $SCORE/100 (minimum: $MIN_SCORE)"
     FAILED=1
   else
-    echo "[aeoptimize] PASS: $FILE scored $SCORE/100"
+    echo "[geoptimize] PASS: $FILE scored $SCORE/100"
   fi
 done
 IFS=$OLD_IFS
 if [ "$FAILED" = "1" ]; then
   echo ""
-  echo "[aeoptimize] Commit blocked. Fix AEO issues or bypass with: git commit --no-verify"
+  echo "[geoptimize] Commit blocked. Fix AEO issues or bypass with: git commit --no-verify"
   exit 1
 fi
 ${HOOK_END_MARKER}
@@ -351,12 +351,12 @@ ${HOOK_END_MARKER}
     await writeFile(hookPath, finalHook, { mode: 0o755 });
     console.log(chalk.green(`Pre-commit hook ${alreadyInstalled ? 'updated' : 'installed'} (min score: ${minScore})`));
     console.log(chalk.dim(`  Hook location: ${hookPath}`));
-    console.log(chalk.dim(`  To uninstall: npx aeoptimize hook uninstall`));
+    console.log(chalk.dim(`  To uninstall: npx geoptimize hook uninstall`));
   });
 
 hookCmd
   .command('uninstall')
-  .description('Remove aeoptimize pre-commit hook')
+  .description('Remove geoptimize pre-commit hook')
   .action(async () => {
     const gitDir = await findGitDir();
     if (!gitDir) {
@@ -368,7 +368,7 @@ hookCmd
     try {
       const existing = await readFile(hookPath, 'utf-8');
       if (!existing.includes(HOOK_BEGIN_MARKER)) {
-        console.log(chalk.yellow('No aeoptimize hook found.'));
+        console.log(chalk.yellow('No geoptimize hook found.'));
         return;
       }
 
@@ -443,7 +443,7 @@ function resolveTarget(target: string, isDir?: boolean): ScanTarget {
   }
   // Looks like a local path — hint the user
   if (target.startsWith('./') || target.startsWith('/') || target.startsWith('..')) {
-    throw new Error(`"${target}" looks like a local path. Use --dir flag: npx aeoptimize scan ${target} --dir`);
+    throw new Error(`"${target}" looks like a local path. Use --dir flag: npx geoptimize scan ${target} --dir`);
   }
   // Fallback: assume URL with https
   return { type: 'url', path: `https://${target}` };
@@ -753,7 +753,7 @@ function printScoreBar(label: string, score: number, max: number): void {
 function printSkillCta(): void {
   console.log(chalk.dim('  ─────────────────────────────────────────'));
   console.log(chalk.dim('  Want AI-powered fixes? Install as Claude Code skill:'));
-  console.log(chalk.white('    claude plugin marketplace add cucuwang/aeoptimize'));
+  console.log(chalk.white('    claude plugin marketplace add cucuwang/geoptimize'));
   console.log(chalk.dim('  Then use: /aeo-scan, /aeo-generate, /aeo-transform'));
   console.log('');
 }

@@ -126,13 +126,13 @@ describe('v0.6 public rule fixture corpus', () => {
     const packageJson = JSON.parse(await readFile(join(repositoryRoot, 'package.json'), 'utf8'));
     const methodology = await readFile(join(repositoryRoot, 'docs/methodology.md'), 'utf8');
     const sampleWorkflow = await readFile(
-      join(repositoryRoot, 'examples/github-action-sample/.github/workflows/aeoptimize.yml'),
+      join(repositoryRoot, 'examples/github-action-sample/.github/workflows/geoptimize.yml'),
       'utf8',
     );
 
     expect(ruleFixtureCorpusVersion).toBe('0.6.0');
     expect(methodology).toContain(`v${ruleFixtureCorpusVersion} scoring contract`);
-    expect(sampleWorkflow).toContain(`uses: cucuwang/aeoptimize@v${packageJson.version}`);
+    expect(sampleWorkflow).toContain(`uses: cucuwang/geoptimize@v${packageJson.version}`);
     expect(sampleWorkflow).toContain('permissions:\n  contents: read');
     expect(sampleWorkflow).toContain('path: site');
     expect(sampleWorkflow).toContain("fail-on-low-score: 'false'");
@@ -192,7 +192,7 @@ describe('v0.6 JSON automation contract', () => {
       'npm run release:check && bash scripts/verify-publish-source.sh',
     );
     expect(releaseGuide).toContain('## Rollback');
-    expect(releaseGuide).toContain('npm dist-tag add aeoptimize@0.6.2 latest');
+    expect(releaseGuide).toContain('npm dist-tag add geoptimize@0.6.2 latest');
     expect(releaseGuide).toContain('<verified-package-sha256>');
     expect(publicVerifier).toContain('.gitHead');
     expect(publicVerifier).toContain('EXPECTED_REPOSITORY_URL');

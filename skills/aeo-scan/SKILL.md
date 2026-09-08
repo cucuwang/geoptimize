@@ -5,7 +5,7 @@ description: Use when auditing a website or build output for deterministic conte
 
 # AEO Scan — Content Readiness Audit
 
-Run aeoptimize against a URL or build directory. The deterministic report is suitable for regression checks; optional Gemini, Copilot, or Claude reviews are experimental and do not predict ranking, indexing, rich results, visibility, or citation.
+Run geoptimize against a URL or build directory. The deterministic report is suitable for regression checks; optional Gemini, Copilot, or Claude reviews are experimental and do not predict ranking, indexing, rich results, visibility, or citation.
 
 ## Workflow
 
@@ -13,8 +13,8 @@ Run aeoptimize against a URL or build directory. The deterministic report is sui
 2. Run the deterministic scan with machine-readable output:
 
    ```bash
-   npx aeoptimize scan <target> --json
-   npx aeoptimize scan <directory> --dir --json
+   npx geoptimize scan <target> --json
+   npx geoptimize scan <directory> --dir --json
    ```
 
 3. Report the deterministic score, methodology version, critical findings, and heuristic limitations.

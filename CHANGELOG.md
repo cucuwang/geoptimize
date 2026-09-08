@@ -52,5 +52,5 @@ All notable user-visible changes will be documented here. The project follows Se
 
 ## 0.5.3 — 2026-04-15
 
-- Added the `aeoptimize` executable alias.
+- Added the `geoptimize` executable alias.
 - Synchronized CLI, Action, and plugin version metadata.

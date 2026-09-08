@@ -13,7 +13,7 @@ describe('robots policy', () => {
       Allow: /private/public$
       Sitemap: https://example.com/sitemap.xml
 
-      User-agent: aeoptimize
+      User-agent: geoptimize
       Disallow: /preview
       Allow: /preview/public
     `);
@@ -38,10 +38,10 @@ describe('robots policy', () => {
 
   it('prefers the exact crawler product token over its shorter prefix', () => {
     const policy = parseRobotsTxt(`
-      User-agent: aeoptimize
+      User-agent: geoptimize
       Allow: /private
 
-      User-agent: aeoptimize-site-audit
+      User-agent: geoptimize-site-audit
       Disallow: /private
     `);
 
@@ -74,7 +74,7 @@ describe('auditSite', () => {
     const fetchMock = vi.fn(async (input: string | URL, init?: RequestInit) => {
       const url = input.toString();
       expect(init?.redirect).toBe('manual');
-      expect(new Headers(init?.headers).get('user-agent')).toBe('aeoptimize-site-audit');
+      expect(new Headers(init?.headers).get('user-agent')).toBe('geoptimize-site-audit');
 
       if (url === 'https://example.com/') {
         return new Response(`

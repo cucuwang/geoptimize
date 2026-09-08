@@ -23,8 +23,8 @@ Audit statuses describe the evidence collected. Unavailable evidence remains una
 Verify npm metadata and the exact version, download its tarball, compare its SHA-256 with the candidate, and install all CLI aliases from those verified bytes. Confirm the immutable tag and published GitHub Release independently.
 
 ```bash
-npm view aeoptimize version dist-tags --json
-npm view aeoptimize@0.7.0 version gitHead dist --json
+npm view geoptimize version dist-tags --json
+npm view geoptimize@0.7.0 version gitHead dist --json
 bash scripts/verify-release-v0.6.sh <verified-release-commit> <verified-package-sha256>
 ```
 
@@ -35,8 +35,8 @@ The public verifier keeps its historical filename and reads the expected version
 With explicit rollback authorization, restore `latest` to the last fully published release and deprecate the problematic version.
 
 ```bash
-npm dist-tag add aeoptimize@0.6.2 latest
-npm deprecate aeoptimize@0.7.0 "Use 0.6.2 while an audit regression is corrected."
+npm dist-tag add geoptimize@0.6.2 latest
+npm deprecate geoptimize@0.7.0 "Use 0.6.2 while an audit regression is corrected."
 ```
 
 Update the GitHub Release with the same warning. Preserve existing tags and exact-version artifacts, then fix forward with a new version and repeat the release gates.

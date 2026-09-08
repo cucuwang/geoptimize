@@ -1,6 +1,6 @@
 ---
 name: aeo-ai-scorer
-description: Use only for an explicitly requested experimental content-quality review alongside the deterministic aeoptimize report
+description: Use only for an explicitly requested experimental content-quality review alongside the deterministic geoptimize report
 model: inherit
 ---
 

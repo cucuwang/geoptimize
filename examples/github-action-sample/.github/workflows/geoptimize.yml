@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: cucuwang/aeoptimize@v0.7.0
+      - uses: cucuwang/geoptimize@v0.7.0
         with:
           path: site
           fail-on-low-score: 'false'

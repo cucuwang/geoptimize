@@ -13,7 +13,7 @@ Generate reviewable candidate artifacts. These files do not guarantee crawling, 
 2. Preview without writing:
 
    ```bash
-   npx aeoptimize generate <directory> --dry-run
+   npx geoptimize generate <directory> --dry-run
    ```
 
 3. Review every output:
@@ -23,7 +23,7 @@ Generate reviewable candidate artifacts. These files do not guarantee crawling, 
 4. Write only after the user approves the exact directory:
 
    ```bash
-   npx aeoptimize generate <directory>
+   npx geoptimize generate <directory>
    ```
 
 ## Boundaries

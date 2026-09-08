@@ -1,5 +1,5 @@
 {
-  "name": "aeoptimize",
+  "name": "geoptimize",
   "owner": {
     "name": "Te-Shu Wang"
   },
@@ -9,13 +9,13 @@
   },
   "plugins": [
     {
-      "name": "aeoptimize",
+      "name": "geoptimize",
       "source": "./",
       "description": "CLI and Claude Code skills for reproducible content-readiness checks",
       "category": "seo",
       "tags": ["aeo", "seo", "ai-search", "llms-txt", "structured-data"],
-      "homepage": "https://github.com/cucuwang/aeoptimize",
-      "repository": "https://github.com/cucuwang/aeoptimize"
+      "homepage": "https://github.com/cucuwang/geoptimize",
+      "repository": "https://github.com/cucuwang/geoptimize"
     }
   ]
 }

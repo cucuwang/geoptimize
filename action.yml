@@ -1,5 +1,5 @@
-name: aeoptimize Content Readiness Check
-description: Run the deterministic aeoptimize readiness lint against a build directory
+name: geoptimize Content Readiness Check
+description: Run the deterministic geoptimize readiness lint against a build directory
 author: Te-Shu Wang
 branding:
   icon: search
@@ -21,7 +21,7 @@ inputs:
   package-spec:
     description: npm package spec to install; keep the default outside prerelease testing
     required: false
-    default: 'aeoptimize@0.7.0'
+    default: 'geoptimize@0.7.0'
 
 outputs:
   score:
@@ -39,7 +39,7 @@ runs:
       with:
         node-version: '24'
 
-    - name: Install aeoptimize
+    - name: Install geoptimize
       shell: bash
       env:
         PACKAGE_SPEC: ${{ inputs.package-spec }}

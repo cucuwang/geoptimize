@@ -10,19 +10,19 @@ Add build-time AEO optimization to Vite and Next.js projects. On build, automati
 
 ```ts
 // vite.config.ts
-import { aeoPlugin } from 'aeoptimize/vite';
+import { aeoPlugin } from 'geoptimize/vite';
 export default defineConfig({ plugins: [aeoPlugin()] });
 
 // next.config.mjs
-import { withAeo } from 'aeoptimize/next';
+import { withAeo } from 'geoptimize/next';
 export default withAeo({});
 ```
 
 Build output:
 ```
-[aeoptimize] Scanning build output...
-[aeoptimize] AEO Score: 72/100 (3 pages)
-[aeoptimize] Generated: llms.txt, llms-full.txt, _aeo/generated-schemas.json
+[geoptimize] Scanning build output...
+[geoptimize] AEO Score: 72/100 (3 pages)
+[geoptimize] Generated: llms.txt, llms-full.txt, _aeo/generated-schemas.json
 ```
 
 ## Architecture
@@ -78,7 +78,7 @@ No other options. YAGNI.
 - Each plugin file < 60 lines
 - Only imports from `../core/scanner` and `../core/generator`
 - Zero new dependencies
-- No chalk in plugins (use plain console.log with `[aeoptimize]` prefix)
+- No chalk in plugins (use plain console.log with `[geoptimize]` prefix)
 - Does not run in dev mode (only production builds)
 
 ## Testing
@@ -91,6 +91,6 @@ No other options. YAGNI.
 
 1. `tsc --noEmit` passes
 2. `vitest run` — all tests pass
-3. `import { aeoPlugin } from 'aeoptimize/vite'` resolves correctly
-4. `import { withAeo } from 'aeoptimize/next'` resolves correctly
+3. `import { aeoPlugin } from 'geoptimize/vite'` resolves correctly
+4. `import { withAeo } from 'geoptimize/next'` resolves correctly
 5. Build a minimal Vite project with plugin → llms.txt appears in dist/

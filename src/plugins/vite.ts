@@ -7,7 +7,7 @@ import type { ParsedDocument, SiteInfo } from '../core/types.js';
 export function aeoPlugin(options?: { silent?: boolean; outDir?: string }) {
   let resolvedOutDir = 'dist';
   return {
-    name: 'aeoptimize',
+    name: 'geoptimize',
     configResolved(config: { build: { outDir: string } }) {
       resolvedOutDir = config.build.outDir;
     },
@@ -15,7 +15,7 @@ export function aeoPlugin(options?: { silent?: boolean; outDir?: string }) {
       const outDir = options?.outDir || resolvedOutDir;
       const report = await scanDirectory(outDir);
       if (report.pages.length === 0) {
-        if (!options?.silent) console.log('[aeoptimize] No pages found in build output.');
+        if (!options?.silent) console.log('[geoptimize] No pages found in build output.');
         return;
       }
 
@@ -43,8 +43,8 @@ export function aeoPlugin(options?: { silent?: boolean; outDir?: string }) {
       }
 
       if (!options?.silent) {
-        console.log(`[aeoptimize] Readiness score: ${report.overall.total}/100 (${report.pages.length} pages)`);
-        console.log(`[aeoptimize] Generated optional artifacts: llms.txt, llms-full.txt${output.jsonLd.length ? ', _aeo/generated-schemas.json' : ''}`);
+        console.log(`[geoptimize] Readiness score: ${report.overall.total}/100 (${report.pages.length} pages)`);
+        console.log(`[geoptimize] Generated optional artifacts: llms.txt, llms-full.txt${output.jsonLd.length ? ', _aeo/generated-schemas.json' : ''}`);
       }
     },
   };
