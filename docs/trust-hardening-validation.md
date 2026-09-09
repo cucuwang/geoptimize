@@ -7,10 +7,10 @@
 | Command / check | Result |
 | --- | --- |
 | npm ci | Passed on Node 24.19.0 / npm 11.9.0 |
-| npm test | Original 231 tests passed |
+| npm test | Original 231 tests plus 11 release-hardening tests passed; 242 total |
 | npm test -- --run src/core/__tests__/release-publication.test.ts | 10 additional preflight tests passed |
 | npm run build | Passed |
-| npm run release:check | Passed with all 241 tests, Action contract, audit, package contents, clean consumer, aliases and report checks |
+| npm run release:check | Passed with all 242 tests, Action contract, audit, package contents, non-empty packaged README, clean consumer, aliases and report checks |
 | npm audit --audit-level=high (inside release:check) | 0 vulnerabilities at test time |
 | node scripts/prepare-release-artifacts.mjs /tmp/geoptimize-trust-artifacts | SPDX generated and root identity/hash validated |
 | sha256sum --check SHA256SUMS | Tarball and SPDX both passed |
@@ -19,6 +19,9 @@
 | Python yaml.safe_load on workflows, Dependabot and issue config | Passed; all external uses references are 40-character SHAs |
 | node --check scripts/prepare-release-artifacts.mjs; bash -n scripts/verify-release-publication.sh | Passed |
 | git diff --check | Passed |
+
+The release workflow uses a public release-notes file rather than publishing this
+maintainer runbook. A contract test keeps the two paths separate.
 
 Actionlint download SHA-256 was checked against the official GitHub release asset:
 `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8`.

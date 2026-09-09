@@ -34,6 +34,11 @@ node scripts/prepare-release-artifacts.mjs "$release_dir"
 npm pack "$release_dir/geoptimize-$version.tgz" --dry-run --ignore-scripts --json
 ```
 
+The candidate gate extracts `package/README.md` from the verified tarball and requires
+it to be non-empty. After publication, open the npm package page and confirm that the
+README renders. The registry metadata `readme` field can be empty while npm still
+renders the packaged README, so that field alone is not a publication failure.
+
 On GitHub, Actions → Release → Run workflow → branch main → leave publish false.
 All CI gates run and release-assets is retained; no signing, OIDC publication,
 attestation or GitHub Release writes occur. A successful dry run proves packaging,
@@ -56,6 +61,10 @@ not external npm authorization or immutable-release settings.
    source, changed main HEAD, corrupted artifacts and already-published npm versions.
 6. Attest the tarball; create a draft with all assets; publish that exact tarball with
    npm OIDC/provenance; finalize the draft; run the existing public readback verifier.
+
+The GitHub Release uses [public release notes](release-notes-v0.10.md). Keep setup,
+approval and recovery instructions in this runbook rather than publishing them as the
+release description.
 
 Expected assets: `geoptimize-0.10.0.tgz`, `geoptimize-0.10.0.spdx.json`, `SHA256SUMS`.
 The Actions artifact also retains candidate.json. Filenames are version-derived.

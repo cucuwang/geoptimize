@@ -64,7 +64,7 @@ jobs:
           subject-path: ${{ runner.temp }}/release-assets/geoptimize-*.tgz
       - name: Stage all assets in a draft release
         run: |
-          gh release create "$RELEASE_TAG" --verify-tag --draft --title "geoptimize ${RELEASE_TAG#v}" --notes-file docs/release-v0.10.md
+          gh release create "$RELEASE_TAG" --verify-tag --draft --title "geoptimize ${RELEASE_TAG#v}" --notes-file docs/release-notes-v0.10.md
           gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/release-assets/"*.tgz "$RUNNER_TEMP/release-assets/SHA256SUMS" "$RUNNER_TEMP/release-assets/"*.spdx.json
       - name: Publish the verified tarball using npm OIDC
         run: |
