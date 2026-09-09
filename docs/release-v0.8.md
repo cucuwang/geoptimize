@@ -4,6 +4,8 @@ Version 0.8.0 moves the project to the `geoptimize` npm package, the `cucuwang/g
 
 The deterministic readiness score and audit evidence boundaries remain unchanged. The package does not predict search ranking, indexing, traffic, AI visibility, or citation.
 
+See the [aeoptimize migration guide](https://github.com/cucuwang/geoptimize/blob/main/docs/migrating-from-aeoptimize.md) for exact command, import, and hook changes.
+
 ## Release acceptance
 
 1. Rename the GitHub repository to `cucuwang/geoptimize` and update the local remote before preparing the release commit.

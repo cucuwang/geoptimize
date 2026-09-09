@@ -1,5 +1,9 @@
 # geoptimize
 
+**Formerly aeoptimize.** This is the same project, continued under the `geoptimize` name from version 0.8.0. Existing `aeoptimize` users can follow the [migration guide](https://github.com/cucuwang/geoptimize/blob/main/docs/migrating-from-aeoptimize.md).
+
+[Current npm package](https://www.npmjs.com/package/geoptimize) · [Legacy npm package and download history](https://www.npmjs.com/package/aeoptimize) · [Last release under the old name](https://github.com/cucuwang/geoptimize/releases/tag/v0.7.0)
+
 [![npm version](https://img.shields.io/npm/v/geoptimize.svg)](https://www.npmjs.com/package/geoptimize)
 [![CI](https://github.com/cucuwang/geoptimize/actions/workflows/ci.yml/badge.svg)](https://github.com/cucuwang/geoptimize/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/geoptimize.svg)](https://github.com/cucuwang/geoptimize/blob/main/LICENSE)
@@ -113,7 +117,7 @@ npx geoptimize scan ./dist --dir --json > geoptimize-report.json
 node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.total < 60 ? 1 : 0)"
 ```
 
-The GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
+The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimize-content-readiness-check) is advisory by default. It reports findings without blocking the workflow:
 
 ```yaml
 - uses: cucuwang/geoptimize@v0.8.0
