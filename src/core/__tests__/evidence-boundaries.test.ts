@@ -72,7 +72,7 @@ describe('public metadata', () => {
     const publicSurface = contents.join('\n');
 
     expect(publicSurface).not.toContain('dexuwang627-cloud');
-    expect(publicSurface).toContain('cucuwang/aeoptimize');
+    expect(publicSurface).toContain('cucuwang/geoptimize');
   });
 
   it('keeps v0.6 package, CLI, plugin, and Action versions aligned', async () => {
@@ -83,7 +83,7 @@ describe('public metadata', () => {
     const action = await readFile(join(root, 'action.yml'), 'utf8');
     const compatibilityAction = await readFile(join(root, 'action/action.yml'), 'utf8');
 
-    expect(packageJson.version).toBe('0.7.0');
+    expect(packageJson.version).toBe('0.7.1');
     expect(pluginJson.version).toBe(packageJson.version);
     expect(marketplaceJson.metadata.version).toBe(packageJson.version);
     expect(cli).toContain(`.version('${packageJson.version}')`);
@@ -97,7 +97,7 @@ describe('public metadata', () => {
   it('keeps npm publisher metadata normalized and exposes every CLI alias', async () => {
     const packageJson = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 
-    expect(packageJson.repository.url).toBe('git+https://github.com/cucuwang/aeoptimize.git');
+    expect(packageJson.repository.url).toBe('git+https://github.com/cucuwang/geoptimize.git');
     expect(packageJson.bin).toEqual({
       aeoptimize: 'dist/cli/index.js',
       aeo: 'dist/cli/index.js',

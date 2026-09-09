@@ -132,7 +132,7 @@ describe('v0.6 public rule fixture corpus', () => {
 
     expect(ruleFixtureCorpusVersion).toBe('0.6.0');
     expect(methodology).toContain(`v${ruleFixtureCorpusVersion} scoring contract`);
-    expect(sampleWorkflow).toContain(`uses: cucuwang/aeoptimize@v${packageJson.version}`);
+    expect(sampleWorkflow).toContain(`uses: cucuwang/geoptimize@v${packageJson.version}`);
     expect(sampleWorkflow).toContain('permissions:\n  contents: read');
     expect(sampleWorkflow).toContain('path: site');
     expect(sampleWorkflow).toContain("fail-on-low-score: 'false'");

@@ -1,8 +1,12 @@
 # aeoptimize
 
+**This project continues as [geoptimize](https://www.npmjs.com/package/geoptimize).** aeoptimize 0.7.1 preserves the original package, API, and CLI names for existing integrations. New integrations should use geoptimize. Follow the [migration guide](https://github.com/cucuwang/geoptimize/blob/main/docs/migrating-from-aeoptimize.md) to update an existing project.
+
+[Current project](https://github.com/cucuwang/geoptimize) · [geoptimize on npm](https://www.npmjs.com/package/geoptimize) · [Legacy aeoptimize downloads](https://www.npmjs.com/package/aeoptimize)
+
 [![npm version](https://img.shields.io/npm/v/aeoptimize.svg)](https://www.npmjs.com/package/aeoptimize)
-[![CI](https://github.com/cucuwang/aeoptimize/actions/workflows/ci.yml/badge.svg)](https://github.com/cucuwang/aeoptimize/actions/workflows/ci.yml)
-[![license](https://img.shields.io/npm/l/aeoptimize.svg)](https://github.com/cucuwang/aeoptimize/blob/main/LICENSE)
+[![CI](https://github.com/cucuwang/geoptimize/actions/workflows/ci.yml/badge.svg)](https://github.com/cucuwang/geoptimize/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/aeoptimize.svg)](https://github.com/cucuwang/geoptimize/blob/main/LICENSE)
 
 **AI crawlers read your pages before humans do. Lint them like code.**
 
@@ -116,7 +120,7 @@ node -e "const r=require('./aeoptimize-report.json'); process.exit(r.overall.tot
 The GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.7.0
+- uses: cucuwang/geoptimize@v0.7.1
   with:
     path: dist
 ```
@@ -124,7 +128,7 @@ The GitHub Action is advisory by default. Consume it from the repository pin unt
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/aeoptimize@v0.7.0
+- uses: cucuwang/geoptimize@v0.7.1
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -231,13 +235,13 @@ The hook checks staged `.html`, `.htm`, `.md`, and `.mdx` content. Review the ba
 ## Claude Code skills
 
 ```bash
-claude plugin marketplace add cucuwang/aeoptimize
+claude plugin marketplace add cucuwang/geoptimize
 ```
 
 Or install the same reusable skills through the cross-agent Agent Skills CLI (skills.sh indexes installs from this command; there is no separate submit form):
 
 ```bash
-npx skills add cucuwang/aeoptimize
+npx skills add cucuwang/geoptimize
 ```
 
 - `/aeo-scan` — deterministic readiness audit with optional experimental review

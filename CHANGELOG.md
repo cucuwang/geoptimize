@@ -2,6 +2,14 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## 0.7.1
+
+### Documentation
+
+- Linked the continuing geoptimize project and migration guide from the npm package.
+- Preserved the aeoptimize CLI aliases and framework exports.
+- Refreshed the js-yaml and Vitest lockfile entries to pass the current security audit.
+
 ## 0.7.0
 
 ### Added

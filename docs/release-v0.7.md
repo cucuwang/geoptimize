@@ -40,3 +40,7 @@ npm deprecate aeoptimize@0.7.0 "Use 0.6.2 while an audit regression is corrected
 ```
 
 Update the GitHub Release with the same warning. Preserve existing tags and exact-version artifacts, then fix forward with a new version and repeat the release gates.
+
+## Legacy 0.7.1 publication
+
+Version 0.7.1 adds the geoptimize migration notice while retaining aeoptimize interfaces. Publish from the exact freshly fetched `origin/maintenance/aeoptimize-0.7` commit; this branch's source gate and CI target that maintenance branch. Main carries the geoptimize package.

@@ -1,12 +1,12 @@
 {
   "name": "aeoptimize",
   "description": "Content-readiness lint and evidence-bounded discovery experiments",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "author": {
     "name": "Te-Shu Wang"
   },
-  "homepage": "https://github.com/cucuwang/aeoptimize",
-  "repository": "https://github.com/cucuwang/aeoptimize",
+  "homepage": "https://github.com/cucuwang/geoptimize",
+  "repository": "https://github.com/cucuwang/geoptimize",
   "license": "MIT",
   "keywords": ["aeo", "seo", "ai-search", "llms-txt", "structured-data", "claude-code-skill"],
   "commands": [

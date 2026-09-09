@@ -1,7 +1,7 @@
 {
   "name": "aeoptimize",
-  "version": "0.7.0",
-  "description": "Deterministic content-readiness lint for static websites and documentation",
+  "version": "0.7.1",
+  "description": "Legacy package for geoptimize, retaining the aeoptimize API and CLI for existing integrations",
   "type": "module",
   "main": "./dist/core/index.js",
   "bin": {
@@ -32,7 +32,8 @@
     "ROADMAP.md",
     "SECURITY.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "docs/migrating-from-aeoptimize.md"
   ],
   "scripts": {
     "build": "tsc",
@@ -53,15 +54,16 @@
     "generative-engine-optimization",
     "claude-code-skill",
     "vite-plugin",
-    "nextjs-plugin"
+    "nextjs-plugin",
+    "geoptimize"
   ],
-  "homepage": "https://github.com/cucuwang/aeoptimize",
+  "homepage": "https://github.com/cucuwang/geoptimize",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cucuwang/aeoptimize.git"
+    "url": "git+https://github.com/cucuwang/geoptimize.git"
   },
   "bugs": {
-    "url": "https://github.com/cucuwang/aeoptimize/issues"
+    "url": "https://github.com/cucuwang/geoptimize/issues"
   },
   "license": "MIT",
   "engines": {

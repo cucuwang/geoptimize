@@ -10,7 +10,7 @@ const testDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(testDirectory, '../../..');
 const verifier = join(repositoryRoot, 'scripts/verify-release-v0.6.sh');
 const expectedCommit = '0123456789abcdef0123456789abcdef01234567';
-const tarballContent = 'verified aeoptimize v0.7.0 candidate';
+const tarballContent = 'verified aeoptimize v0.7.1 candidate';
 const expectedTarballHash = createHash('sha256').update(tarballContent).digest('hex');
 
 interface CommandResult {
@@ -29,9 +29,9 @@ function runVerifier(
       env: {
         ...process.env,
         PATH: `${mockBin}:${process.env.PATH}`,
-        MOCK_LATEST: '0.7.0',
+        MOCK_LATEST: '0.7.1',
         MOCK_NPM_GIT_HEAD: expectedCommit,
-        MOCK_REPOSITORY_URL: 'git+https://github.com/cucuwang/aeoptimize.git',
+        MOCK_REPOSITORY_URL: 'git+https://github.com/cucuwang/geoptimize.git',
         MOCK_TAG_COMMIT: expectedCommit,
         MOCK_TARBALL_CONTENT: tarballContent,
         MOCK_RELEASE_DRAFT: 'false',
@@ -80,13 +80,13 @@ done
 
 case "$url" in
   https://registry.npmjs.org/aeoptimize)
-    printf '{"dist-tags":{"latest":"%s"},"versions":{"0.7.0":{"gitHead":"%s","repository":{"url":"%s"},"homepage":"https://github.com/cucuwang/aeoptimize","bugs":{"url":"https://github.com/cucuwang/aeoptimize/issues"},"dist":{"tarball":"https://registry.npmjs.org/aeoptimize/-/aeoptimize-0.7.0.tgz"}}}}' "$MOCK_LATEST" "$MOCK_NPM_GIT_HEAD" "$MOCK_REPOSITORY_URL"
+    printf '{"dist-tags":{"latest":"%s"},"versions":{"0.7.1":{"gitHead":"%s","repository":{"url":"%s"},"homepage":"https://github.com/cucuwang/geoptimize","bugs":{"url":"https://github.com/cucuwang/geoptimize/issues"},"dist":{"tarball":"https://registry.npmjs.org/aeoptimize/-/aeoptimize-0.7.1.tgz"}}}}' "$MOCK_LATEST" "$MOCK_NPM_GIT_HEAD" "$MOCK_REPOSITORY_URL"
     ;;
-  https://registry.npmjs.org/aeoptimize/-/aeoptimize-0.7.0.tgz)
+  https://registry.npmjs.org/aeoptimize/-/aeoptimize-0.7.1.tgz)
     printf '%s' "$MOCK_TARBALL_CONTENT" > "$output_file"
     ;;
-  https://api.github.com/repos/cucuwang/aeoptimize/releases/tags/v0.7.0)
-    printf '{"tag_name":"v0.7.0","draft":%s,"prerelease":%s}' "$MOCK_RELEASE_DRAFT" "$MOCK_RELEASE_PRERELEASE" > "$output_file"
+  https://api.github.com/repos/cucuwang/geoptimize/releases/tags/v0.7.1)
+    printf '{"tag_name":"v0.7.1","draft":%s,"prerelease":%s}' "$MOCK_RELEASE_DRAFT" "$MOCK_RELEASE_PRERELEASE" > "$output_file"
     printf '200'
     ;;
   *)
@@ -98,7 +98,7 @@ esac
 
     await writeExecutable(join(mockBin, 'git'), `#!/usr/bin/env bash
 set -euo pipefail
-printf '%s\trefs/tags/v0.7.0\n' "$MOCK_TAG_COMMIT"
+printf '%s\trefs/tags/v0.7.1\n' "$MOCK_TAG_COMMIT"
 `);
 
     await writeExecutable(join(mockBin, 'npm'), `#!/usr/bin/env bash
@@ -116,7 +116,7 @@ for binary in aeoptimize aeo aeo-cli; do
   if [ "$binary" = "$MOCK_MISSING_BINARY" ]; then
     continue
   fi
-  printf '#!/usr/bin/env bash\nprintf "0.7.0\\n"\n' > "$prefix/node_modules/.bin/$binary"
+  printf '#!/usr/bin/env bash\nprintf "0.7.1\\n"\n' > "$prefix/node_modules/.bin/$binary"
   chmod +x "$prefix/node_modules/.bin/$binary"
 done
 `);
@@ -135,8 +135,8 @@ done
     expect(result.stdout).toContain('PASS: npm gitHead matches');
     expect(result.stdout).toContain('PASS: npm tarball SHA-256 matches the verified candidate');
     expect(result.stdout).toContain('All public release checks passed.');
-    expect(npmArgs).toMatch(/aeoptimize-0\.7\.0\.tgz/);
-    expect(npmArgs).not.toContain('aeoptimize@0.7.0');
+    expect(npmArgs).toMatch(/aeoptimize-0\.7\.1\.tgz/);
+    expect(npmArgs).not.toContain('aeoptimize@0.7.1');
   });
 
   it('fails closed when npm serves a different tarball', async () => {
@@ -177,7 +177,7 @@ done
     });
 
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('FAIL: v0.7.0 points to');
+    expect(result.stderr).toContain('FAIL: v0.7.1 points to');
   });
 
   it('fails closed when the GitHub Release is a draft', async () => {

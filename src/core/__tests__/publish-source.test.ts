@@ -53,7 +53,7 @@ case "$*" in
   "rev-parse --verify HEAD")
     printf '%s\\n' "$MOCK_HEAD"
     ;;
-  "rev-parse --verify refs/remotes/origin/main")
+  "rev-parse --verify refs/remotes/origin/maintenance/aeoptimize-0.7")
     if [ "$MOCK_MISSING_MAIN" = "true" ]; then exit 1; fi
     printf '%s\\n' "$MOCK_MAIN"
     ;;
@@ -70,27 +70,27 @@ esac
     await rm(testRoot, { recursive: true, force: true });
   });
 
-  it('passes only at the exact origin/main commit', async () => {
+  it('passes only at the exact origin/maintenance/aeoptimize-0.7 commit', async () => {
     const result = await runVerifier(mockBin);
 
     expect(result.code).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('HEAD matches origin/main');
+    expect(result.stdout).toContain('HEAD matches origin/maintenance/aeoptimize-0.7');
   });
 
-  it('fails when HEAD differs from origin/main', async () => {
+  it('fails when HEAD differs from origin/maintenance/aeoptimize-0.7', async () => {
     const result = await runVerifier(mockBin, {
       MOCK_HEAD: 'fedcba9876543210fedcba9876543210fedcba98',
     });
 
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('expected origin/main');
+    expect(result.stderr).toContain('expected origin/maintenance/aeoptimize-0.7');
   });
 
-  it('fails when origin/main is unavailable', async () => {
+  it('fails when origin/maintenance/aeoptimize-0.7 is unavailable', async () => {
     const result = await runVerifier(mockBin, { MOCK_MISSING_MAIN: 'true' });
 
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('run git fetch origin main');
+    expect(result.stderr).toContain('run git fetch origin maintenance/aeoptimize-0.7');
   });
 });

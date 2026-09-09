@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Content-readiness lint with evidence-bounded AI discovery experiments",
-    "version": "0.7.0"
+    "version": "0.7.1"
   },
   "plugins": [
     {
@@ -14,8 +14,8 @@
       "description": "CLI and Claude Code skills for reproducible content-readiness checks",
       "category": "seo",
       "tags": ["aeo", "seo", "ai-search", "llms-txt", "structured-data"],
-      "homepage": "https://github.com/cucuwang/aeoptimize",
-      "repository": "https://github.com/cucuwang/aeoptimize"
+      "homepage": "https://github.com/cucuwang/geoptimize",
+      "repository": "https://github.com/cucuwang/geoptimize"
     }
   ]
 }

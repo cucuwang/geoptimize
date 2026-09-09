@@ -21,7 +21,7 @@ inputs:
   package-spec:
     description: npm package spec to install; keep the default outside prerelease testing
     required: false
-    default: 'aeoptimize@0.7.0'
+    default: 'aeoptimize@0.7.1'
 
 outputs:
   score:

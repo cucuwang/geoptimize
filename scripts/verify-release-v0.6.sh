@@ -2,12 +2,12 @@
 set -u
 
 PACKAGE_NAME=aeoptimize
-REPOSITORY=cucuwang/aeoptimize
+REPOSITORY=cucuwang/geoptimize
 EXPECTED_COMMIT=${1:-}
 EXPECTED_PACKAGE_SHA256=${2:-}
-EXPECTED_REPOSITORY_URL=git+https://github.com/cucuwang/aeoptimize.git
-EXPECTED_HOMEPAGE=https://github.com/cucuwang/aeoptimize
-EXPECTED_BUGS_URL=https://github.com/cucuwang/aeoptimize/issues
+EXPECTED_REPOSITORY_URL=git+https://github.com/cucuwang/geoptimize.git
+EXPECTED_HOMEPAGE=https://github.com/cucuwang/geoptimize
+EXPECTED_BUGS_URL=https://github.com/cucuwang/geoptimize/issues
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 PACKAGE_JSON="$SCRIPT_DIR/../package.json"
 
