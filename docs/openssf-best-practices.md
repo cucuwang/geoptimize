@@ -25,8 +25,8 @@ transitive dependency or the maintainer's historical response performance.
 
 | Work | Status / evidence needed |
 | --- | --- |
-| Static analysis for application and workflow sources | CodeQL added; first successful runs and finding triage required |
-| Automated dependency review and updates | Dependency Review, Dependabot added; resolve actionable results |
+| Static analysis for application and workflow sources | CodeQL passed on PR #19; first main run and ongoing finding triage remain |
+| Automated dependency review and updates | Dependency Review passed; Dependabot alerts, security updates and weekly version updates are enabled |
 | Verifiable release integrity | OIDC workflow, SBOM, checksums and attestation prepared; next authorized release supplies public evidence |
 | Document operational trust boundaries | Release/settings/Action decision documents added |
 | Release notes for security fixes | Changelog process exists; describe actual fixes and identifiers when applicable |
@@ -36,8 +36,8 @@ transitive dependency or the maintainer's historical response performance.
 - Register the project and answer all Passing criteria with public evidence links.
 - `know_secure_design` / `know_common_errors`: identify a primary developer who can
   substantiate secure-design and common-error knowledge. A workflow cannot prove this.
-- Confirm actual private reporting availability and monitor acknowledgement/remediation
-  performance; do not infer historical responsiveness from a written target.
+- Private reporting is enabled; monitor acknowledgement/remediation performance rather
+  than inferring historical responsiveness from a written target.
 - Review outstanding static-analysis, dependency and reported vulnerability findings;
   document severity, disposition and timely fixes. Audit success is time-bound.
 - Confirm test-policy enforcement for new functionality and fixes, and that important

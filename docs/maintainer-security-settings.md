@@ -1,17 +1,17 @@
 # Maintainer security settings
 
 Snapshot: 2026-09-09. Configuration files do not prove account settings are enabled.
-The connected API exposes ruleset reads, but no supported administration mutation.
-No account settings, credentials, production tags or releases were changed by this PR.
+The states below were read back through the repository administration API after an
+authorized settings update. No credentials, production tags or releases were changed.
 
 ## GitHub rulesets
 
 Settings → Rules → Rulesets → `protect-main` (ID 22617494) currently blocks deletion
 and force pushes only. It also targets two maintenance branches. Preserve that
-coverage; create a separate **main-required-checks** branch ruleset targeting `main`
-to avoid requiring new checks on historical maintenance branches.
+coverage. `main-required-checks` (ID 22637595) is Active with no bypass actors and
+targets the default branch without affecting historical maintenance branches.
 
-Set enforcement Active, no routine bypass actors, and enable:
+It enforces:
 
 - Require a pull request before merging; required approvals **0** for the current
   single maintainer. Leave required CODEOWNER review and last-push approval off.
@@ -19,7 +19,7 @@ Set enforcement Active, no routine bypass actors, and enable:
 - Require status checks to pass; require branches to be up to date before merging.
 - Block deletions and force pushes (already provided by protect-main).
 
-After the PR checks have run, choose these exact GitHub Actions contexts:
+These exact GitHub Actions contexts are required:
 
 | Required context | Source |
 | --- | --- |
@@ -32,10 +32,9 @@ After the PR checks have run, choose these exact GitHub Actions contexts:
 | `CodeQL (javascript-typescript)` | CodeQL |
 | `CodeQL (actions)` | CodeQL |
 
-The first five job identifiers and Node matrix values are preserved. Select the
-observed context names in Settings after successful runs; do not select the nested
-`validate / …` names from the manual release workflow. Avoid path filters on required
-checks. Add further checks only after their real runs are healthy.
+The first five job identifiers and Node matrix values are preserved. The ruleset uses
+the observed PR context names rather than nested `validate / …` names from the manual
+release workflow. It requires branches to be up to date and has no path filters.
 
 `protect-release-tags` (ID 22617499) is already Active for `v*.*.*`, blocking updates,
 deletion and non-fast-forward changes with no bypass actors. Preserve it and v0.9.0.
@@ -47,21 +46,17 @@ and analysis). Enable/check each independently:
 
 | Feature | Expected state / next action |
 | --- | --- |
-| Dependency graph | **Action required:** Dependency Review run 34342823536 failed: graph not enabled / review unsupported. Enable it and rerun the check. |
+| Dependency graph | Enabled with vulnerability alerts; Dependency Review run 34348461644 passed after enablement |
 | Dependabot alerts | Enabled; triage high/critical findings |
 | Dependabot security updates | Enabled; weekly version updates are configured in YAML |
 | Secret Protection → Secret scanning | Enabled |
 | Secret Protection → Push protection | Enabled |
-| Private vulnerability reporting | Enabled; confirm Security → Advisories → Report a vulnerability appears |
-| Code scanning → CodeQL | Use Advanced setup from this PR; disable conflicting Default setup if already enabled |
+| Private vulnerability reporting | Enabled; the repository API returned `enabled: true` |
+| Code scanning → CodeQL | Advanced workflow passed on PR #19; first main execution remains pending |
 
-Public-repository availability does not prove a feature is configured. The connector
-cannot read these sensitive endpoints, so verify in the UI and record the date.
-Dependency Review specifically returned: "Dependency review is not supported on this
-repository. Please ensure that Dependency graph is enabled". Direct settings path:
-https://github.com/cucuwang/geoptimize/settings/security_analysis. This check is
-intentionally left blocking until the setting is enabled; do not add continue-on-error.
-Do not create a PAT solely to make these checks pass.
+The initial Dependency Review failure reported that the dependency graph was disabled.
+After enablement, the same head passed without suppressing the check or adding a PAT.
+Recheck these settings through the API and UI after ownership or security-plan changes.
 
 ## Immutable releases (state not confirmed)
 

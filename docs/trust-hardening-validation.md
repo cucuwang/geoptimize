@@ -30,19 +30,24 @@ The initial npm publish --dry-run correctly rejected already-published 0.9.0.
 PR preview now uses npm pack --dry-run against the verified tarball, with no force
 flag or weakened version/security gate. No package was published.
 
-## GitHub evidence before the final documentation update
+## GitHub evidence on the current PR head
 
-Commit `1f6d7de6b1a7c5164f12a445813c1f4224aab6e4`:
+Commit `17986f9258d38028e06e47265ffc36c0878e361d`:
 
-- [CI run 34342957970](https://github.com/cucuwang/geoptimize/actions/runs/34342957970):
+- [CI run 34348461590](https://github.com/cucuwang/geoptimize/actions/runs/34348461590):
   test-and-build (22), test-and-build (24), release-candidate-reproducibility,
   lint-readme-commands and action-contract all passed. Node 24 also generated release
   assets/SBOM/checksums and exercised the non-publishing tarball preview.
-- [CodeQL run 34342957988](https://github.com/cucuwang/geoptimize/actions/runs/34342957988):
+- [CodeQL run 34348461591](https://github.com/cucuwang/geoptimize/actions/runs/34348461591):
   JavaScript/TypeScript and GitHub Actions analyses both passed.
-- [Dependency Review run 34342957977](https://github.com/cucuwang/geoptimize/actions/runs/34342957977):
-  blocked because Dependency graph is not enabled/review is unsupported. Maintainer
-  must enable the graph, then rerun; this failure has not been suppressed.
+- [Dependency Review run 34348461644](https://github.com/cucuwang/geoptimize/actions/runs/34348461644):
+  passed after the dependency graph and vulnerability alerts were enabled. The failure
+  was rerun without weakening its severity gate.
+- `main-required-checks` ruleset 22637595 is Active with no bypass actors. It requires
+  a pull request, resolved conversations, an up-to-date branch and all eight documented
+  CI, Dependency Review and CodeQL contexts.
+- Dependabot security updates and private vulnerability reporting were enabled and
+  returned `enabled: true`. Secret scanning and push protection remain enabled.
 
 The PR checks panel is authoritative for the latest commit. Documentation changes
 also affect the npm tarball, so require a fresh successful reproducibility run before
@@ -58,12 +63,12 @@ existing scoring contract tests pass. The only new src file is a preflight test.
   only static/preflight validation.
 - Scorecard is configured for main pushes/schedule and awaits its first main run.
   Syntax and upstream pin were verified; no successful score or badge is asserted.
-- Private reporting, secret scanning/push protection, immutable-release setting,
-  OpenSSF registration and signing identity remain maintainer UI gates.
+- Immutable-release setting, npm Trusted Publisher/environment, OpenSSF registration
+  and signing identity remain maintainer gates.
 
 ## Public issue reconciliation
 
-#11 retains Marketplace live-listing verification. #16 replaces the stale npm 404
-with verified 0.9.0 metadata and retains Mac/readback follow-ups. #9/#10 examples use
-the current name/version; their feature/test scope stays open. Historical dogfood
-reports were preserved. Bundling is tracked in [#20](https://github.com/cucuwang/geoptimize/issues/20).
+#11's Marketplace listing was verified for owner cucuwang and version 0.9.0. #16's
+Mac checkout now uses the geoptimize origin, and the original 0.9.0 candidate hash,
+public tarball, three aliases, tag and Release were read back successfully. #9/#10
+retain their feature scope. Bundling remains tracked in [#20](https://github.com/cucuwang/geoptimize/issues/20).
