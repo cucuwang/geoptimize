@@ -59,11 +59,11 @@ jq -e '
   (.[0].files | map(.path) | index("dist/core/audit.js")) != null and
   (.[0].files | map(.path) | index("dist/core/static-audit.js")) != null and
   (.[0].files | map(.path) | index("dist/core/site-audit.js")) != null and
-  (.[0].files | map(.path) | index("docs/release-v0.7.md")) != null and
+  (.[0].files | map(.path) | index("docs/release-v0.8.md")) != null and
   (.[0].files | map(.path) | index("fixtures/v0.6/rule-corpus.ts")) != null and
   (.[0].files | map(.path) | index("examples/github-action-sample/.github/workflows/geoptimize.yml")) != null and
   (.[0].files | map(.path) | index("scripts/verify-release-candidate.sh")) != null and
-  (.[0].files | map(.path) | index("scripts/verify-release-v0.6.sh")) != null
+  (.[0].files | map(.path) | index("scripts/verify-release-v0.8.sh")) != null
 ' "$PACK_JSON" >/dev/null
 
 npm_config_dry_run=false npm --cache "$VERIFY_ROOT/npm-cache" install \

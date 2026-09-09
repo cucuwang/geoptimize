@@ -2,6 +2,16 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## 0.8.0
+
+### Changed
+
+- Renamed the npm package and repository to `geoptimize`, with `geoptimize`, `geo`, and `geo-cli` executables.
+- Renamed framework APIs to `geoPlugin` and `withGeo`, bundled skills to `geo-*`, and generated schema output to `_geo`.
+- Updated the GitHub Action to install `geoptimize@0.8.0`. Existing users should update package imports, CLI commands, and Action references.
+- Preserved deterministic scoring and audit evidence contracts.
+- Refreshed js-yaml and Vitest dependencies to address published security advisories.
+
 ## 0.7.0
 
 ### Added

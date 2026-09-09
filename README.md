@@ -116,7 +116,7 @@ node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.tot
 The GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.7.0
+- uses: cucuwang/geoptimize@v0.8.0
   with:
     path: dist
 ```
@@ -124,7 +124,7 @@ The GitHub Action is advisory by default. Consume it from the repository pin unt
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.7.0
+- uses: cucuwang/geoptimize@v0.8.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -246,7 +246,7 @@ npx skills add cucuwang/geoptimize
 
 ## Project status
 
-Version 0.7 adds page, build, and bounded site audits while retaining the v0.6 scoring contract. Release acceptance and rollback are documented in [docs/release-v0.7.md](docs/release-v0.7.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
+Version 0.8 moves the package and integrations to geoptimize while retaining the scoring and audit contracts. Release acceptance and rollback are documented in [docs/release-v0.8.md](docs/release-v0.8.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 

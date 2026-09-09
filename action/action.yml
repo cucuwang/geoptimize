@@ -20,7 +20,7 @@ inputs:
   package-spec:
     description: npm package spec to install; keep the default outside prerelease testing
     required: false
-    default: 'geoptimize@0.7.0'
+    default: 'geoptimize@0.8.0'
 
 outputs:
   score:
