@@ -171,7 +171,7 @@ also accepts an empty output directory for inspecting readiness and site JSON re
 | Deterministic | Yes — versioned rules, fixture-tested | Partially | No — model output varies run to run |
 | Runs where | Local CLI, CI, pre-commit hook, Vite/Next plugins | Browser / DevTools | Vendor cloud |
 | Blocks regressions in CI | Yes, via a stable `--json` contract | Possible with extra wiring | Rarely |
-| Cost | Free, MIT | Free | Typically $95+/mo |
+| Cost | Free, MIT | Free | Varies by vendor |
 
 Visibility trackers answer "did rankings change?". geoptimize answers the question you can act on in a pull request: "is this page ready?". The two compose rather than compete.
 
