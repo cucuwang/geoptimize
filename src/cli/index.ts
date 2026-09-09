@@ -7,6 +7,7 @@ import { join, extname } from 'node:path';
 import { scan, scanDirectory, parseHtml, parseMarkdown, scanUrl } from '../core/scanner.js';
 import { audit } from '../core/audit.js';
 import { parseSiteReport, summarizeSite } from '../core/site-metrics.js';
+import { parseScanReport, renderVisualReport } from '../core/visual-report.js';
 import { auditSite } from '../core/site-audit.js';
 import { generate } from '../core/generator.js';
 import { detectAvailableCLIs, scoreWithAllAvailable } from '../core/external-scorers.js';
@@ -111,6 +112,26 @@ program
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
+    }
+  });
+
+program
+  .command('report <scan-json>')
+  .description('Create an offline visual report with the original five readiness scores')
+  .requiredOption('--output <path>', 'New HTML output file (existing files are preserved)')
+  .option('--site <path>', 'Optional audit-site JSON for website health charts')
+  .option('--baseline-site <path>', 'Previous audit-site JSON for count comparisons')
+  .action(async (path: string, options: { output: string; site?: string; baselineSite?: string }) => {
+    try {
+      const readiness = parseScanReport(JSON.parse(await readFile(path, 'utf-8')));
+      const site = options.site ? parseSiteReport(JSON.parse(await readFile(options.site, 'utf-8'))) : undefined;
+      const baselineSite = options.baselineSite ? parseSiteReport(JSON.parse(await readFile(options.baselineSite, 'utf-8'))) : undefined;
+      const html = renderVisualReport(readiness, { site, baselineSite });
+      await writeFile(options.output, html, { flag: 'wx' });
+      console.log(`Visual report saved to ${options.output}`);
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
     }
   });
 

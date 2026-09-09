@@ -8,6 +8,10 @@
 
 `geoptimize` is a deterministic content-readiness lint for static websites and documentation. It checks reproducible properties such as document structure, sourced quantitative claims, structured-data hygiene, indexing controls, metadata quality, and repetitive wording — locally, in CI, or pre-commit.
 
+[![geoptimize visual report with five readiness scores and site health charts](docs/assets/report-demo.png)](docs/assets/report-demo.html)
+
+[Open the offline example](docs/assets/report-demo.html) · [After improvements](docs/assets/report-demo-after.html)
+
 ![geoptimize terminal demo](docs/assets/demo.gif)
 
 It does **not** predict ranking, indexing, rich results, Google AI Overviews, or citation by ChatGPT, Perplexity, or another AI system. Google states that its AI search features need no special AI text file or schema, and valid structured data does not guarantee a search feature. See [methodology and limitations](docs/methodology.md).
@@ -92,6 +96,30 @@ The site contract reports bounded crawl coverage, robots policy, page status, re
 
 The default limit is 20 page requests and the accepted range is 1–200. Cross-origin page links are recorded only as counts, and subsequent redirects outside the audited origin are not followed. JavaScript-inserted links, actual search-engine crawl/index state, rankings, traffic, and conversions remain outside this contract.
 
+## Visual report
+
+Keep the original total and all five readiness dimensions together with page-score
+and severity charts. Add site-audit data for HTTP charts, canonical/link/sitemap
+observations, and baseline comparisons. Search individual pages or expand findings
+to inspect evidence and suggested actions.
+
+```bash
+geo scan ./dist --dir --json > readiness.json
+geo audit-site https://example.com --max-pages 50 --json > site.json
+geo report readiness.json --site site.json --output report.html
+# Add --baseline-site previous-site.json for comparable site-count charts.
+```
+
+Open the resulting HTML in a browser. It works offline with no external fonts,
+scripts, or analytics. Existing output files are preserved; choose a new filename
+for another report. The scoring algorithm is unchanged. Readiness and site audit
+scope/timestamps remain visible because the two inputs can cover different pages.
+
+The example reports use the same synthetic HTML for readiness and site audits.
+Generate them with `node scripts/prepare-metrics-demo.mjs <empty-directory>` after
+building. Browser checks run with `node scripts/verify-visual-report.mjs <directory>`;
+set `GEO_CHROME` to a Chrome executable on platforms outside macOS.
+
 ## Site metrics and scan comparisons
 
 Summarize the site audit into 19 observed counts, including HTTP failures, redirects,
@@ -119,7 +147,7 @@ citations, traffic and conversions require separate collection and remain unmeas
 
 The terminal demo uses a synthetic three-page fixture with actual audit output.
 To reproduce it after building, run `vhs docs/assets/demo.tape`. The preparation script
-also accepts an empty output directory for inspecting the two JSON reports without VHS.
+also accepts an empty output directory for inspecting readiness and site JSON reports plus the interactive HTML examples without VHS.
 
 ## How it compares
 
