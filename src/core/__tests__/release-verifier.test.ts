@@ -10,7 +10,7 @@ const testDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(testDirectory, '../../..');
 const verifier = join(repositoryRoot, 'scripts/verify-release-v0.8.sh');
 const expectedCommit = '0123456789abcdef0123456789abcdef01234567';
-const tarballContent = 'verified geoptimize v0.8.0 candidate';
+const tarballContent = 'verified geoptimize v0.9.0 candidate';
 const expectedTarballHash = createHash('sha256').update(tarballContent).digest('hex');
 
 interface CommandResult {
@@ -29,7 +29,7 @@ function runVerifier(
       env: {
         ...process.env,
         PATH: `${mockBin}:${process.env.PATH}`,
-        MOCK_LATEST: '0.8.0',
+        MOCK_LATEST: '0.9.0',
         MOCK_NPM_GIT_HEAD: expectedCommit,
         MOCK_REPOSITORY_URL: 'git+https://github.com/cucuwang/geoptimize.git',
         MOCK_TAG_COMMIT: expectedCommit,
@@ -56,7 +56,7 @@ async function writeExecutable(path: string, contents: string): Promise<void> {
   await chmod(path, 0o755);
 }
 
-describe('v0.6 public release verifier', () => {
+describe('public release verifier', () => {
   let testRoot: string;
   let mockBin: string;
 
@@ -80,13 +80,13 @@ done
 
 case "$url" in
   https://registry.npmjs.org/geoptimize)
-    printf '{"dist-tags":{"latest":"%s"},"versions":{"0.8.0":{"gitHead":"%s","repository":{"url":"%s"},"homepage":"https://github.com/cucuwang/geoptimize","bugs":{"url":"https://github.com/cucuwang/geoptimize/issues"},"dist":{"tarball":"https://registry.npmjs.org/geoptimize/-/geoptimize-0.8.0.tgz"}}}}' "$MOCK_LATEST" "$MOCK_NPM_GIT_HEAD" "$MOCK_REPOSITORY_URL"
+    printf '{"dist-tags":{"latest":"%s"},"versions":{"0.9.0":{"gitHead":"%s","repository":{"url":"%s"},"homepage":"https://github.com/cucuwang/geoptimize","bugs":{"url":"https://github.com/cucuwang/geoptimize/issues"},"dist":{"tarball":"https://registry.npmjs.org/geoptimize/-/geoptimize-0.9.0.tgz"}}}}' "$MOCK_LATEST" "$MOCK_NPM_GIT_HEAD" "$MOCK_REPOSITORY_URL"
     ;;
-  https://registry.npmjs.org/geoptimize/-/geoptimize-0.8.0.tgz)
+  https://registry.npmjs.org/geoptimize/-/geoptimize-0.9.0.tgz)
     printf '%s' "$MOCK_TARBALL_CONTENT" > "$output_file"
     ;;
-  https://api.github.com/repos/cucuwang/geoptimize/releases/tags/v0.8.0)
-    printf '{"tag_name":"v0.8.0","draft":%s,"prerelease":%s}' "$MOCK_RELEASE_DRAFT" "$MOCK_RELEASE_PRERELEASE" > "$output_file"
+  https://api.github.com/repos/cucuwang/geoptimize/releases/tags/v0.9.0)
+    printf '{"tag_name":"v0.9.0","draft":%s,"prerelease":%s}' "$MOCK_RELEASE_DRAFT" "$MOCK_RELEASE_PRERELEASE" > "$output_file"
     printf '200'
     ;;
   *)
@@ -98,7 +98,7 @@ esac
 
     await writeExecutable(join(mockBin, 'git'), `#!/usr/bin/env bash
 set -euo pipefail
-printf '%s\trefs/tags/v0.8.0\n' "$MOCK_TAG_COMMIT"
+printf '%s\trefs/tags/v0.9.0\n' "$MOCK_TAG_COMMIT"
 `);
 
     await writeExecutable(join(mockBin, 'npm'), `#!/usr/bin/env bash
@@ -116,7 +116,7 @@ for binary in geoptimize geo geo-cli; do
   if [ "$binary" = "$MOCK_MISSING_BINARY" ]; then
     continue
   fi
-  printf '#!/usr/bin/env bash\nprintf "0.8.0\\n"\n' > "$prefix/node_modules/.bin/$binary"
+  printf '#!/usr/bin/env bash\nprintf "0.9.0\\n"\n' > "$prefix/node_modules/.bin/$binary"
   chmod +x "$prefix/node_modules/.bin/$binary"
 done
 `);
@@ -135,8 +135,8 @@ done
     expect(result.stdout).toContain('PASS: npm gitHead matches');
     expect(result.stdout).toContain('PASS: npm tarball SHA-256 matches the verified candidate');
     expect(result.stdout).toContain('All public release checks passed.');
-    expect(npmArgs).toMatch(/geoptimize-0\.8\.0\.tgz/);
-    expect(npmArgs).not.toContain('geoptimize@0.8.0');
+    expect(npmArgs).toMatch(/geoptimize-0\.9\.0\.tgz/);
+    expect(npmArgs).not.toContain('geoptimize@0.9.0');
   });
 
   it('fails closed when npm serves a different tarball', async () => {
@@ -177,7 +177,7 @@ done
     });
 
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('FAIL: v0.8.0 points to');
+    expect(result.stderr).toContain('FAIL: v0.9.0 points to');
   });
 
   it('fails closed when the GitHub Release is a draft', async () => {

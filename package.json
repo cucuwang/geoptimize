@@ -1,6 +1,6 @@
 {
   "name": "geoptimize",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Deterministic content-readiness lint for static websites and documentation",
   "type": "module",
   "main": "./dist/core/index.js",
@@ -34,7 +34,10 @@
     "README.md",
     "LICENSE",
     "docs/release-v0.8.md",
-    "scripts/verify-release-v0.8.sh"
+    "scripts/verify-release-v0.8.sh",
+    "docs/release-v0.9.md",
+    "docs/visual-report.md",
+    "docs/assets/"
   ],
   "scripts": {
     "build": "tsc",

@@ -59,6 +59,12 @@ jq -e '
   (.[0].files | map(.path) | index("dist/core/audit.js")) != null and
   (.[0].files | map(.path) | index("dist/core/static-audit.js")) != null and
   (.[0].files | map(.path) | index("dist/core/site-audit.js")) != null and
+  (.[0].files | map(.path) | index("dist/core/site-metrics.js")) != null and
+  (.[0].files | map(.path) | index("dist/core/visual-report.js")) != null and
+  (.[0].files | map(.path) | index("dist/core/readiness-comparison.js")) != null and
+  (.[0].files | map(.path) | index("docs/release-v0.9.md")) != null and
+  (.[0].files | map(.path) | index("docs/assets/report-demo.html")) != null and
+  (.[0].files | map(.path) | index("docs/assets/report-demo-after.html")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.8.md")) != null and
   (.[0].files | map(.path) | index("fixtures/v0.6/rule-corpus.ts")) != null and
   (.[0].files | map(.path) | index("examples/github-action-sample/.github/workflows/geoptimize.yml")) != null and
@@ -78,7 +84,7 @@ for binary in geoptimize geo geo-cli; do
   fi
 done
 
-for audit_command in audit audit-build audit-site; do
+for audit_command in audit audit-build audit-site metrics report; do
   "$CONSUMER_ROOT/node_modules/.bin/geoptimize" "$audit_command" --help >/dev/null
 done
 
@@ -90,6 +96,19 @@ done
   --json > "$VERIFY_ROOT/build-audit.json"
 jq -e '.contractVersion == "1.0" and (.checks | length > 0)' "$VERIFY_ROOT/page-audit.json" >/dev/null
 jq -e '.contractVersion == "1.0" and .source == "local-html" and (.pages | length == 1)' "$VERIFY_ROOT/build-audit.json" >/dev/null
+
+"$CONSUMER_ROOT/node_modules/.bin/geo" scan \
+  "$CONSUMER_ROOT/node_modules/geoptimize/examples/github-action-sample/site" \
+  --dir --details --json > "$VERIFY_ROOT/readiness.json"
+"$CONSUMER_ROOT/node_modules/.bin/geo" report "$VERIFY_ROOT/readiness.json" \
+  --baseline "$VERIFY_ROOT/readiness.json" --output "$VERIFY_ROOT/report.html"
+node - "$VERIFY_ROOT/readiness.json" "$VERIFY_ROOT/report.html" <<'NODE'
+const fs = require('node:fs');
+const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+const html = fs.readFileSync(process.argv[3], 'utf8');
+if (!report.scoringVersion || report.pages[0].ruleResults.length !== 17) throw new Error('Missing detailed rule evidence');
+if ((html.match(/<meter /g) || []).length !== 5 || !html.includes('data-panel="sources"')) throw new Error('Visual report contract failed');
+NODE
 
 MANIFEST=$(jq -n \
   --arg version "$PACKAGE_VERSION" \

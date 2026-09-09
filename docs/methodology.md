@@ -97,3 +97,25 @@ robots.txt matching covers applicable user-agent groups, `Allow`, `Disallow`, `*
 - [llms.txt proposal](https://llmstxt.org/)
 
 Last reviewed: 2026-08-22.
+
+## Site metric evidence version 1.0
+
+`audit-site` adds optional `metricEvidenceVersion` and complete `findings` fields to
+its 1.0 report, plus complete numeric counts alongside existing capped URL samples.
+Existing fields and readiness scoring remain unchanged. Consumers that assert an
+exact top-level key set must accept these additive fields. The `metrics` command
+accepts older 1.0 reports, but missing counts stay null and unversioned evidence
+cannot produce comparison deltas.
+
+Metric units distinguish pages, target URLs, canonical entries, and duplicate groups.
+Canonical review observations and orphan candidates are contextual findings, not
+confirmed faults. All counts apply to the bounded response-HTML crawl. No ranking,
+AI citation outcome, or entire-site denominator is inferred.
+
+A comparison requires the same metric evidence version, start URL, origin, page
+limit and requested URL set, completed queues, no robots skips or unavailable page
+responses, and chronological timestamps. Findings match by kind and observed target;
+changes in a grouped title/canonical observation can create both an added and an
+absent observation. An absent finding does not prove a fix, since content or response
+type may have changed. Bump the metric evidence version when measurement semantics
+change. Store reports produced by the same tool build for controlled comparisons.

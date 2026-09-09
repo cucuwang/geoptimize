@@ -140,12 +140,19 @@ export interface SiteAuditSitemap {
   urlCount: number;
 }
 
+export interface SiteFinding {
+  kind: string;
+  target: string;
+}
+
 export interface SiteAuditReport {
   contractVersion: '1.0';
   startUrl: string;
   origin: string;
   maxPages: number;
   crawledPages: number;
+  findings?: SiteFinding[];
+  metricEvidenceVersion?: '1.0';
   truncated: boolean;
   robots: {
     url: string;
@@ -176,15 +183,33 @@ export interface ScoringRule {
   evaluate: (doc: ParsedDocument) => RuleResult;
 }
 
+export interface RuleEvidence extends RuleResult {
+  id: string;
+  dimension: Dimension;
+  weight: number;
+}
+
+export type SourceCapture = 'local-file' | 'response-html' | 'browser-rendered-html' | 'provided-html' | 'markdown';
+
+export interface ScanOptions {
+  /** Include rule evidence and a bounded source excerpt in the saved report. */
+  details?: boolean;
+  /** Provenance for callers that already hold evaluated HTML. File/URL scans set this automatically. */
+  sourceCapture?: SourceCapture;
+}
+
 export interface PageAnalysis {
   url: string;
   title: string;
   scores: DimensionScores;
+  ruleResults?: RuleEvidence[];
+  sourcePreview?: { text: string; truncated: boolean; format: 'html' | 'markdown'; capture: SourceCapture };
   issues: Issue[];
   suggestions: Suggestion[];
 }
 
 export interface ScanReport {
+  scoringVersion?: string;
   pages: PageAnalysis[];
   overall: DimensionScores;
   summary: string;

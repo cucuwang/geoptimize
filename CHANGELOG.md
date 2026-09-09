@@ -2,6 +2,22 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## 0.9.0
+
+### Added
+
+- Added 19 site metrics with complete finding counts and bounded scan comparisons.
+- Added offline HTML reports with the original five readiness dimensions, page and severity charts, rule drilldowns, searchable pages, and clickable site evidence.
+- Added optional `scan --details` output containing all 17 original rule results, versioned scoring evidence, and bounded source excerpts with capture provenance.
+- Added readiness baseline comparisons and matched before/after source excerpts, with score, scope, timestamp and evidence validation.
+- Included interactive example reports and refreshed the terminal demonstration.
+
+### Compatibility
+
+- Preserved the scoring algorithm and default `scan --json` output. Detailed evidence is opt-in.
+- Older site reports remain readable; unavailable counts and incompatible comparisons are labeled explicitly.
+- Retained the security dependency updates from 0.8.0.
+
 ## 0.8.0
 
 ### Changed

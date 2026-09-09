@@ -178,10 +178,12 @@ describe('v0.6 JSON automation contract', () => {
 
   it('ships release and rollback instructions with the package', async () => {
     const packageJson = JSON.parse(await readFile(join(repositoryRoot, 'package.json'), 'utf8'));
-    const releaseGuide = await readFile(join(repositoryRoot, 'docs/release-v0.7.md'), 'utf8');
+    const releaseGuide = await readFile(join(repositoryRoot, 'docs/release-v0.9.md'), 'utf8');
     const publicVerifier = await readFile(join(repositoryRoot, 'scripts/verify-release-v0.8.sh'), 'utf8');
 
-    expect(packageJson.files).toContain('docs/release-v0.7.md');
+    expect(packageJson.files).toContain('docs/release-v0.9.md');
+    expect(packageJson.files).toContain('docs/visual-report.md');
+    expect(packageJson.files).toContain('docs/assets/');
     expect(packageJson.files).toContain('fixtures/');
     expect(packageJson.files).toContain('examples/github-action-sample/');
     expect(packageJson.files).toContain('scripts/verify-release-candidate.sh');
@@ -192,7 +194,7 @@ describe('v0.6 JSON automation contract', () => {
       'npm run release:check && bash scripts/verify-publish-source.sh',
     );
     expect(releaseGuide).toContain('## Rollback');
-    expect(releaseGuide).toContain('npm dist-tag add geoptimize@0.6.2 latest');
+    expect(releaseGuide).toContain('npm dist-tag add geoptimize@0.8.0 latest');
     expect(releaseGuide).toContain('<verified-package-sha256>');
     expect(publicVerifier).toContain('.gitHead');
     expect(publicVerifier).toContain('EXPECTED_REPOSITORY_URL');

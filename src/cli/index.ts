@@ -6,6 +6,8 @@ import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import { scan, scanDirectory, parseHtml, parseMarkdown, scanUrl } from '../core/scanner.js';
 import { audit } from '../core/audit.js';
+import { parseSiteReport, summarizeSite } from '../core/site-metrics.js';
+import { parseScanReport, renderVisualReport } from '../core/visual-report.js';
 import { auditSite } from '../core/site-audit.js';
 import { generate } from '../core/generator.js';
 import { detectAvailableCLIs, scoreWithAllAvailable } from '../core/external-scorers.js';
@@ -21,7 +23,7 @@ const program = new Command();
 program
   .name('geoptimize')
   .description('Deterministic content-readiness lint for websites and documentation')
-  .version('0.8.0');
+  .version('0.9.0');
 
 // ── scan command ───────────────────────────────────────────────────
 
@@ -30,8 +32,9 @@ program
   .description('Scan a URL or directory for content-readiness regressions')
   .option('--json', 'Output raw JSON report')
   .option('--dir', 'Treat target as a local directory instead of a URL')
+  .option('--details', 'Include rule evidence and up to 6000 characters of source per page')
   .option('--multi-ai', 'Add experimental reviews from available AI CLIs (gemini, copilot)')
-  .action(async (target: string, options: { json?: boolean; dir?: boolean; multiAi?: boolean }) => {
+  .action(async (target: string, options: { json?: boolean; dir?: boolean; multiAi?: boolean; details?: boolean }) => {
     try {
       if (!target || target.trim().length === 0) {
         console.error(chalk.red('Error: Please provide a URL or directory path.'));
@@ -40,7 +43,7 @@ program
         process.exit(1);
       }
       const scanTarget = resolveTarget(target, options.dir);
-      const report = await scan(scanTarget);
+      const report = await scan(scanTarget, { details: options.details });
 
       if (options.multiAi) {
         const multiReport = await runMultiAiScan(report, target, !!options.json);
@@ -110,6 +113,75 @@ program
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
+    }
+  });
+
+program
+  .command('report <scan-json>')
+  .description('Create an offline visual report with the original five readiness scores')
+  .requiredOption('--output <path>', 'New HTML output file (existing files are preserved)')
+  .option('--site <path>', 'Optional audit-site JSON for website health charts')
+  .option('--baseline-site <path>', 'Previous audit-site JSON for count comparisons')
+  .option('--baseline <path>', 'Previous detailed scan JSON for readiness scores and source comparisons')
+  .action(async (path: string, options: { output: string; site?: string; baselineSite?: string; baseline?: string }) => {
+    try {
+      const readiness = parseScanReport(JSON.parse(await readFile(path, 'utf-8')));
+      const site = options.site ? parseSiteReport(JSON.parse(await readFile(options.site, 'utf-8'))) : undefined;
+      const baselineSite = options.baselineSite ? parseSiteReport(JSON.parse(await readFile(options.baselineSite, 'utf-8'))) : undefined;
+      const baseline = options.baseline ? parseScanReport(JSON.parse(await readFile(options.baseline, 'utf-8'))) : undefined;
+      const html = renderVisualReport(readiness, { site, baselineSite, baseline });
+      await writeFile(options.output, html, { flag: 'wx' });
+      console.log(`Visual report saved to ${options.output}`);
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command('metrics <report>')
+  .description('Summarize saved audit-site JSON and compare a previous scan')
+  .option('--baseline <path>', 'Previous audit-site JSON report')
+  .option('--json', 'Output metrics and comparison as JSON')
+  .action(async (path: string, options: { baseline?: string; json?: boolean }) => {
+    try {
+      const current = parseSiteReport(JSON.parse(await readFile(path, 'utf-8')));
+      const baseline = options.baseline
+        ? parseSiteReport(JSON.parse(await readFile(options.baseline, 'utf-8'))) : undefined;
+      const report = summarizeSite(current, baseline);
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+        return;
+      }
+      console.log(chalk.bold('Site Metrics'));
+      console.log(`${report.startUrl} | ${report.timestamp}`);
+      console.log(report.scope);
+      if (report.comparison) {
+        console.log(`Baseline: ${report.comparison.baselineTimestamp}`);
+        if (!report.comparison.comparable) console.log(`Comparison unavailable: ${report.comparison.reasons.join(' ')}`);
+      }
+      for (const metric of report.metrics) {
+        const change = report.comparison?.changes.find(c => c.id === metric.id);
+        const delta = change?.delta;
+        const suffix = delta === null || delta === undefined ? '' : ` (${delta > 0 ? '+' : ''}${delta})`;
+        console.log(`  ${metric.label.padEnd(39)} ${metric.value === null ? 'Not measured' : `${metric.value} ${metric.unit}`}${suffix}`);
+      }
+      const findings = report.comparison?.findings;
+      if (findings) {
+        for (const [label, items] of [
+          ['New observations', findings.added],
+          ['No longer observed', findings.noLongerObserved],
+          ['Still observed', findings.persisting],
+        ] as const) {
+          console.log(`${label}: ${items.length}`);
+          for (const finding of items) console.log(`  ${finding.kind}: ${finding.target}`);
+        }
+      }
+      if (findings) console.log('Absent observations can also reflect changed content or response types; inspect the source audit.');
+      console.log('AI mentions, citations, traffic and conversions: Not measured.');
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
     }
   });
 

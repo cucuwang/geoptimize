@@ -566,7 +566,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
       'crawl-coverage',
       'Bounded crawl coverage',
       pages.length === 0 ? 'FAIL' : truncated ? 'WARNING' : 'PASS',
-      { crawledPages: pages.length, maxPages, queuedButUnchecked: remainingUrls.slice(0, 20), truncated },
+      { crawledPages: pages.length, maxPages, queuedUrlCount: new Set(remainingUrls).size, queuedButUnchecked: remainingUrls.slice(0, 20), truncated },
       truncated
         ? 'The page limit was reached while same-origin URLs remained in the deterministic queue.'
         : 'The deterministic queue completed within the configured page limit.',
@@ -642,6 +642,8 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
             : 'N/A',
       {
         discoveredTargetCount: allInternalTargets.size,
+        brokenTargetCount: brokenInternalTargets.length,
+        uncheckedTargetCount: uncheckedInternalTargets.length,
         brokenTargets: brokenInternalTargets.slice(0, 20),
         uncheckedTargets: uncheckedInternalTargets.slice(0, 20),
       },
@@ -663,6 +665,10 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
       canonicalStatus,
       {
         htmlPageCount: htmlPages.length,
+        missingCanonicalCount: missingCanonicals.length,
+        malformedCanonicalCount: malformedCanonicals.length,
+        nonSelfCanonicalCount: nonSelfCanonicals.length,
+        sharedCanonicalGroupCount: duplicateCanonicals.length,
         missingCanonicals: missingCanonicals.slice(0, 20),
         malformedCanonicals: malformedCanonicals.slice(0, 20),
         nonSelfCanonicals: nonSelfCanonicals.slice(0, 20),
@@ -693,6 +699,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
         unavailableSitemaps: unavailableSitemaps.map((sitemap) => sitemap.url).slice(0, 20),
         brokenSitemapPages: brokenSitemapPages.slice(0, 20),
         unavailableSitemapPages: unavailableSitemapPages.slice(0, 20),
+        crawledButMissingCount: missingFromSitemap.length,
         crawledButMissing: missingFromSitemap.slice(0, 20),
       },
       sitemapStatus === 'N/A'
@@ -744,6 +751,19 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
     origin,
     maxPages,
     crawledPages: pages.length,
+    metricEvidenceVersion: '1.0',
+    findings: [
+      ...failedPages.map(p => ({ kind: 'http-error', target: p.output.requestedUrl })),
+      ...longRedirectChains.map(p => ({ kind: 'multi-hop-redirect', target: p.output.requestedUrl })),
+      ...brokenInternalTargets.map(target => ({ kind: 'broken-internal-target', target })),
+      ...missingCanonicals.map(target => ({ kind: 'missing-canonical', target })),
+      ...malformedCanonicals.map(target => ({ kind: 'malformed-canonical', target })),
+      ...nonSelfCanonicals.map(target => ({ kind: 'non-self-canonical', target })),
+      ...duplicateCanonicals.map(target => ({ kind: 'shared-canonical', target })),
+      ...missingFromSitemap.map(target => ({ kind: 'sitemap-omission', target })),
+      ...orphanCandidates.map(target => ({ kind: 'orphan-candidate', target })),
+      ...duplicateTitles.map(target => ({ kind: 'duplicate-title', target })),
+    ],
     truncated,
     robots: {
       url: robotsResult.url,

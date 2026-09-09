@@ -12,6 +12,10 @@
 
 `geoptimize` is a deterministic content-readiness lint for static websites and documentation. It checks reproducible properties such as document structure, sourced quantitative claims, structured-data hygiene, indexing controls, metadata quality, and repetitive wording — locally, in CI, or pre-commit.
 
+[![geoptimize visual report with five readiness scores and site health charts](docs/assets/report-demo.png)](docs/assets/report-demo.html)
+
+[Open the offline example](docs/assets/report-demo.html) · [After improvements](docs/assets/report-demo-after.html)
+
 ![geoptimize terminal demo](docs/assets/demo.gif)
 
 It does **not** predict ranking, indexing, rich results, Google AI Overviews, or citation by ChatGPT, Perplexity, or another AI system. Google states that its AI search features need no special AI text file or schema, and valid structured data does not guarantee a search feature. See [methodology and limitations](docs/methodology.md).
@@ -96,6 +100,69 @@ The site contract reports bounded crawl coverage, robots policy, page status, re
 
 The default limit is 20 page requests and the accepted range is 1–200. Cross-origin page links are recorded only as counts, and subsequent redirects outside the audited origin are not followed. JavaScript-inserted links, actual search-engine crawl/index state, rankings, traffic, and conversions remain outside this contract.
 
+## Visual report
+
+Keep the original total and all five readiness dimensions together with page-score
+and severity charts. Add site-audit data for HTTP charts, canonical/link/sitemap
+observations, and baseline comparisons. Search individual pages or expand findings
+to inspect evidence and suggested actions.
+
+```bash
+geo scan ./dist --dir --details --json > readiness.json
+geo audit-site https://example.com --max-pages 50 --json > site.json
+geo report readiness.json --site site.json --output report.html
+# Add --baseline previous-readiness.json for score and source comparisons.
+# Add --baseline-site previous-site.json for comparable site-count charts.
+```
+
+Detailed scans include original rule results and a source excerpt of up to 6000
+characters per page. Review captured source before sharing. Reports without details
+still open, with unavailable rule/source evidence labeled explicitly.
+
+Click score distributions to filter pages, or a severity label to inspect those
+scoring findings. Site finding controls expose the complete affected target list.
+Open a dimension to inspect rule points and diagnostics. A compatible readiness
+baseline adds total/dimension changes and captured before/after source excerpts.
+
+Open the resulting HTML in a browser. It works offline with no external fonts,
+scripts, or analytics. Existing output files are preserved; choose a new filename
+for another report. The scoring algorithm is unchanged. Readiness and site audit
+scope/timestamps remain visible because the two inputs can cover different pages.
+
+The example reports use the same synthetic HTML for readiness and site audits.
+In a repository checkout, generate them with `node scripts/prepare-metrics-demo.mjs <empty-directory>` after
+building. Browser checks run with `node scripts/verify-visual-report.mjs <directory>`;
+set `GEO_CHROME` to a Chrome executable on platforms outside macOS.
+
+## Site metrics and scan comparisons
+
+Summarize the site audit into 19 observed counts, including HTTP failures, redirects,
+internal link targets, canonical findings, sitemap discrepancies and duplicate titles.
+Save each scan to a new JSON file to retain its timestamp and evidence.
+
+```bash
+geo audit-site https://example.com --max-pages 50 --json > before.json
+# After updating the site, scan the same URL with the same limit.
+geo audit-site https://example.com --max-pages 50 --json > after.json
+geo metrics after.json --baseline before.json
+geo metrics after.json --baseline before.json --json
+```
+
+The comparison lists count differences and new, persisting, and no-longer-observed
+findings. An absent observation needs evidence review before calling it a repair.
+Changes in origin, start URL, page limit, crawled URL set, or metric evidence version
+suppress deltas. Partial crawls, robots skips, unavailable requests, and a newer
+baseline also suppress comparison. Absolute counts remain available.
+
+Counts use complete evidence, even when the detailed audit displays only 20 sample
+URLs. Older reports without complete counts display `Not measured`. Queue completion
+is bounded discovery, so no whole-site coverage percentage is inferred. AI mentions,
+citations, traffic and conversions require separate collection and remain unmeasured.
+
+The terminal demo uses a synthetic three-page fixture with actual audit output.
+To reproduce it after building, run `vhs docs/assets/demo.tape`. The preparation script
+also accepts an empty output directory for inspecting readiness and site JSON reports plus the interactive HTML examples without VHS.
+
 ## How it compares
 
 | | geoptimize | Lighthouse-style SEO audits | Hosted GEO platforms |
@@ -120,7 +187,7 @@ node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.tot
 The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimize-content-readiness-check) is advisory by default. It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.8.0
+- uses: cucuwang/geoptimize@v0.9.0
   with:
     path: dist
 ```
@@ -128,7 +195,7 @@ The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimiz
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.8.0
+- uses: cucuwang/geoptimize@v0.9.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -250,7 +317,7 @@ npx skills add cucuwang/geoptimize
 
 ## Project status
 
-Version 0.8 moves the package and integrations to geoptimize while retaining the scoring and audit contracts. Release acceptance and rollback are documented in [docs/release-v0.8.md](docs/release-v0.8.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
+Version 0.9 adds site metrics, offline visual reports, detailed rule evidence and baseline comparisons while retaining the existing scoring contract. Release acceptance and rollback are documented in [docs/release-v0.9.md](docs/release-v0.9.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 

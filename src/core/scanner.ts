@@ -16,8 +16,11 @@ import type {
   Issue,
   Suggestion,
   Dimension,
+  RuleEvidence,
+  ScanOptions,
 } from './types.js';
 import { allRules } from './rules.js';
+export const SCORING_VERSION = 'readiness-v0.6.0-details-v1';
 
 // ── Parsers ────────────────────────────────────────────────────────
 
@@ -225,7 +228,7 @@ export function parseMarkdown(md: string, url: string): ParsedDocument {
 
 // ── Scoring ────────────────────────────────────────────────────────
 
-function aggregateScores(doc: ParsedDocument): { scores: DimensionScores; issues: Issue[]; suggestions: Suggestion[] } {
+function aggregateScores(doc: ParsedDocument, options: ScanOptions = {}): { scores: DimensionScores; issues: Issue[]; suggestions: Suggestion[]; ruleResults?: RuleEvidence[] } {
   const dimensionTotals: Record<Dimension, { score: number; maxScore: number }> = {
     structure: { score: 0, maxScore: 0 },
     citability: { score: 0, maxScore: 0 },
@@ -234,11 +237,13 @@ function aggregateScores(doc: ParsedDocument): { scores: DimensionScores; issues
     contentDensity: { score: 0, maxScore: 0 },
   };
 
+  const ruleResults: RuleEvidence[] = [];
   const allIssues: Issue[] = [];
   const allSuggestions: Suggestion[] = [];
 
   for (const rule of allRules) {
     const result = rule.evaluate(doc);
+    if (options.details) ruleResults.push({ id: rule.id, dimension: rule.dimension, weight: rule.weight, ...result });
     dimensionTotals[rule.dimension].score += result.score;
     dimensionTotals[rule.dimension].maxScore += result.maxScore;
     allIssues.push(...result.issues);
@@ -267,16 +272,22 @@ function aggregateScores(doc: ParsedDocument): { scores: DimensionScores; issues
 
   scores.total = scores.structure + scores.citability + scores.schema + scores.aiMetadata + scores.contentDensity;
 
-  return { scores, issues: allIssues, suggestions: allSuggestions };
+  return { scores, issues: allIssues, suggestions: allSuggestions, ...(options.details ? { ruleResults } : {}) };
 }
 
 // ── Public API ─────────────────────────────────────────────────────
 
-export function scanDocument(doc: ParsedDocument): PageAnalysis {
-  const { scores, issues, suggestions } = aggregateScores(doc);
+export function scanDocument(doc: ParsedDocument, options: ScanOptions = {}): PageAnalysis {
+  const { scores, issues, suggestions, ruleResults } = aggregateScores(doc, options);
+  const source = doc.html ?? doc.markdown ?? '';
   return {
     url: doc.url,
     title: doc.title,
+    ...(options.details ? { ruleResults, sourcePreview: {
+      text: source.slice(0, 6000), truncated: source.length > 6000,
+      capture: options.sourceCapture ?? (doc.html !== undefined ? 'provided-html' : 'markdown'),
+      format: (doc.html !== undefined ? 'html' : 'markdown') as 'html' | 'markdown',
+    } } : {}),
     scores,
     issues,
     suggestions,
@@ -285,7 +296,7 @@ export function scanDocument(doc: ParsedDocument): PageAnalysis {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-export async function scanFile(filePath: string): Promise<PageAnalysis> {
+export async function scanFile(filePath: string, options: ScanOptions = {}): Promise<PageAnalysis> {
   const fileStats = await stat(filePath);
   if (fileStats.size > MAX_FILE_SIZE) {
     throw new Error(`File too large (${(fileStats.size / 1024 / 1024).toFixed(1)}MB). Maximum is 5MB.`);
@@ -302,15 +313,16 @@ export async function scanFile(filePath: string): Promise<PageAnalysis> {
     throw new Error(`Unsupported file type: ${ext}`);
   }
 
-  return scanDocument(doc);
+  return scanDocument(doc, { ...options, sourceCapture: doc.html !== undefined ? 'local-file' : 'markdown' });
 }
 
-export async function scanDirectory(dirPath: string): Promise<ScanReport> {
+export async function scanDirectory(dirPath: string, options: ScanOptions = {}): Promise<ScanReport> {
   const pages: PageAnalysis[] = [];
-  await walkDir(dirPath, pages);
+  await walkDir(dirPath, pages, options);
 
   if (pages.length === 0) {
     return {
+      ...(options.details ? { scoringVersion: SCORING_VERSION } : {}),
       pages: [],
       overall: { structure: 0, citability: 0, schema: 0, aiMetadata: 0, contentDensity: 0, total: 0 },
       summary: 'No HTML or Markdown files found in directory.',
@@ -321,7 +333,7 @@ export async function scanDirectory(dirPath: string): Promise<ScanReport> {
   const overall = averageScores(pages.map((p) => p.scores));
   const summary = generateSummary(overall, pages.length);
 
-  return { pages, overall, summary, timestamp: new Date().toISOString() };
+  return { pages, overall, summary, timestamp: new Date().toISOString(), ...(options.details ? { scoringVersion: SCORING_VERSION } : {}) };
 }
 
 function validateUrl(raw: string): URL {
@@ -481,7 +493,7 @@ export async function fetchUrlResource(url: string, options: UrlFetchOptions = {
   };
 }
 
-export async function scanUrl(url: string): Promise<ScanReport> {
+export async function scanUrl(url: string, options: ScanOptions = {}): Promise<ScanReport> {
   const resource = await fetchUrlResource(url);
   if (resource.status < 200 || resource.status >= 300) {
     throw new Error(`Failed to fetch ${url}: ${resource.status} ${resource.statusText}`);
@@ -495,9 +507,10 @@ export async function scanUrl(url: string): Promise<ScanReport> {
 
   const doc = parseHtml(resource.html, url);
 
-  const analysis = scanDocument(doc);
+  const analysis = scanDocument(doc, { ...options, sourceCapture: resource.renderedWithBrowser ? 'browser-rendered-html' : 'response-html' });
 
   return {
+    ...(options.details ? { scoringVersion: SCORING_VERSION } : {}),
     pages: [analysis],
     overall: analysis.scores,
     summary: generateSummary(analysis.scores, 1),
@@ -505,13 +518,14 @@ export async function scanUrl(url: string): Promise<ScanReport> {
   };
 }
 
-export async function scan(target: ScanTarget): Promise<ScanReport> {
+export async function scan(target: ScanTarget, options: ScanOptions = {}): Promise<ScanReport> {
   switch (target.type) {
     case 'url':
-      return scanUrl(target.path);
+      return scanUrl(target.path, options);
     case 'file': {
-      const analysis = await scanFile(target.path);
+      const analysis = await scanFile(target.path, options);
       return {
+        ...(options.details ? { scoringVersion: SCORING_VERSION } : {}),
         pages: [analysis],
         overall: analysis.scores,
         summary: generateSummary(analysis.scores, 1),
@@ -519,13 +533,13 @@ export async function scan(target: ScanTarget): Promise<ScanReport> {
       };
     }
     case 'directory':
-      return scanDirectory(target.path);
+      return scanDirectory(target.path, options);
   }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
 
-async function walkDir(dirPath: string, pages: PageAnalysis[]): Promise<void> {
+async function walkDir(dirPath: string, pages: PageAnalysis[], options: ScanOptions): Promise<void> {
   const entries = await readdir(dirPath);
 
   for (const entry of entries) {
@@ -534,12 +548,12 @@ async function walkDir(dirPath: string, pages: PageAnalysis[]): Promise<void> {
 
     if (stats.isDirectory()) {
       if (entry.startsWith('.') || entry === 'node_modules') continue;
-      await walkDir(fullPath, pages);
+      await walkDir(fullPath, pages, options);
     } else {
       const ext = extname(entry).toLowerCase();
       if (['.html', '.htm', '.md', '.mdx'].includes(ext)) {
         try {
-          const analysis = await scanFile(fullPath);
+          const analysis = await scanFile(fullPath, options);
           pages.push(analysis);
         } catch {
           // Skip files that can't be parsed
