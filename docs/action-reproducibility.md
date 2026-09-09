@@ -1,6 +1,6 @@
 # Action reproducibility decision
 
-Decision: retain the composite Action for this PR; evaluate a bundle separately.
+Decision: retain the composite Action for this PR; evaluate a bundle separately in [issue #20](https://github.com/cucuwang/geoptimize/issues/20).
 Both Action metadata paths now pin setup-node to an upstream commit. The default
 package-spec remains the exact published geoptimize version. No runtime behavior
 or package-spec override has been removed.

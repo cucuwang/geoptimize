@@ -40,14 +40,14 @@ checks. Add further checks only after their real runs are healthy.
 `protect-release-tags` (ID 22617499) is already Active for `v*.*.*`, blocking updates,
 deletion and non-fast-forward changes with no bypass actors. Preserve it and v0.9.0.
 
-## Security feature settings (state not confirmed)
+## Security feature settings
 
 Open repository Settings → Security → **Advanced Security** (older UI: Code security
 and analysis). Enable/check each independently:
 
 | Feature | Expected state / next action |
 | --- | --- |
-| Dependency graph | Enabled; required by dependency review |
+| Dependency graph | **Action required:** Dependency Review run 34342823536 failed: graph not enabled / review unsupported. Enable it and rerun the check. |
 | Dependabot alerts | Enabled; triage high/critical findings |
 | Dependabot security updates | Enabled; weekly version updates are configured in YAML |
 | Secret Protection → Secret scanning | Enabled |
@@ -57,6 +57,10 @@ and analysis). Enable/check each independently:
 
 Public-repository availability does not prove a feature is configured. The connector
 cannot read these sensitive endpoints, so verify in the UI and record the date.
+Dependency Review specifically returned: "Dependency review is not supported on this
+repository. Please ensure that Dependency graph is enabled". Direct settings path:
+https://github.com/cucuwang/geoptimize/settings/security_analysis. This check is
+intentionally left blocking until the setting is enabled; do not add continue-on-error.
 Do not create a PAT solely to make these checks pass.
 
 ## Immutable releases (state not confirmed)
