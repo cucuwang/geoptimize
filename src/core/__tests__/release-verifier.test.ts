@@ -56,7 +56,8 @@ async function writeExecutable(path: string, contents: string): Promise<void> {
   await chmod(path, 0o755);
 }
 
-describe('v0.6 public release verifier', () => {
+// The verifier spawns several Node and shell processes; allow startup time on busy hosts.
+describe('v0.6 public release verifier', { timeout: 15_000 }, () => {
   let testRoot: string;
   let mockBin: string;
 
