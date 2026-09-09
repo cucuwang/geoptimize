@@ -122,5 +122,9 @@ if [ -n "${RELEASE_MANIFEST_OUT:-}" ]; then
   printf '%s\n' "$MANIFEST" > "$RELEASE_MANIFEST_OUT"
 fi
 
+if [ -n "${RELEASE_TARBALL_OUT:-}" ]; then
+  cp "$PACKAGE_TARBALL" "$RELEASE_TARBALL_OUT"
+fi
+
 printf '%s\n' "$MANIFEST"
 echo "Release candidate checks passed."
