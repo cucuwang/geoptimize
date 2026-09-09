@@ -30,7 +30,7 @@ The initial npm publish --dry-run correctly rejected already-published 0.9.0.
 PR preview now uses npm pack --dry-run against the verified tarball, with no force
 flag or weakened version/security gate. No package was published.
 
-## GitHub evidence on the current PR head
+## GitHub evidence before the applied-settings documentation update
 
 Commit `17986f9258d38028e06e47265ffc36c0878e361d`:
 
