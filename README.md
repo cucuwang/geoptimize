@@ -126,7 +126,7 @@ for another report. The scoring algorithm is unchanged. Readiness and site audit
 scope/timestamps remain visible because the two inputs can cover different pages.
 
 The example reports use the same synthetic HTML for readiness and site audits.
-Generate them with `node scripts/prepare-metrics-demo.mjs <empty-directory>` after
+In a repository checkout, generate them with `node scripts/prepare-metrics-demo.mjs <empty-directory>` after
 building. Browser checks run with `node scripts/verify-visual-report.mjs <directory>`;
 set `GEO_CHROME` to a Chrome executable on platforms outside macOS.
 
@@ -183,7 +183,7 @@ node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.tot
 The GitHub Action is advisory by default. Consume it from the repository pin until it appears on GitHub Marketplace (Marketplace listing is a checkbox on a GitHub Release, not an extra package). It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.8.0
+- uses: cucuwang/geoptimize@v0.9.0
   with:
     path: dist
 ```
@@ -191,7 +191,7 @@ The GitHub Action is advisory by default. Consume it from the repository pin unt
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.8.0
+- uses: cucuwang/geoptimize@v0.9.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -313,7 +313,7 @@ npx skills add cucuwang/geoptimize
 
 ## Project status
 
-Version 0.8 moves the package and integrations to geoptimize while retaining the scoring and audit contracts. Release acceptance and rollback are documented in [docs/release-v0.8.md](docs/release-v0.8.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
+Version 0.9 adds site metrics, offline visual reports, detailed rule evidence and baseline comparisons while retaining the existing scoring contract. Release acceptance and rollback are documented in [docs/release-v0.9.md](docs/release-v0.9.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 

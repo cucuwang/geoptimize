@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name('geoptimize')
   .description('Deterministic content-readiness lint for websites and documentation')
-  .version('0.8.0');
+  .version('0.9.0');
 
 // ── scan command ───────────────────────────────────────────────────
 
