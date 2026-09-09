@@ -14,7 +14,9 @@ actual composite Action, README commands and byte-identical Node candidate manif
 
 The verifier can export its already-tested tarball via `RELEASE_TARBALL_OUT`; it never
 re-packs for publication. Node 24 prepares a production SPDX 2.3 SBOM, SHA256SUMS and
-runs `npm publish <tarball> --dry-run --ignore-scripts`. PR CI exercises this path.
+previews the exact tarball with `npm pack <tarball> --dry-run --ignore-scripts`.
+PR CI exercises this non-publishing path. npm publish --dry-run rejects an already
+published version, so ordinary PRs use pack preview without bypassing that safeguard.
 `--ignore-scripts` applies to publishing the existing tarball only; all acceptance
 checks have already executed explicitly. Existing prepublishOnly remains intact.
 
@@ -29,7 +31,7 @@ version=$(node -p "JSON.parse(require('fs').readFileSync('package.json')).versio
 RELEASE_MANIFEST_OUT="$release_dir/candidate.json" RELEASE_TARBALL_OUT="$release_dir/geoptimize-$version.tgz" npm run release:check
 node scripts/prepare-release-artifacts.mjs "$release_dir"
 (cd "$release_dir" && sha256sum --check SHA256SUMS)
-npm publish "$release_dir/geoptimize-$version.tgz" --dry-run --ignore-scripts --access public
+npm pack "$release_dir/geoptimize-$version.tgz" --dry-run --ignore-scripts --json
 ```
 
 On GitHub, Actions → Release → Run workflow → branch main → leave publish false.

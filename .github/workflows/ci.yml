@@ -45,7 +45,7 @@ jobs:
           mv "$RUNNER_TEMP/release-assets/geoptimize-24.tgz" "$RUNNER_TEMP/release-assets/geoptimize-$version.tgz"
           node scripts/prepare-release-artifacts.mjs "$RUNNER_TEMP/release-assets"
           (cd "$RUNNER_TEMP/release-assets" && sha256sum --check SHA256SUMS)
-          npm publish "$RUNNER_TEMP/release-assets/geoptimize-$version.tgz" --dry-run --ignore-scripts --access public
+          npm pack "$RUNNER_TEMP/release-assets/geoptimize-$version.tgz" --dry-run --ignore-scripts --json > "$RUNNER_TEMP/release-assets/package-preview.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: matrix.node-version == 24
         with:
