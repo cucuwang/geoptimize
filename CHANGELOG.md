@@ -2,6 +2,13 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## 0.8.1
+
+### Documentation
+
+- Added the aeoptimize project lineage, legacy package link, and migration guide to the npm package.
+- Preserved public API and CLI names and runtime behavior.
+
 ## 0.8.0
 
 ### Changed

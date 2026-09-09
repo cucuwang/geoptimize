@@ -120,7 +120,7 @@ node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.tot
 The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimize-content-readiness-check) is advisory by default. It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.8.0
+- uses: cucuwang/geoptimize@v0.8.1
   with:
     path: dist
 ```
@@ -128,7 +128,7 @@ The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimiz
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.8.0
+- uses: cucuwang/geoptimize@v0.8.1
   with:
     path: dist
     fail-on-low-score: 'true'

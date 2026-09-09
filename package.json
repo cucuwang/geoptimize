@@ -1,7 +1,7 @@
 {
   "name": "geoptimize",
-  "version": "0.8.0",
-  "description": "Deterministic content-readiness lint for static websites and documentation",
+  "version": "0.8.1",
+  "description": "Deterministic content-readiness lint for static websites and documentation, formerly aeoptimize",
   "type": "module",
   "main": "./dist/core/index.js",
   "bin": {
@@ -34,7 +34,8 @@
     "README.md",
     "LICENSE",
     "docs/release-v0.8.md",
-    "scripts/verify-release-v0.8.sh"
+    "scripts/verify-release-v0.8.sh",
+    "docs/migrating-from-aeoptimize.md"
   ],
   "scripts": {
     "build": "tsc",
@@ -55,7 +56,8 @@
     "generative-engine-optimization",
     "claude-code-skill",
     "vite-plugin",
-    "nextjs-plugin"
+    "nextjs-plugin",
+    "aeoptimize"
   ],
   "homepage": "https://github.com/cucuwang/geoptimize",
   "repository": {
