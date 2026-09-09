@@ -56,7 +56,7 @@ async function writeExecutable(path: string, contents: string): Promise<void> {
   await chmod(path, 0o755);
 }
 
-describe('v0.6 public release verifier', () => {
+describe('public release verifier', () => {
   let testRoot: string;
   let mockBin: string;
 
@@ -135,7 +135,7 @@ done
     expect(result.stdout).toContain('PASS: npm gitHead matches');
     expect(result.stdout).toContain('PASS: npm tarball SHA-256 matches the verified candidate');
     expect(result.stdout).toContain('All public release checks passed.');
-    expect(npmArgs).toMatch(/geoptimize-0\.8\.0\.tgz/);
+    expect(npmArgs).toMatch(/geoptimize-0\.9\.0\.tgz/);
     expect(npmArgs).not.toContain('geoptimize@0.9.0');
   });
 
