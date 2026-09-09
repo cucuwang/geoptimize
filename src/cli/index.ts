@@ -6,6 +6,7 @@ import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import { scan, scanDirectory, parseHtml, parseMarkdown, scanUrl } from '../core/scanner.js';
 import { audit } from '../core/audit.js';
+import { parseSiteReport, summarizeSite } from '../core/site-metrics.js';
 import { auditSite } from '../core/site-audit.js';
 import { generate } from '../core/generator.js';
 import { detectAvailableCLIs, scoreWithAllAvailable } from '../core/external-scorers.js';
@@ -110,6 +111,53 @@ program
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
       process.exit(1);
+    }
+  });
+
+program
+  .command('metrics <report>')
+  .description('Summarize saved audit-site JSON and compare a previous scan')
+  .option('--baseline <path>', 'Previous audit-site JSON report')
+  .option('--json', 'Output metrics and comparison as JSON')
+  .action(async (path: string, options: { baseline?: string; json?: boolean }) => {
+    try {
+      const current = parseSiteReport(JSON.parse(await readFile(path, 'utf-8')));
+      const baseline = options.baseline
+        ? parseSiteReport(JSON.parse(await readFile(options.baseline, 'utf-8'))) : undefined;
+      const report = summarizeSite(current, baseline);
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+        return;
+      }
+      console.log(chalk.bold('Site Metrics'));
+      console.log(`${report.startUrl} | ${report.timestamp}`);
+      console.log(report.scope);
+      if (report.comparison) {
+        console.log(`Baseline: ${report.comparison.baselineTimestamp}`);
+        if (!report.comparison.comparable) console.log(`Comparison unavailable: ${report.comparison.reasons.join(' ')}`);
+      }
+      for (const metric of report.metrics) {
+        const change = report.comparison?.changes.find(c => c.id === metric.id);
+        const delta = change?.delta;
+        const suffix = delta === null || delta === undefined ? '' : ` (${delta > 0 ? '+' : ''}${delta})`;
+        console.log(`  ${metric.label.padEnd(39)} ${metric.value === null ? 'Not measured' : `${metric.value} ${metric.unit}`}${suffix}`);
+      }
+      const findings = report.comparison?.findings;
+      if (findings) {
+        for (const [label, items] of [
+          ['New observations', findings.added],
+          ['No longer observed', findings.noLongerObserved],
+          ['Still observed', findings.persisting],
+        ] as const) {
+          console.log(`${label}: ${items.length}`);
+          for (const finding of items) console.log(`  ${finding.kind}: ${finding.target}`);
+        }
+      }
+      if (findings) console.log('Absent observations can also reflect changed content or response types; inspect the source audit.');
+      console.log('AI mentions, citations, traffic and conversions: Not measured.');
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
     }
   });
 

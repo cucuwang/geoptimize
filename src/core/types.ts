@@ -140,12 +140,19 @@ export interface SiteAuditSitemap {
   urlCount: number;
 }
 
+export interface SiteFinding {
+  kind: string;
+  target: string;
+}
+
 export interface SiteAuditReport {
   contractVersion: '1.0';
   startUrl: string;
   origin: string;
   maxPages: number;
   crawledPages: number;
+  findings?: SiteFinding[];
+  metricEvidenceVersion?: '1.0';
   truncated: boolean;
   robots: {
     url: string;

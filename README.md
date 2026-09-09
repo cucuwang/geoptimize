@@ -92,6 +92,35 @@ The site contract reports bounded crawl coverage, robots policy, page status, re
 
 The default limit is 20 page requests and the accepted range is 1–200. Cross-origin page links are recorded only as counts, and subsequent redirects outside the audited origin are not followed. JavaScript-inserted links, actual search-engine crawl/index state, rankings, traffic, and conversions remain outside this contract.
 
+## Site metrics and scan comparisons
+
+Summarize the site audit into 19 observed counts, including HTTP failures, redirects,
+internal link targets, canonical findings, sitemap discrepancies and duplicate titles.
+Save each scan to a new JSON file to retain its timestamp and evidence.
+
+```bash
+geo audit-site https://example.com --max-pages 50 --json > before.json
+# After updating the site, scan the same URL with the same limit.
+geo audit-site https://example.com --max-pages 50 --json > after.json
+geo metrics after.json --baseline before.json
+geo metrics after.json --baseline before.json --json
+```
+
+The comparison lists count differences and new, persisting, and no-longer-observed
+findings. An absent observation needs evidence review before calling it a repair.
+Changes in origin, start URL, page limit, crawled URL set, or metric evidence version
+suppress deltas. Partial crawls, robots skips, unavailable requests, and a newer
+baseline also suppress comparison. Absolute counts remain available.
+
+Counts use complete evidence, even when the detailed audit displays only 20 sample
+URLs. Older reports without complete counts display `Not measured`. Queue completion
+is bounded discovery, so no whole-site coverage percentage is inferred. AI mentions,
+citations, traffic and conversions require separate collection and remain unmeasured.
+
+The terminal demo uses a synthetic three-page fixture with actual audit output.
+To reproduce it after building, run `vhs docs/assets/demo.tape`. The preparation script
+also accepts an empty output directory for inspecting the two JSON reports without VHS.
+
 ## How it compares
 
 | | geoptimize | Lighthouse-style SEO audits | Hosted GEO platforms |

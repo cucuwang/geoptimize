@@ -8,3 +8,4 @@ export * from './ai-prompt.js';
 export * from './external-scorers.js';
 export * from './merger.js';
 export * from './static-audit.js';
+export * from './site-metrics.js';
