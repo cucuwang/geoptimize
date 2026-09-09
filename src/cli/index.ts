@@ -32,8 +32,9 @@ program
   .description('Scan a URL or directory for content-readiness regressions')
   .option('--json', 'Output raw JSON report')
   .option('--dir', 'Treat target as a local directory instead of a URL')
+  .option('--details', 'Include rule evidence and up to 6000 characters of source per page')
   .option('--multi-ai', 'Add experimental reviews from available AI CLIs (gemini, copilot)')
-  .action(async (target: string, options: { json?: boolean; dir?: boolean; multiAi?: boolean }) => {
+  .action(async (target: string, options: { json?: boolean; dir?: boolean; multiAi?: boolean; details?: boolean }) => {
     try {
       if (!target || target.trim().length === 0) {
         console.error(chalk.red('Error: Please provide a URL or directory path.'));
@@ -42,7 +43,7 @@ program
         process.exit(1);
       }
       const scanTarget = resolveTarget(target, options.dir);
-      const report = await scan(scanTarget);
+      const report = await scan(scanTarget, { details: options.details });
 
       if (options.multiAi) {
         const multiReport = await runMultiAiScan(report, target, !!options.json);
@@ -121,12 +122,14 @@ program
   .requiredOption('--output <path>', 'New HTML output file (existing files are preserved)')
   .option('--site <path>', 'Optional audit-site JSON for website health charts')
   .option('--baseline-site <path>', 'Previous audit-site JSON for count comparisons')
-  .action(async (path: string, options: { output: string; site?: string; baselineSite?: string }) => {
+  .option('--baseline <path>', 'Previous detailed scan JSON for readiness scores and source comparisons')
+  .action(async (path: string, options: { output: string; site?: string; baselineSite?: string; baseline?: string }) => {
     try {
       const readiness = parseScanReport(JSON.parse(await readFile(path, 'utf-8')));
       const site = options.site ? parseSiteReport(JSON.parse(await readFile(options.site, 'utf-8'))) : undefined;
       const baselineSite = options.baselineSite ? parseSiteReport(JSON.parse(await readFile(options.baselineSite, 'utf-8'))) : undefined;
-      const html = renderVisualReport(readiness, { site, baselineSite });
+      const baseline = options.baseline ? parseScanReport(JSON.parse(await readFile(options.baseline, 'utf-8'))) : undefined;
+      const html = renderVisualReport(readiness, { site, baselineSite, baseline });
       await writeFile(options.output, html, { flag: 'wx' });
       console.log(`Visual report saved to ${options.output}`);
     } catch (error) {

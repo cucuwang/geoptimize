@@ -104,11 +104,21 @@ observations, and baseline comparisons. Search individual pages or expand findin
 to inspect evidence and suggested actions.
 
 ```bash
-geo scan ./dist --dir --json > readiness.json
+geo scan ./dist --dir --details --json > readiness.json
 geo audit-site https://example.com --max-pages 50 --json > site.json
 geo report readiness.json --site site.json --output report.html
+# Add --baseline previous-readiness.json for score and source comparisons.
 # Add --baseline-site previous-site.json for comparable site-count charts.
 ```
+
+Detailed scans include original rule results and a source excerpt of up to 6000
+characters per page. Review captured source before sharing. Reports without details
+still open, with unavailable rule/source evidence labeled explicitly.
+
+Click score distributions to filter pages, or a severity label to inspect those
+scoring findings. Site finding controls expose the complete affected target list.
+Open a dimension to inspect rule points and diagnostics. A compatible readiness
+baseline adds total/dimension changes and captured before/after source excerpts.
 
 Open the resulting HTML in a browser. It works offline with no external fonts,
 scripts, or analytics. Existing output files are preserved; choose a new filename

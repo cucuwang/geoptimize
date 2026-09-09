@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseScanReport, renderVisualReport } from '../visual-report.js';
-import { parseHtml, scanDocument, scan } from '../scanner.js';
+import { parseHtml, scanDocument, scan, SCORING_VERSION } from '../scanner.js';
 import type { ScanReport } from '../types.js';
 
 function fixture(html = '<h1>Example</h1><p>A definition is an explanation of a term.</p>'): ScanReport {
@@ -73,5 +73,35 @@ describe('visual report', () => {
     expect(html).toContain('id="severity"');
     expect(html).toContain('Scoring severity');
     expect(html).toContain('All scoring observations');
+  });
+});
+
+
+describe('interactive readiness details', () => {
+  const detailed = (html: string): ScanReport => {
+    const page = scanDocument(parseHtml(html, 'https://example.com/'), { details: true });
+    return { pages: [page], overall: page.scores, timestamp: '2026-09-09T00:00:00Z', scoringVersion: SCORING_VERSION, summary: 'Fixture' };
+  };
+
+  it('renders baseline scores, all rule rows and escaped source examples', () => {
+    const before = detailed('<h3>Before</h3><p>Before copy.</p>');
+    const after = detailed('<h1>After</h1><p>After copy.</p><img src=x onerror=alert(1)>');
+    const html = renderVisualReport(after, { baseline: before });
+    expect(html).toContain(`Baseline ${before.overall.total} / 100`);
+    expect(html).toContain('heading-hierarchy');
+    expect(html).toContain('llms-txt-presence');
+    expect(html).toContain('id="source-comparisons"');
+    expect(html).toContain('provided-html');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(html).not.toContain('<img src=x');
+    expect(html.match(/<script>/g)).toHaveLength(1);
+  });
+
+  it('withholds unversioned baseline deltas and marks missing raw rule evidence', () => {
+    const old = fixture();
+    const html = renderVisualReport(old, { baseline: old });
+    expect(html).toContain('Baseline comparison unavailable');
+    expect(html).toContain('Rule details were not recorded');
+    expect(html).not.toContain('class="source-pair"');
   });
 });

@@ -1,7 +1,7 @@
 // Synthetic response-HTML fixture. No network requests or external measurements.
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { parseHtml, scanDocument } from '../dist/core/scanner.js';
+import { parseHtml, scanDocument, SCORING_VERSION } from '../dist/core/scanner.js';
 import { renderVisualReport } from '../dist/core/visual-report.js';
 import { auditSite } from '../dist/core/site-audit.js';
 
@@ -14,14 +14,19 @@ const origin = 'https://demo.example';
 const paths = ['/', '/guide', '/contact'];
 const badPage = await readFile(new URL('../src/core/__tests__/fixtures/bad-page.html', import.meta.url), 'utf8');
 const goodPage = await readFile(new URL('../src/core/__tests__/fixtures/good-page.html', import.meta.url), 'utf8');
-const pageHtml = (path) => (fixed ? goodPage : badPage)
+const sparsePage = '<html><head><title>Demo</title></head><body>Contact information</body></html>';
+const blockedPage = `<html><head><title>Demo</title><meta name="robots" content="noindex"></head><body>${'SEO '.repeat(350)}</body></html>`;
+const pageHtml = (path) => (fixed ? goodPage : path === '/guide' ? sparsePage : path === '/contact' ? blockedPage : badPage)
   .replace(/href="\/[^"\n]*"/g, 'href="/"')
   .replace(/<title>.*?<\/title>/s, `<title>${fixed ? `Demo ${path}` : 'Demo'}</title>`)
   .replace('</head>', `${fixed ? `<link rel="canonical" href="${origin}${path}">` : ''}</head>`)
   .replace('</body>', `${paths.map(p => `<a href="${p}">${p}</a>`).join('')}</body>`);
 const readiness = () => {
-  const pages = paths.map(path => scanDocument(parseHtml(pageHtml(path), `${origin}${path}`)));
-  return { pages, overall: pages[0].scores, summary: 'Synthetic demonstration', timestamp: new Date().toISOString() };
+  const pages = paths.map(path => scanDocument(parseHtml(pageHtml(path), `${origin}${path}`), { details: true, sourceCapture: 'response-html' }));
+  const overall = { ...pages[0].scores };
+  for (const key of ['structure', 'citability', 'schema', 'aiMetadata', 'contentDensity']) overall[key] = Math.round(pages.reduce((sum, page) => sum + page.scores[key], 0) / pages.length);
+  overall.total = overall.structure + overall.citability + overall.schema + overall.aiMetadata + overall.contentDensity;
+  return { scoringVersion: SCORING_VERSION, pages, overall, summary: 'Synthetic demonstration', timestamp: new Date().toISOString() };
 };
 globalThis.fetch = async (input) => {
   const url = String(input);
@@ -42,7 +47,7 @@ try {
     await writeFile(join(resolve(directory), `${name}.json`), `${JSON.stringify(report, null, 2)}\n`, { flag: 'wx' });
   }
   await writeFile(join(resolve(directory), 'report.html'), renderVisualReport(beforeScan, { site: before, demo: true }), { flag: 'wx' });
-  await writeFile(join(resolve(directory), 'report-after.html'), renderVisualReport(afterScan, { site: after, baselineSite: before, demo: true }), { flag: 'wx' });
+  await writeFile(join(resolve(directory), 'report-after.html'), renderVisualReport(afterScan, { site: after, baselineSite: before, baseline: beforeScan, demo: true }), { flag: 'wx' });
   await mkdir(join(directory, 'site'), { recursive: true });
   await writeFile(join(directory, 'site', 'index.html'), pageHtml('/'), { flag: 'wx' });
 } finally {
