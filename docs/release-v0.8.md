@@ -49,3 +49,7 @@ Update the GitHub Release with the same warning. Preserve the immutable tag and 
 The active `protect-main` branch ruleset targets the default branch, blocks force pushes and deletion, and has no bypass actors. Normal fast-forward pushes and PR merges remain available. Short-lived development branches may still be rebased.
 
 The active `protect-release-tags` tag ruleset targets `v*.*.*`, blocks updates and deletion, and has no bypass actors. Create each release tag only after verifying the exact publication commit. Major aliases such as `v0` are outside this pattern. Fix published versions forward with a new version.
+
+## Documentation patch 0.8.1
+
+Version 0.8.1 publishes the aeoptimize migration guide and project lineage to npm. It preserves the 0.8 API and CLI behavior. Publish this patch from the exact freshly fetched `origin/maintenance/geoptimize-0.8` commit; main now carries 0.9 development. This maintenance branch's source gate and CI target the maintenance branch. Preserve any newer npm `latest` version when publishing this patch.

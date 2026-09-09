@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [maintenance/geoptimize-0.8]
   pull_request:
-    branches: [main]
+    branches: [maintenance/geoptimize-0.8]
 
 jobs:
   test-and-build:
