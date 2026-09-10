@@ -324,6 +324,7 @@ npx skills add cucuwang/geoptimize
 - `/geo-scan` — deterministic readiness audit with optional experimental review
 - `/geo-generate` — preview optional discovery artifacts
 - `/geo-transform` — propose content edits without inventing claims
+- `/seo-rank-watch` — run one evidence-bounded Search Console ranking experiment
 
 ## Project status
 
