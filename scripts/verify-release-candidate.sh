@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$REPO_ROOT"
 
-for command_name in git jq mktemp node npm; do
+for command_name in git jq mktemp node npm tar; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "missing required command: $command_name" >&2
     exit 2
@@ -55,6 +55,7 @@ PACKAGE_TARBALL="$PACK_ROOT/$PACKAGE_FILENAME"
 PACKAGE_SHA256=$(node -e "const crypto=require('node:crypto');const fs=require('node:fs');console.log(crypto.createHash('sha256').update(fs.readFileSync(process.argv[1])).digest('hex'))" "$PACKAGE_TARBALL")
 
 jq -e '
+  (.[0].files | map(.path) | index("README.md")) != null and
   (.[0].files | map(.path) | index("dist/cli/index.js")) != null and
   (.[0].files | map(.path) | index("dist/core/audit.js")) != null and
   (.[0].files | map(.path) | index("dist/core/static-audit.js")) != null and
@@ -71,6 +72,12 @@ jq -e '
   (.[0].files | map(.path) | index("scripts/verify-release-candidate.sh")) != null and
   (.[0].files | map(.path) | index("scripts/verify-release-v0.8.sh")) != null
 ' "$PACK_JSON" >/dev/null
+
+if ! tar -xOf "$PACKAGE_TARBALL" package/README.md > "$VERIFY_ROOT/README.md" || \
+   [ ! -s "$VERIFY_ROOT/README.md" ]; then
+  echo "package README.md is missing or empty" >&2
+  exit 1
+fi
 
 npm_config_dry_run=false npm --cache "$VERIFY_ROOT/npm-cache" install \
   --ignore-scripts --no-audit --no-fund \
@@ -120,6 +127,10 @@ MANIFEST=$(jq -n \
 
 if [ -n "${RELEASE_MANIFEST_OUT:-}" ]; then
   printf '%s\n' "$MANIFEST" > "$RELEASE_MANIFEST_OUT"
+fi
+
+if [ -n "${RELEASE_TARBALL_OUT:-}" ]; then
+  cp "$PACKAGE_TARBALL" "$RELEASE_TARBALL_OUT"
 fi
 
 printf '%s\n' "$MANIFEST"

@@ -1,10 +1,14 @@
 name: CI
 
 on:
+  workflow_call:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   test-and-build:
@@ -14,25 +18,46 @@ jobs:
       matrix:
         node-version: [22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
+      - name: Prepare candidate directory
+        run: mkdir -p "$RUNNER_TEMP/release-assets"
       - run: npm run release:check
         env:
+          RELEASE_TARBALL_OUT: ${{ runner.temp }}/release-assets/geoptimize-${{ matrix.node-version }}.tgz
           RELEASE_MANIFEST_OUT: ${{ runner.temp }}/release-candidate-node-${{ matrix.node-version }}.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-candidate-node-${{ matrix.node-version }}
           path: ${{ runner.temp }}/release-candidate-node-${{ matrix.node-version }}.json
+          if-no-files-found: error
+
+      - name: Prepare release artifacts and exercise non-publishing path
+        if: matrix.node-version == 24
+        run: |
+          version=$(node -p "JSON.parse(require('fs').readFileSync('package.json')).version")
+          cp "$RUNNER_TEMP/release-candidate-node-24.json" "$RUNNER_TEMP/release-assets/candidate.json"
+          mv "$RUNNER_TEMP/release-assets/geoptimize-24.tgz" "$RUNNER_TEMP/release-assets/geoptimize-$version.tgz"
+          node scripts/prepare-release-artifacts.mjs "$RUNNER_TEMP/release-assets"
+          (cd "$RUNNER_TEMP/release-assets" && sha256sum --check SHA256SUMS)
+          npm pack "$RUNNER_TEMP/release-assets/geoptimize-$version.tgz" --dry-run --ignore-scripts --json > "$RUNNER_TEMP/release-assets/package-preview.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: matrix.node-version == 24
+        with:
+          name: release-assets
+          path: ${{ runner.temp }}/release-assets/
           if-no-files-found: error
 
   release-candidate-reproducibility:
     needs: test-and-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: release-candidate-node-*
           path: release-candidates
@@ -56,8 +81,10 @@ jobs:
   lint-readme-commands:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
       - run: npm ci
@@ -70,8 +97,10 @@ jobs:
   action-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
       - run: npm ci

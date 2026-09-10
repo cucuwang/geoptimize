@@ -37,7 +37,11 @@
     "scripts/verify-release-v0.8.sh",
     "docs/release-v0.9.md",
     "docs/visual-report.md",
-    "docs/assets/"
+    "docs/assets/",
+    "docs/release-v0.10.md",
+    "docs/maintainer-security-settings.md",
+    "docs/openssf-best-practices.md",
+    "docs/action-reproducibility.md"
   ],
   "scripts": {
     "build": "tsc",

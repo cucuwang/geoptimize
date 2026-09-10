@@ -202,7 +202,7 @@ Projects can explicitly choose blocking mode after accepting a baseline:
     min-score: '60'
 ```
 
-The Action exposes `score` and `report` outputs in both modes. Its release is reproducible only when the Action tag and matching npm package version both exist. Before pinning a version, verify both artifacts; if either is missing, use the CLI directly.
+The Action exposes `score` and `report` outputs in both modes. Its default selects an exact npm package version; transitive dependencies are resolved at install time. Verify the Action tag and matching npm package before pinning. See the [Action reproducibility decision](docs/action-reproducibility.md) for the remaining dependency-resolution boundary.
 
 A copyable advisory workflow and controlled input are available in the [end-to-end Action sample](examples/github-action-sample/README.md).
 
@@ -320,6 +320,15 @@ npx skills add cucuwang/geoptimize
 Version 0.9 adds site metrics, offline visual reports, detailed rule evidence and baseline comparisons while retaining the existing scoring contract. Release acceptance and rollback are documented in [docs/release-v0.9.md](docs/release-v0.9.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
+
+## Release integrity and security maintenance
+
+The next-release trust-hardening path is documented in [the v0.10 runbook](docs/release-v0.10.md).
+CI validates Node 22/24 tarballs, package contents and CLI/Action contracts; the
+release preparation exports SHA-256 checksums and an SPDX production-dependency SBOM.
+Repository settings and npm authorization remain explicit [maintainer gates](docs/maintainer-security-settings.md).
+[OpenSSF Passing preparation](docs/openssf-best-practices.md) records outstanding
+verification. Scorecard/Best Practices badges will be added only after real results exist.
 
 ## License
 

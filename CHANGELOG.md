@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — trust hardening
+
+- Prepare a SHA-pinned, least-privilege CI/security and OIDC release pipeline.
+- Export verified tarballs with checksums, SPDX SBOM and attestation support.
+- Document maintainer settings and OpenSSF gaps; preserve scoring and public contracts.
+
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
 ## 0.9.0

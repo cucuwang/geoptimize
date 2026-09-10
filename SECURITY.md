@@ -13,3 +13,14 @@ Include the affected version, environment, reproduction preconditions, impact, a
 ## Scope notes
 
 `geoptimize` can fetch remote pages, invoke a local browser, read build output, and install a Git hook. Reports may contain URLs and excerpts from scanned content. Review artifacts before publishing them and never scan private systems without authorization.
+
+## Release and dependency integrity
+
+Release candidates retain the high/critical npm audit gate. Pull requests add
+dependency review; weekly Dependabot and CodeQL/Scorecard workflows support ongoing
+triage. Configuration alone does not establish a clean scan or certification.
+
+The next automated release uses npm OIDC, tarball attestations, checksums and a locked
+production SBOM. Follow [release verification](docs/release-v0.10.md) and
+[maintainer security settings](docs/maintainer-security-settings.md). Existing releases
+are not retroactively signed or attested. No long-lived npm credential is required.

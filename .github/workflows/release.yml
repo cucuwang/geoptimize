@@ -1,0 +1,80 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the verified candidate (requires completed maintainer checklist)
+        type: boolean
+        default: false
+      tag:
+        description: Existing signed release tag; required only for publication
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: geoptimize-release
+  cancel-in-progress: false
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject an unauthorized publication request
+        if: inputs.publish
+        env:
+          ENABLED: ${{ vars.RELEASE_ENABLED }}
+          REF: ${{ github.ref }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          test "$ENABLED" = true
+          test "$REF" = refs/heads/main
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+  validate:
+    needs: request
+    uses: ./.github/workflows/ci.yml
+  publish:
+    needs: validate
+    if: inputs.publish && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-assets
+          path: ${{ runner.temp }}/release-assets
+      - name: Verify source, signed tag, candidate and unpublished version
+        run: bash scripts/verify-release-publication.sh "$RUNNER_TEMP/release-assets"
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: ${{ runner.temp }}/release-assets/geoptimize-*.tgz
+      - name: Stage all assets in a draft release
+        run: |
+          gh release create "$RELEASE_TAG" --verify-tag --draft --title "geoptimize ${RELEASE_TAG#v}" --notes-file docs/release-notes-v0.10.md
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/release-assets/"*.tgz "$RUNNER_TEMP/release-assets/SHA256SUMS" "$RUNNER_TEMP/release-assets/"*.spdx.json
+      - name: Publish the verified tarball using npm OIDC
+        run: |
+          # Recheck main immediately before the irreversible operation.
+          test "$(gh api repos/cucuwang/geoptimize/git/ref/heads/main --jq .object.sha)" = "$GITHUB_SHA"
+          (cd "$RUNNER_TEMP/release-assets" && sha256sum --check SHA256SUMS)
+          npm publish "$RUNNER_TEMP/release-assets/geoptimize-${RELEASE_TAG#v}.tgz" --access public --provenance --ignore-scripts
+      - name: Finalize the fully populated release
+        run: gh release edit "$RELEASE_TAG" --draft=false --latest
+      - name: Verify public npm, GitHub and tag alignment
+        run: |
+          sha=$(jq -r .sha256 "$RUNNER_TEMP/release-assets/candidate.json")
+          bash scripts/verify-release-v0.8.sh "$GITHUB_SHA" "$sha"

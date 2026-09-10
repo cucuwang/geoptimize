@@ -1,0 +1,9 @@
+# Routing only: do not require self-approval in the single-maintainer ruleset.
+/.github/ @cucuwang
+/action.yml @cucuwang
+/action/ @cucuwang
+/package.json @cucuwang
+/package-lock.json @cucuwang
+/scripts/verify-* @cucuwang
+/scripts/*release* @cucuwang
+/SECURITY.md @cucuwang

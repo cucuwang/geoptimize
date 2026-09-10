@@ -29,3 +29,13 @@ The code-level gates are enforced by `npm run release:check`, `src/core/__tests_
 - awarding points for `llms.txt`, FAQ count, schema count, or a fixed meta-description length;
 - automatic deployment of generated JSON-LD or crawler policy;
 - adding more AI scorers and calling their average consensus.
+
+## v0.10 — Trust hardening
+
+Repository preparation covers SHA-pinned Actions, minimal token permissions, a
+reusable release pipeline, OIDC preparation, tarball hashes/SPDX/attestations,
+dependency review, CodeQL, Dependabot, Scorecard and maintainer governance guidance.
+Account settings, signing identity and actual publication are separate gates;
+OpenSSF Passing is pending assessment. Package version remains 0.9.0 until release
+approval. Bundled Action runtime evaluation is tracked separately to preserve the
+package-spec contract. See [release-v0.10](docs/release-v0.10.md).
