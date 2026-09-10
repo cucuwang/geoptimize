@@ -59,6 +59,32 @@ describe('evidence boundaries', () => {
 });
 
 describe('public metadata', () => {
+  it('links and ships every localized README', async () => {
+    const readme = await readFile(join(root, 'README.md'), 'utf8');
+    const localizedReadmes = [
+      'README.zh-TW.md',
+      'README.zh-CN.md',
+      'README.ja.md',
+      'README.ko.md',
+      'README.es.md',
+      'README.fr.md',
+      'README.de.md',
+      'README.pt-BR.md',
+    ];
+
+    const contents = await Promise.all(localizedReadmes.map(async (filename) => {
+      expect(readme).toContain(`docs/readme/${filename}`);
+      return readFile(join(root, 'docs', 'readme', filename), 'utf8');
+    }));
+
+    for (const content of contents) {
+      expect(content).toContain('# geoptimize');
+      expect(content).toContain('npm install --save-dev geoptimize');
+      expect(content).toContain('geo seo init .');
+      expect(content).toContain('../../README.md');
+    }
+  });
+
   it('uses the current repository owner and exposes root Action metadata', async () => {
     const paths = [
       'README.md',
