@@ -449,12 +449,12 @@ seoCmd
 
 seoCmd
   .command('start <repository>')
-  .description('Record one completed page improvement and begin its seven-day cooldown')
+  .description('Record one publicly deployed page improvement and begin its seven-day cooldown')
   .requiredOption('--keyword <text>', 'The currently selected exact query')
   .requiredOption('--intent <text>', 'Who searched and what they needed')
   .requiredOption('--gap <text>', 'Observed gap against that need')
   .requiredOption('--change <text>', 'Specific completed page change')
-  .option('--date <date>', 'Action date, YYYY-MM-DD')
+  .option('--date <date>', 'Verified publication date, YYYY-MM-DD')
   .action(async (repository: string, options: { keyword: string; intent: string; gap: string; change: string; date?: string }) => {
     try {
       const experiment = await startSeoExperiment(repository, {

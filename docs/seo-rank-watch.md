@@ -48,12 +48,13 @@ Select one candidate, compare the target page with current leading results, defi
 geo seo select .
 geo seo start . \
   --keyword "能源管理系統整合" \
+  --date 2026-09-11 \
   --intent "A facilities manager is comparing what an EMS integration includes and whether existing devices can remain." \
   --gap "The page explains architecture but does not answer implementation scope near the main content." \
   --change "Added a visible implementation-scope section and direct links to system evidence."
 ```
 
-`start` allows only the selected query and moves it to `observing` for seven days. While one query is observing, another experiment cannot start in that repository.
+Deploy the page, read the public URL back, and then call `start` with the verified publication date. `start` allows only the selected query and moves it to `observing` for seven days. A local commit, preview, or green build does not start the cooldown. While one query is observing, another experiment cannot start in that repository.
 
 After the cooldown, record a comparable seven-day Search Console observation and review it:
 
@@ -73,4 +74,4 @@ geo seo review . \
 - Keep the query, page, country, device, search type, and date window fixed when comparing observations.
 - Add information that satisfies the search need. Do not pad the page or repeat keywords mechanically.
 - Treat `noindex`, canonical changes, redirects, and large information-architecture changes as separate reviewed changes.
-- Report the implemented change and measured outcome separately. A readiness score change is not ranking evidence.
+- Report the local implementation, public deployment, and measured outcome separately. A readiness score change is not ranking evidence.

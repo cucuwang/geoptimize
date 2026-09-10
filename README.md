@@ -44,7 +44,7 @@ geo seo add . --keyword "energy management system integration" --page /services/
 geo seo status .
 ```
 
-The ledger enforces one active page experiment and a seven-day cooldown while preserving fixed query, page, country, device, search type, and date-window evidence. It does not affect the readiness score. See [SEO rank watch](docs/seo-rank-watch.md).
+The ledger enforces one active page experiment and a seven-day cooldown while preserving fixed query, page, country, device, search type, and date-window evidence. Start the cooldown only after the changed page is publicly deployed and read back. The ledger does not affect the readiness score. See [SEO rank watch](docs/seo-rank-watch.md).
 
 Example output:
 

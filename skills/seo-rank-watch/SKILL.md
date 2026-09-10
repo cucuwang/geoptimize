@@ -15,8 +15,8 @@ Use geoptimize's SEO ledger for a controlled ranking experiment. This workflow i
 4. Run `geo seo select <repository>`. Improve only the returned keyword. If it returns no candidate, report the state and stop.
 5. Define in one or two sentences who searched and what they need. Inspect current leading pages and identify one information gap on the target page.
 6. Make one focused improvement that answers the need. Internal links should lead to the visitor's likely next question or action.
-7. Run the site's normal tests and a geoptimize build audit. Then call `geo seo start` with the exact intent, gap, and completed change.
-8. Commit the page change and `data/seo` files together. Report the next review date without predicting the outcome.
+7. Run the site's normal tests and a geoptimize build audit. Commit the page change and baseline `data/seo` files together without starting the cooldown.
+8. After deployment, read the public page and deployment marker back. Then call `geo seo start` with the verified publication date, exact intent, gap, and completed change. Commit the ledger update and report the next review date without predicting the outcome.
 
 ## Boundaries
 
