@@ -1,5 +1,12 @@
 # geoptimize 0.10.0
 
+## SEO rank watch
+
+- Adds `geo seo` commands for reviewable watchword, rank-history, and improvement ledgers.
+- Keeps one page experiment observing at a time and starts its seven-day cooldown only after public deployment.
+- Preserves fixed query, page, country, device, search type, and date-window evidence for later review.
+- Includes the reusable `/seo-rank-watch` skill and workflow guide.
+
 ## Release integrity
 
 - Publishes the exact tarball validated by CI on Node.js 22 and 24.
@@ -9,7 +16,7 @@
 
 ## Compatibility
 
-Scoring, CLI, API, JSON output and composite Action contracts remain unchanged.
+The readiness score, existing audit JSON output, and composite Action scoring contracts remain unchanged.
 
 ## Install
 

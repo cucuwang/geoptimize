@@ -11,3 +11,4 @@ export * from './static-audit.js';
 export * from './site-metrics.js';
 export * from './visual-report.js';
 export * from './readiness-comparison.js';
+export * from './seo-watch.js';

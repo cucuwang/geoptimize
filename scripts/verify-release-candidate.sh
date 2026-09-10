@@ -63,7 +63,11 @@ jq -e '
   (.[0].files | map(.path) | index("dist/core/site-metrics.js")) != null and
   (.[0].files | map(.path) | index("dist/core/visual-report.js")) != null and
   (.[0].files | map(.path) | index("dist/core/readiness-comparison.js")) != null and
+  (.[0].files | map(.path) | index("dist/core/seo-watch.js")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.9.md")) != null and
+  (.[0].files | map(.path) | index("docs/release-v0.10.md")) != null and
+  (.[0].files | map(.path) | index("docs/seo-rank-watch.md")) != null and
+  (.[0].files | map(.path) | index("skills/seo-rank-watch/SKILL.md")) != null and
   (.[0].files | map(.path) | index("docs/assets/report-demo.html")) != null and
   (.[0].files | map(.path) | index("docs/assets/report-demo-after.html")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.8.md")) != null and
@@ -94,6 +98,42 @@ done
 for audit_command in audit audit-build audit-site metrics report; do
   "$CONSUMER_ROOT/node_modules/.bin/geoptimize" "$audit_command" --help >/dev/null
 done
+
+SEO_ROOT="$VERIFY_ROOT/seo-ledger"
+GEO_BINARY="$CONSUMER_ROOT/node_modules/.bin/geo"
+SEO_KEYWORD="release acceptance keyword"
+mkdir -p "$SEO_ROOT"
+"$GEO_BINARY" seo init "$SEO_ROOT" >/dev/null
+"$GEO_BINARY" seo add "$SEO_ROOT" \
+  --keyword "$SEO_KEYWORD" --page /services/ems/ --priority high >/dev/null
+"$GEO_BINARY" seo record "$SEO_ROOT" \
+  --keyword "$SEO_KEYWORD" --page /services/ems/ --source gsc \
+  --start-date 2025-12-01 --end-date 2025-12-28 \
+  --country TWN --device DESKTOP --position 9 --clicks 1 --impressions 20 \
+  --observed-at 2025-12-29T00:00:00Z >/dev/null
+"$GEO_BINARY" seo select "$SEO_ROOT" --json > "$VERIFY_ROOT/seo-candidate.json"
+jq -e --arg keyword "$SEO_KEYWORD" '.watchword.keyword == $keyword' \
+  "$VERIFY_ROOT/seo-candidate.json" >/dev/null
+"$GEO_BINARY" seo start "$SEO_ROOT" \
+  --keyword "$SEO_KEYWORD" --date 2026-01-01 \
+  --intent "Compare an EMS integration scope" \
+  --gap "The page lacks visible inputs and outputs" \
+  --change "Added visible inputs and outputs" >/dev/null
+"$GEO_BINARY" seo record "$SEO_ROOT" \
+  --keyword "$SEO_KEYWORD" --page /services/ems/ --source gsc \
+  --start-date 2026-01-02 --end-date 2026-01-08 \
+  --country TWN --device DESKTOP --position 6 --clicks 2 --impressions 28 \
+  --observed-at 2026-01-09T00:00:00Z > "$VERIFY_ROOT/seo-observation.json"
+SEO_OBSERVATION_ID=$(jq -er '.id' "$VERIFY_ROOT/seo-observation.json")
+"$GEO_BINARY" seo review "$SEO_ROOT" \
+  --keyword "$SEO_KEYWORD" --outcome improved \
+  --observation "$SEO_OBSERVATION_ID" --date 2026-01-08 \
+  --note "Comparable release acceptance observation" >/dev/null
+"$GEO_BINARY" seo status "$SEO_ROOT" --json > "$VERIFY_ROOT/seo-status.json"
+jq -e --arg keyword "$SEO_KEYWORD" '
+  .counts == {active: 1, observing: 0, achieved: 0, observations: 2} and
+  .candidate.watchword.keyword == $keyword
+' "$VERIFY_ROOT/seo-status.json" >/dev/null
 
 "$CONSUMER_ROOT/node_modules/.bin/geoptimize" audit \
   "$CONSUMER_ROOT/node_modules/geoptimize/examples/github-action-sample/site/index.html" \

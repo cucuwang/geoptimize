@@ -36,6 +36,16 @@ npx geoptimize audit https://example.com --json
 npx geoptimize audit-site https://example.com --max-pages 20 --json
 ```
 
+For measured Google Search experiments, initialize the separate SEO ledger:
+
+```bash
+geo seo init .
+geo seo add . --keyword "energy management system integration" --page /services/ems/ --priority high
+geo seo status .
+```
+
+The ledger enforces one active page experiment and a seven-day cooldown while preserving fixed query, page, country, device, search type, and date-window evidence. Start the cooldown only after the changed page is publicly deployed and read back. The ledger does not affect the readiness score. See [SEO rank watch](docs/seo-rank-watch.md).
+
 Example output:
 
 ```text
@@ -187,7 +197,7 @@ node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.tot
 The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimize-content-readiness-check) is advisory by default. It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.9.0
+- uses: cucuwang/geoptimize@v0.10.0
   with:
     path: dist
 ```
@@ -195,7 +205,7 @@ The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimiz
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.9.0
+- uses: cucuwang/geoptimize@v0.10.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -314,10 +324,11 @@ npx skills add cucuwang/geoptimize
 - `/geo-scan` — deterministic readiness audit with optional experimental review
 - `/geo-generate` — preview optional discovery artifacts
 - `/geo-transform` — propose content edits without inventing claims
+- `/seo-rank-watch` — run one evidence-bounded Search Console ranking experiment
 
 ## Project status
 
-Version 0.9 adds site metrics, offline visual reports, detailed rule evidence and baseline comparisons while retaining the existing scoring contract. Release acceptance and rollback are documented in [docs/release-v0.9.md](docs/release-v0.9.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
+Version 0.10 adds a separate, evidence-bounded SEO rank-watch ledger while retaining the existing readiness score and audit contracts. Release acceptance and rollback are documented in [docs/release-v0.10.md](docs/release-v0.10.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 

@@ -13,6 +13,19 @@ import { generate } from '../core/generator.js';
 import { detectAvailableCLIs, scoreWithAllAvailable } from '../core/external-scorers.js';
 import { mergeScores } from '../core/merger.js';
 import { auditPath } from '../core/static-audit.js';
+import {
+  addSeoWatchword,
+  initializeSeoWatch,
+  loadSeoWatch,
+  recordSeoRank,
+  reviewSeoExperiment,
+  selectSeoCandidate,
+  startSeoExperiment,
+  summarizeSeoWatch,
+  type SeoPriority,
+  type SeoRankSource,
+  type SeoReviewOutcome,
+} from '../core/seo-watch.js';
 import type { AuditReport, AuditStatus, SiteAuditReport, ScanReport, MultiAiReport, DimensionScores, ScanTarget, SiteInfo, AiScorerResult } from '../core/types.js';
 
 const HOOK_BEGIN_MARKER = '# BEGIN geoptimize';
@@ -23,7 +36,7 @@ const program = new Command();
 program
   .name('geoptimize')
   .description('Deterministic content-readiness lint for websites and documentation')
-  .version('0.9.0');
+  .version('0.10.0');
 
 // ── scan command ───────────────────────────────────────────────────
 
@@ -334,6 +347,174 @@ program
     }
   });
 
+// ── seo command ───────────────────────────────────────────────────
+
+const seoCmd = program
+  .command('seo')
+  .description('Track evidence-bounded SEO ranking experiments without changing readiness scores');
+
+seoCmd
+  .command('init <repository>')
+  .description('Create data/seo watchword, rank-history, and improvement-log files')
+  .action(async (repository: string) => {
+    try {
+      await initializeSeoWatch(repository);
+      console.log(`SEO watch initialized in ${join(repository, 'data', 'seo')}`);
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  });
+
+seoCmd
+  .command('add <repository>')
+  .description('Add one keyword and target page to the watchlist')
+  .requiredOption('--keyword <text>', 'Exact query to track')
+  .requiredOption('--page <path>', 'Target path or canonical URL')
+  .option('--priority <priority>', 'high, medium, or low', 'medium')
+  .action(async (repository: string, options: { keyword: string; page: string; priority: SeoPriority }) => {
+    try {
+      const watchword = await addSeoWatchword(repository, {
+        keyword: options.keyword, targetPath: options.page, priority: options.priority,
+      });
+      console.log(JSON.stringify(watchword, null, 2));
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  });
+
+seoCmd
+  .command('record <repository>')
+  .description('Append one fixed-window GSC or observed SERP ranking measurement')
+  .requiredOption('--keyword <text>', 'Exact query')
+  .requiredOption('--page <path>', 'Target path or canonical URL')
+  .requiredOption('--source <source>', 'gsc or serp')
+  .requiredOption('--start-date <date>', 'Measurement start date, YYYY-MM-DD')
+  .requiredOption('--end-date <date>', 'Measurement end date, YYYY-MM-DD')
+  .requiredOption('--country <country>', 'Fixed country segment, such as TWN')
+  .requiredOption('--device <device>', 'Fixed device segment, such as DESKTOP')
+  .option('--search-type <type>', 'Search type segment', 'web')
+  .option('--position <number>', 'Average GSC position or observed organic result position')
+  .option('--clicks <number>', 'GSC clicks')
+  .option('--impressions <number>', 'GSC impressions')
+  .option('--observed-at <timestamp>', 'ISO timestamp for the observation')
+  .action(async (repository: string, options: {
+    keyword: string; page: string; source: SeoRankSource; startDate: string; endDate: string;
+    country: string; device: string; searchType: string; position?: string; clicks?: string;
+    impressions?: string; observedAt?: string;
+  }) => {
+    try {
+      const observation = await recordSeoRank(repository, {
+        keyword: options.keyword,
+        targetPath: options.page,
+        source: options.source,
+        startDate: options.startDate,
+        endDate: options.endDate,
+        country: options.country,
+        device: options.device,
+        searchType: options.searchType,
+        position: optionalNumber(options.position, 'position'),
+        clicks: optionalNumber(options.clicks, 'clicks'),
+        impressions: optionalNumber(options.impressions, 'impressions'),
+        observedAt: options.observedAt,
+      });
+      console.log(JSON.stringify(observation, null, 2));
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  });
+
+seoCmd
+  .command('select <repository>')
+  .description('Select exactly one eligible keyword using recorded evidence and priority')
+  .option('--json', 'Output JSON')
+  .action(async (repository: string, options: { json?: boolean }) => {
+    try {
+      const candidate = selectSeoCandidate(await loadSeoWatch(repository));
+      if (options.json) {
+        console.log(JSON.stringify(candidate, null, 2));
+      } else if (!candidate) {
+        console.log('No keyword selected. An experiment may be observing, every watchword may be achieved, or the watchlist may be empty.');
+      } else {
+        console.log(`${candidate.watchword.keyword} -> ${candidate.watchword.targetPath}`);
+        console.log(candidate.reason);
+      }
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  });
+
+seoCmd
+  .command('start <repository>')
+  .description('Record one publicly deployed page improvement and begin its seven-day cooldown')
+  .requiredOption('--keyword <text>', 'The currently selected exact query')
+  .requiredOption('--intent <text>', 'Who searched and what they needed')
+  .requiredOption('--gap <text>', 'Observed gap against that need')
+  .requiredOption('--change <text>', 'Specific completed page change')
+  .option('--date <date>', 'Verified publication date, YYYY-MM-DD')
+  .action(async (repository: string, options: { keyword: string; intent: string; gap: string; change: string; date?: string }) => {
+    try {
+      const experiment = await startSeoExperiment(repository, {
+        keyword: options.keyword,
+        searchIntent: options.intent,
+        gap: options.gap,
+        change: options.change,
+        date: options.date,
+      });
+      console.log(JSON.stringify(experiment, null, 2));
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  });
+
+seoCmd
+  .command('review <repository>')
+  .description('Review a due experiment against a matching post-action observation')
+  .requiredOption('--keyword <text>', 'Exact query under review')
+  .requiredOption('--outcome <outcome>', 'achieved, improved, unchanged, or declined')
+  .requiredOption('--observation <id>', 'Matching rank-history observation ID')
+  .option('--note <text>', 'Short evidence note')
+  .option('--date <date>', 'Review date, YYYY-MM-DD')
+  .action(async (repository: string, options: { keyword: string; outcome: SeoReviewOutcome; observation: string; note?: string; date?: string }) => {
+    try {
+      const experiment = await reviewSeoExperiment(repository, {
+        keyword: options.keyword,
+        outcome: options.outcome,
+        observationId: options.observation,
+        note: options.note,
+        date: options.date,
+      });
+      console.log(JSON.stringify(experiment, null, 2));
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  });
+
+seoCmd
+  .command('status <repository>')
+  .description('Summarize active, observing, and achieved SEO experiments')
+  .option('--json', 'Output JSON')
+  .action(async (repository: string, options: { json?: boolean }) => {
+    try {
+      const summary = summarizeSeoWatch(await loadSeoWatch(repository));
+      if (options.json) {
+        console.log(JSON.stringify(summary, null, 2));
+      } else {
+        console.log(`Active ${summary.counts.active} | Observing ${summary.counts.observing} | Achieved ${summary.counts.achieved} | Observations ${summary.counts.observations}`);
+        if (summary.candidate) console.log(`Next candidate: ${summary.candidate.watchword.keyword} -> ${summary.candidate.watchword.targetPath}`);
+        for (const item of summary.observing) console.log(`Observing: ${item.keyword} until ${item.nextReviewDate}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  });
+
 // ── hook command ──────────────────────────────────────────────────
 
 const hookCmd = program
@@ -519,6 +700,13 @@ function resolveTarget(target: string, isDir?: boolean): ScanTarget {
   }
   // Fallback: assume URL with https
   return { type: 'url', path: `https://${target}` };
+}
+
+function optionalNumber(value: string | undefined, label: string): number | null {
+  if (value === undefined) return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) throw new Error(`${label} must be a number.`);
+  return parsed;
 }
 
 function detectSiteName(dir: string, report: ScanReport): string {

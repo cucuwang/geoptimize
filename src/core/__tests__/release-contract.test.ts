@@ -178,11 +178,13 @@ describe('v0.6 JSON automation contract', () => {
 
   it('ships release and rollback instructions with the package', async () => {
     const packageJson = JSON.parse(await readFile(join(repositoryRoot, 'package.json'), 'utf8'));
-    const releaseGuide = await readFile(join(repositoryRoot, 'docs/release-v0.9.md'), 'utf8');
+    const releaseLine = packageJson.version.split('.').slice(0, 2).join('.');
+    const releaseGuidePath = `docs/release-v${releaseLine}.md`;
+    const releaseGuide = await readFile(join(repositoryRoot, releaseGuidePath), 'utf8');
     const candidateVerifier = await readFile(join(repositoryRoot, 'scripts/verify-release-candidate.sh'), 'utf8');
     const publicVerifier = await readFile(join(repositoryRoot, 'scripts/verify-release-v0.8.sh'), 'utf8');
 
-    expect(packageJson.files).toContain('docs/release-v0.9.md');
+    expect(packageJson.files).toContain(releaseGuidePath);
     expect(packageJson.files).toContain('docs/visual-report.md');
     expect(packageJson.files).toContain('docs/assets/');
     expect(packageJson.files).toContain('fixtures/');
@@ -195,7 +197,7 @@ describe('v0.6 JSON automation contract', () => {
       'npm run release:check && bash scripts/verify-publish-source.sh',
     );
     expect(releaseGuide).toContain('## Rollback');
-    expect(releaseGuide).toContain('npm dist-tag add geoptimize@0.8.0 latest');
+    expect(releaseGuide).toContain('npm dist-tag add geoptimize@0.9.0 latest');
     expect(releaseGuide).toContain('<verified-package-sha256>');
     expect(candidateVerifier).toContain('index("README.md")');
     expect(candidateVerifier).toContain('tar -xOf "$PACKAGE_TARBALL" package/README.md');
@@ -215,6 +217,6 @@ describe('v0.6 JSON automation contract', () => {
     expect(workflow).not.toContain('--notes-file docs/release-v0.10.md');
     expect(releaseNotes).toContain('# geoptimize 0.10.0');
     expect(releaseNotes).not.toContain('repository preparation');
-    expect(runbook).toContain('Status: repository preparation');
+    expect(runbook).toContain('Status: release candidate preparation');
   });
 });

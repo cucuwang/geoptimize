@@ -1,16 +1,18 @@
 # v0.10 trust-hardening release runbook
 
-Status: repository preparation; package version remains 0.9.0 until an approved
-version-bump PR. Nothing in this document asserts that 0.10.0 has been published.
-Scoring, CLI/API/JSON and composite Action contracts remain unchanged.
+Status: release candidate preparation; package version 0.10.0 is under review.
+Nothing in this document asserts that 0.10.0 has been published. This release
+adds the `geo seo` CLI, API, data contract, and skill while preserving the
+readiness score, existing audit JSON, and composite Action scoring contracts.
 
 ## Candidate and dry run
 
 The reusable CI workflow remains the single acceptance pipeline. On both Node 22
 and 24 it runs `npm ci` and `npm run release:check`: clean worktree, tests, TypeScript,
 Action shell contract, high/critical npm audit gate, package contents, clean consumer
-installation, all three aliases and report contracts. Separate jobs exercise the
-actual composite Action, README commands and byte-identical Node candidate manifests.
+installation, all three aliases, report contracts, and the clean-install SEO
+workflow. Separate jobs exercise the actual composite Action, README commands,
+and byte-identical Node candidate manifests.
 
 The verifier can export its already-tested tarball via `RELEASE_TARBALL_OUT`; it never
 re-packs for publication. Node 24 prepares a production SPDX 2.3 SBOM, SHA256SUMS and
@@ -48,9 +50,9 @@ not external npm authorization or immutable-release settings.
 
 1. Complete [maintainer settings](maintainer-security-settings.md), including npm
    environment binding, main required checks, immutable releases and signing identity.
-2. Prepare a separate version-bump PR updating package/lock, CLI and plugin metadata,
-   both Action defaults, sample pins, hard-coded CI tarball fixtures, changelog and
-   release-contract expectations. Run all gates. Do not rewrite v0.9.0.
+2. Review the version-bump PR that updates package/lock, CLI and plugin metadata,
+   both Action defaults, sample pins, hard-coded CI tarball fixtures, changelog,
+   the SEO workflow, and release-contract expectations. Run all gates. Preserve v0.9.0.
 3. Merge the approved release commit, fetch origin/main, and ensure it is still main's
    exact HEAD. With explicit release authorization, create an annotated signed tag
    (`git tag -s v0.10.0 <commit> -m 'geoptimize 0.10.0'`) and push only that tag.
@@ -90,7 +92,7 @@ References: [npm SBOM](https://docs.npmjs.com/cli/v11/commands/npm-sbom/),
 [GitHub attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations),
 [immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases).
 
-## Recovery
+## Rollback and recovery
 
 Publication crosses two services and cannot be atomic. If draft staging succeeds but
 npm fails, leave the draft and inspect logs; do not finalize it. If npm succeeds and
@@ -101,3 +103,17 @@ Never overwrite assets on a finalized release or retag an existing version. Depr
 or adjust dist-tags only with authorization, preserving audit evidence and fixing
 forward. An advanced main branch requires a new release decision, not bypassing the
 exact-main source gate.
+
+Public readback requires the release commit and verified candidate hash:
+
+```bash
+bash scripts/verify-release-v0.8.sh <verified-release-commit> <verified-package-sha256>
+```
+
+If rollback is authorized, preserve the published version and protected tag,
+restore 0.9.0 as the default, and deprecate 0.10.0 while preparing a corrective release:
+
+```bash
+npm dist-tag add geoptimize@0.9.0 latest
+npm deprecate geoptimize@0.10.0 "Use 0.9.0 while a corrective release is prepared."
+```
