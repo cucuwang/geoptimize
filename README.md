@@ -44,7 +44,7 @@ geo seo add . --keyword "energy management system integration" --page /services/
 geo seo status .
 ```
 
-The ledger enforces one active page experiment and a seven-day cooldown while preserving fixed query, page, country, device, search type, and date-window evidence. Start the cooldown only after the changed page is publicly deployed and read back. The ledger does not affect the readiness score. See [SEO rank watch](docs/seo-rank-watch.md).
+The ledger allows one monitoring experiment at a time and preserves fixed query, page, country, device, search type, and date-window evidence. Start its seven-day review period only after the changed page is publicly deployed and read back. The ledger does not affect the readiness score. See [SEO experiment ledger](docs/seo-experiment-ledger.md).
 
 Example output:
 
@@ -324,11 +324,11 @@ npx skills add cucuwang/geoptimize
 - `/geo-scan` — deterministic readiness audit with optional experimental review
 - `/geo-generate` — preview optional discovery artifacts
 - `/geo-transform` — propose content edits without inventing claims
-- `/seo-rank-watch` — run one evidence-bounded Search Console ranking experiment
+- `/seo-experiment-ledger` — maintain one evidence-bounded search experiment
 
 ## Project status
 
-Version 0.10 adds a separate, evidence-bounded SEO rank-watch ledger while retaining the existing readiness score and audit contracts. Release acceptance and rollback are documented in [docs/release-v0.10.md](docs/release-v0.10.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
+Version 0.10 adds a separate, evidence-bounded SEO experiment ledger while retaining the existing readiness score and audit contracts. Release acceptance and rollback are documented in [docs/release-v0.10.md](docs/release-v0.10.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 

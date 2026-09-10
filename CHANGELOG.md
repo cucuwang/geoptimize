@@ -6,9 +6,9 @@ All notable user-visible changes will be documented here. The project follows Se
 
 ### Added
 
-- Added `geo seo` commands for reviewable watchword, rank-history, and improvement ledgers.
+- Added `geo seo` commands for versioned query, observation, and experiment ledgers.
 - Added fixed query-segment evidence, one-experiment-at-a-time selection, and a seven-day post-publication review cooldown.
-- Added a reusable SEO rank-watch skill and workflow documentation.
+- Added a reusable SEO experiment-ledger skill and workflow documentation.
 
 ### Compatibility
 

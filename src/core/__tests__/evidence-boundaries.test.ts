@@ -92,7 +92,7 @@ describe('public metadata', () => {
     expect(action).toContain("default: 'false'");
     expect(compatibilityAction).toContain(`default: 'geoptimize@${packageJson.version}'`);
     expect(compatibilityAction).toContain("default: 'false'");
-    expect(pluginJson.commands).toContain('./skills/seo-rank-watch/SKILL.md');
+    expect(pluginJson.commands).toContain('./skills/seo-experiment-ledger/SKILL.md');
   });
 
   it('keeps npm publisher metadata normalized and exposes every CLI alias', async () => {
