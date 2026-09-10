@@ -1,12 +1,25 @@
 # Changelog
 
-## Unreleased — trust hardening
-
-- Prepare a SHA-pinned, least-privilege CI/security and OIDC release pipeline.
-- Export verified tarballs with checksums, SPDX SBOM and attestation support.
-- Document maintainer settings and OpenSSF gaps; preserve scoring and public contracts.
-
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
+
+## 0.10.0
+
+### Added
+
+- Added `geo seo` commands for reviewable watchword, rank-history, and improvement ledgers.
+- Added fixed query-segment evidence, one-experiment-at-a-time selection, and a seven-day post-publication review cooldown.
+- Added a reusable SEO rank-watch skill and workflow documentation.
+
+### Compatibility
+
+- Kept the deterministic content-readiness score and existing audit JSON contracts unchanged.
+- Kept Search Console authentication and search-result collection outside the CLI; observations remain explicit user-supplied evidence.
+
+### Security
+
+- Added a SHA-pinned, least-privilege CI and OIDC release pipeline.
+- Added verified tarball export with checksums, an SPDX SBOM, and attestation support.
+- Documented maintainer settings, release recovery, and current OpenSSF gaps.
 
 ## 0.9.0
 

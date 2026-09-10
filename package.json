@@ -1,6 +1,6 @@
 {
   "name": "geoptimize",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Deterministic content-readiness lint for static websites and documentation",
   "type": "module",
   "main": "./dist/core/index.js",
@@ -36,10 +36,10 @@
     "docs/release-v0.8.md",
     "scripts/verify-release-v0.8.sh",
     "docs/release-v0.9.md",
+    "docs/release-v0.10.md",
     "docs/visual-report.md",
     "docs/seo-rank-watch.md",
     "docs/assets/",
-    "docs/release-v0.10.md",
     "docs/maintainer-security-settings.md",
     "docs/openssf-best-practices.md",
     "docs/action-reproducibility.md"

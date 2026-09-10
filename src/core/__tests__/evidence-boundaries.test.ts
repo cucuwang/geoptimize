@@ -75,7 +75,7 @@ describe('public metadata', () => {
     expect(publicSurface).toContain('cucuwang/geoptimize');
   });
 
-  it('keeps v0.6 package, CLI, plugin, and Action versions aligned', async () => {
+  it('keeps package, CLI, plugin, and Action versions aligned', async () => {
     const packageJson = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
     const pluginJson = JSON.parse(await readFile(join(root, '.claude-plugin/plugin.json'), 'utf8'));
     const marketplaceJson = JSON.parse(await readFile(join(root, '.claude-plugin/marketplace.json'), 'utf8'));
@@ -83,7 +83,7 @@ describe('public metadata', () => {
     const action = await readFile(join(root, 'action.yml'), 'utf8');
     const compatibilityAction = await readFile(join(root, 'action/action.yml'), 'utf8');
 
-    expect(packageJson.version).toBe('0.9.0');
+    expect(packageJson.version).toBe('0.10.0');
     expect(pluginJson.version).toBe(packageJson.version);
     expect(marketplaceJson.metadata.version).toBe(packageJson.version);
     expect(cli).toContain(`.version('${packageJson.version}')`);
@@ -92,6 +92,7 @@ describe('public metadata', () => {
     expect(action).toContain("default: 'false'");
     expect(compatibilityAction).toContain(`default: 'geoptimize@${packageJson.version}'`);
     expect(compatibilityAction).toContain("default: 'false'");
+    expect(pluginJson.commands).toContain('./skills/seo-rank-watch/SKILL.md');
   });
 
   it('keeps npm publisher metadata normalized and exposes every CLI alias', async () => {

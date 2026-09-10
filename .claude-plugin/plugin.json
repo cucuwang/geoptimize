@@ -1,7 +1,7 @@
 {
   "name": "geoptimize",
   "description": "Content-readiness lint and evidence-bounded discovery experiments",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "author": {
     "name": "Te-Shu Wang"
   },
@@ -12,6 +12,7 @@
   "commands": [
     "./skills/geo-scan/SKILL.md",
     "./skills/geo-generate/SKILL.md",
-    "./skills/geo-transform/SKILL.md"
+    "./skills/geo-transform/SKILL.md",
+    "./skills/seo-rank-watch/SKILL.md"
   ]
 }

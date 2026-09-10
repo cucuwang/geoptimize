@@ -64,6 +64,7 @@ jq -e '
   (.[0].files | map(.path) | index("dist/core/visual-report.js")) != null and
   (.[0].files | map(.path) | index("dist/core/readiness-comparison.js")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.9.md")) != null and
+  (.[0].files | map(.path) | index("docs/release-v0.10.md")) != null and
   (.[0].files | map(.path) | index("docs/assets/report-demo.html")) != null and
   (.[0].files | map(.path) | index("docs/assets/report-demo-after.html")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.8.md")) != null and
