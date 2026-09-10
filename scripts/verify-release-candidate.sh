@@ -63,11 +63,11 @@ jq -e '
   (.[0].files | map(.path) | index("dist/core/site-metrics.js")) != null and
   (.[0].files | map(.path) | index("dist/core/visual-report.js")) != null and
   (.[0].files | map(.path) | index("dist/core/readiness-comparison.js")) != null and
-  (.[0].files | map(.path) | index("dist/core/seo-watch.js")) != null and
+  (.[0].files | map(.path) | index("dist/core/seo-experiments.js")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.9.md")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.10.md")) != null and
-  (.[0].files | map(.path) | index("docs/seo-rank-watch.md")) != null and
-  (.[0].files | map(.path) | index("skills/seo-rank-watch/SKILL.md")) != null and
+  (.[0].files | map(.path) | index("docs/seo-experiment-ledger.md")) != null and
+  (.[0].files | map(.path) | index("skills/seo-experiment-ledger/SKILL.md")) != null and
   (.[0].files | map(.path) | index("docs/assets/report-demo.html")) != null and
   (.[0].files | map(.path) | index("docs/assets/report-demo-after.html")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.8.md")) != null and
@@ -112,7 +112,7 @@ mkdir -p "$SEO_ROOT"
   --country TWN --device DESKTOP --position 9 --clicks 1 --impressions 20 \
   --observed-at 2025-12-29T00:00:00Z >/dev/null
 "$GEO_BINARY" seo select "$SEO_ROOT" --json > "$VERIFY_ROOT/seo-candidate.json"
-jq -e --arg keyword "$SEO_KEYWORD" '.watchword.keyword == $keyword' \
+jq -e --arg keyword "$SEO_KEYWORD" '.query.keyword == $keyword' \
   "$VERIFY_ROOT/seo-candidate.json" >/dev/null
 "$GEO_BINARY" seo start "$SEO_ROOT" \
   --keyword "$SEO_KEYWORD" --date 2026-01-01 \
@@ -131,8 +131,8 @@ SEO_OBSERVATION_ID=$(jq -er '.id' "$VERIFY_ROOT/seo-observation.json")
   --note "Comparable release acceptance observation" >/dev/null
 "$GEO_BINARY" seo status "$SEO_ROOT" --json > "$VERIFY_ROOT/seo-status.json"
 jq -e --arg keyword "$SEO_KEYWORD" '
-  .counts == {active: 1, observing: 0, achieved: 0, observations: 2} and
-  .candidate.watchword.keyword == $keyword
+  .counts == {eligible: 1, monitoring: 0, completed: 0, observations: 2} and
+  .candidate.query.keyword == $keyword
 ' "$VERIFY_ROOT/seo-status.json" >/dev/null
 
 "$CONSUMER_ROOT/node_modules/.bin/geoptimize" audit \

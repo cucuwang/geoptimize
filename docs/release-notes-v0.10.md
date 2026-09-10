@@ -1,11 +1,11 @@
 # geoptimize 0.10.0
 
-## SEO rank watch
+## SEO experiment ledger
 
-- Adds `geo seo` commands for reviewable watchword, rank-history, and improvement ledgers.
-- Keeps one page experiment observing at a time and starts its seven-day cooldown only after public deployment.
+- Adds `geo seo` commands for versioned query, observation, and experiment ledgers.
+- Keeps one page experiment monitoring at a time and starts its seven-day review period only after public deployment.
 - Preserves fixed query, page, country, device, search type, and date-window evidence for later review.
-- Includes the reusable `/seo-rank-watch` skill and workflow guide.
+- Includes the reusable `/seo-experiment-ledger` skill and workflow guide.
 
 ## Release integrity
 
