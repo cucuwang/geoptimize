@@ -36,6 +36,16 @@ npx geoptimize audit https://example.com --json
 npx geoptimize audit-site https://example.com --max-pages 20 --json
 ```
 
+For measured Google Search experiments, initialize the separate SEO ledger:
+
+```bash
+geo seo init .
+geo seo add . --keyword "energy management system integration" --page /services/ems/ --priority high
+geo seo status .
+```
+
+The ledger enforces one active page experiment and a seven-day cooldown while preserving fixed query, page, country, device, search type, and date-window evidence. It does not affect the readiness score. See [SEO rank watch](docs/seo-rank-watch.md).
+
 Example output:
 
 ```text
