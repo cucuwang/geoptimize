@@ -9,6 +9,7 @@ All notable user-visible changes will be documented here. The project follows Se
 - Added `geo seo` commands for versioned query, observation, and experiment ledgers.
 - Added fixed query-segment evidence, one-experiment-at-a-time selection, and a seven-day post-publication review cooldown.
 - Added a reusable SEO experiment-ledger skill and workflow documentation.
+- Added concise README guides in Traditional Chinese, Simplified Chinese, Japanese, Korean, Spanish, French, German, and Brazilian Portuguese.
 
 ### Compatibility
 

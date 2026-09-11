@@ -1,5 +1,7 @@
 # geoptimize
 
+[English](README.md) | [繁體中文](docs/readme/README.zh-TW.md) | [简体中文](docs/readme/README.zh-CN.md) | [日本語](docs/readme/README.ja.md) | [한국어](docs/readme/README.ko.md) | [Español](docs/readme/README.es.md) | [Français](docs/readme/README.fr.md) | [Deutsch](docs/readme/README.de.md) | [Português do Brasil](docs/readme/README.pt-BR.md)
+
 **Formerly aeoptimize.** This is the same project, continued under the `geoptimize` name from version 0.8.0. Existing `aeoptimize` users can follow the [migration guide](https://github.com/cucuwang/geoptimize/blob/main/docs/migrating-from-aeoptimize.md).
 
 [Current npm package](https://www.npmjs.com/package/geoptimize) · [Legacy npm package and download history](https://www.npmjs.com/package/aeoptimize) · [Last release under the old name](https://github.com/cucuwang/geoptimize/releases/tag/v0.7.0)

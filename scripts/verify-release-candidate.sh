@@ -68,6 +68,14 @@ jq -e '
   (.[0].files | map(.path) | index("docs/release-v0.10.md")) != null and
   (.[0].files | map(.path) | index("docs/seo-experiment-ledger.md")) != null and
   (.[0].files | map(.path) | index("skills/seo-experiment-ledger/SKILL.md")) != null and
+  (.[0].files | map(.path) | index("docs/readme/README.zh-TW.md")) != null and
+  (.[0].files | map(.path) | index("docs/readme/README.zh-CN.md")) != null and
+  (.[0].files | map(.path) | index("docs/readme/README.ja.md")) != null and
+  (.[0].files | map(.path) | index("docs/readme/README.ko.md")) != null and
+  (.[0].files | map(.path) | index("docs/readme/README.es.md")) != null and
+  (.[0].files | map(.path) | index("docs/readme/README.fr.md")) != null and
+  (.[0].files | map(.path) | index("docs/readme/README.de.md")) != null and
+  (.[0].files | map(.path) | index("docs/readme/README.pt-BR.md")) != null and
   (.[0].files | map(.path) | index("docs/assets/report-demo.html")) != null and
   (.[0].files | map(.path) | index("docs/assets/report-demo-after.html")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.8.md")) != null and

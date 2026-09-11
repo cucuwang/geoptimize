@@ -6,6 +6,7 @@
 - Keeps one page experiment monitoring at a time and starts its seven-day review period only after public deployment.
 - Preserves fixed query, page, country, device, search type, and date-window evidence for later review.
 - Includes the reusable `/seo-experiment-ledger` skill and workflow guide.
+- Includes localized README guides for eight widely used languages.
 
 ## Release integrity
 
