@@ -47,6 +47,26 @@ describe('robots policy', () => {
 
     expect(robotsAllows('https://example.com/private', policy)).toBe(false);
   });
+
+  it('strips long comments including Unicode separators without creating directives', () => {
+    const commentTail = '#'.repeat(20_000) + '\u2028Allow: /comment-allow\u2029Disallow: /comment-disallow';
+    const policy = parseRobotsTxt(
+      `User-agent: *${commentTail}\n` +
+      `Disallow: /private${commentTail}\n` +
+      `Allow: /private/public$${commentTail}\n` +
+      `Sitemap: https://example.com/sitemap.xml${commentTail}`,
+    );
+
+    expect(policy.sitemapUrls).toEqual(['https://example.com/sitemap.xml']);
+    expect(policy.rules).toEqual([
+      { directive: 'disallow', pattern: '/private' },
+      { directive: 'allow', pattern: '/private/public$' },
+    ]);
+    expect(robotsAllows('https://example.com/private', policy)).toBe(false);
+    expect(robotsAllows('https://example.com/private/public', policy)).toBe(true);
+    expect(robotsAllows('https://example.com/private/public/child', policy)).toBe(false);
+    expect(robotsAllows('https://example.com/comment-disallow', policy)).toBe(true);
+  });
 });
 
 describe('sitemap parsing', () => {

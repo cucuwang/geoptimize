@@ -90,7 +90,8 @@ export function parseRobotsTxt(text: string, userAgent = SITE_AUDIT_USER_AGENT):
   let current: RobotsGroup | null = null;
 
   for (const rawLine of text.split(/\r?\n/)) {
-    const line = rawLine.replace(/#.*$/, '').trim();
+    const commentStart = rawLine.indexOf('#');
+    const line = (commentStart === -1 ? rawLine : rawLine.slice(0, commentStart)).trim();
     if (!line) continue;
     const separator = line.indexOf(':');
     if (separator < 0) continue;

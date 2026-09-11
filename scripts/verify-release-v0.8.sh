@@ -34,7 +34,7 @@ if ! [[ "$EXPECTED_PACKAGE_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
   exit 2
 fi
 
-for command_name in awk curl jq npm git mktemp; do
+for command_name in awk curl jq npm git mktemp tar; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "missing required command: $command_name" >&2
     exit 2
@@ -43,11 +43,16 @@ done
 
 VERIFY_BASE=${TMPDIR:-/tmp}
 VERIFY_BASE=${VERIFY_BASE%/}
+if ! VERIFY_BASE=$(cd -- "$VERIFY_BASE" 2>/dev/null && pwd -P); then
+  echo "temporary directory is unavailable: ${TMPDIR:-/tmp}" >&2
+  exit 2
+fi
 VERIFY_ROOT=$(mktemp -d "$VERIFY_BASE/geoptimize-release-verify.XXXXXX")
 REGISTRY_JSON="$VERIFY_ROOT/registry.json"
 RELEASE_JSON="$VERIFY_ROOT/release.json"
 PACKAGE_TARBALL="$VERIFY_ROOT/$PACKAGE_NAME-$EXPECTED_VERSION.tgz"
 CONSUMER_ROOT="$VERIFY_ROOT/consumer"
+SOURCE_LOCK="$SCRIPT_DIR/../package-lock.json"
 FAILURES=0
 
 cleanup() {
@@ -113,31 +118,47 @@ if curl -fsS "https://registry.npmjs.org/$PACKAGE_NAME" > "$REGISTRY_JSON"; then
       fail "npm repository identity does not match $REPOSITORY"
     fi
 
+    tarball_verified=false
     tarball_url=$(jq -r --arg version "$EXPECTED_VERSION" '.versions[$version].dist.tarball // empty' "$REGISTRY_JSON")
     if [ -n "$tarball_url" ] && curl -fLsS "$tarball_url" -o "$PACKAGE_TARBALL"; then
-      package_sha256=$(node -e "const crypto=require('node:crypto');const fs=require('node:fs');const path=process.argv[1];console.log(crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex'))" "$PACKAGE_TARBALL")
-      if [ "$package_sha256" = "$EXPECTED_PACKAGE_SHA256" ]; then
-        pass "npm tarball SHA-256 matches the verified candidate"
+      if package_sha256=$(node -e "const crypto=require('node:crypto');const fs=require('node:fs');const path=process.argv[1];console.log(crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex'))" "$PACKAGE_TARBALL"); then
+        if [ "$package_sha256" = "$EXPECTED_PACKAGE_SHA256" ]; then
+          pass "npm tarball SHA-256 matches the verified candidate"
+          tarball_verified=true
+        else
+          fail "npm tarball SHA-256 is ${package_sha256:-missing}; expected $EXPECTED_PACKAGE_SHA256"
+        fi
       else
-        fail "npm tarball SHA-256 is ${package_sha256:-missing}; expected $EXPECTED_PACKAGE_SHA256"
+        fail "npm tarball SHA-256 could not be computed"
       fi
-    else
+    elif [ -n "$tarball_url" ]; then
       fail "npm tarball could not be downloaded for SHA-256 verification"
+    else
+      fail "npm metadata did not expose a tarball URL for $EXPECTED_VERSION"
     fi
 
-    if npm --cache "$VERIFY_ROOT/npm-cache" install \
-      --ignore-scripts --no-audit --no-fund \
-      --prefix "$CONSUMER_ROOT" "$PACKAGE_TARBALL" >/dev/null; then
-      for binary in geoptimize geo geo-cli; do
-        binary_version=$("$CONSUMER_ROOT/node_modules/.bin/$binary" --version 2>/dev/null || true)
-        if [ "$binary_version" = "$EXPECTED_VERSION" ]; then
-          pass "$binary resolves to $EXPECTED_VERSION from the public package"
+    if [ "$tarball_verified" = true ]; then
+      if [ ! -f "$SOURCE_LOCK" ]; then
+        fail "canonical source package-lock.json is required for the clean consumer"
+      elif node "$SCRIPT_DIR/prepare-release-consumer.mjs" \
+        "$PACKAGE_TARBALL" "$CONSUMER_ROOT" "$SOURCE_LOCK" "$EXPECTED_PACKAGE_SHA256"; then
+        if npm --cache "$VERIFY_ROOT/npm-cache" ci \
+          --ignore-scripts --no-audit --no-fund \
+          --prefix "$CONSUMER_ROOT"; then
+          for binary in geoptimize geo geo-cli; do
+            binary_version=$("$CONSUMER_ROOT/node_modules/.bin/$binary" --version 2>/dev/null || true)
+            if [ "$binary_version" = "$EXPECTED_VERSION" ]; then
+              pass "$binary resolves to $EXPECTED_VERSION from the public package"
+            else
+              fail "$binary returned ${binary_version:-no version}; expected $EXPECTED_VERSION"
+            fi
+          done
         else
-          fail "$binary returned ${binary_version:-no version}; expected $EXPECTED_VERSION"
+          fail "clean consumer installation failed for the verified package tarball"
         fi
-      done
-    else
-      fail "clean consumer installation failed for the verified package tarball"
+      else
+        fail "clean consumer metadata could not be prepared from the verified package tarball"
+      fi
     fi
   else
     fail "npm does not contain exact version $EXPECTED_VERSION"

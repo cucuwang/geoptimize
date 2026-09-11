@@ -15,6 +15,15 @@ describe('buildScoringPrompt', () => {
     const prompt = buildScoringPrompt(longHtml, 'test');
     expect(prompt.length).toBeLessThan(longHtml.length);
   });
+
+  it('preserves unmatched markup tails while stripping matched tags', () => {
+    const manyOpeners = '<'.repeat(6000);
+    const content = `before <strong>bold</strong> after ${manyOpeners} tail`;
+    const prompt = buildScoringPrompt(content, 'test');
+    const excerpt = prompt.split('---BEGIN UNTRUSTED PAGE CONTENT---\n')[1].split('\n---END UNTRUSTED PAGE CONTENT---')[0];
+
+    expect(excerpt).toBe(`before bold after ${manyOpeners} tail`);
+  });
 });
 
 describe('parseAiResponse', () => {

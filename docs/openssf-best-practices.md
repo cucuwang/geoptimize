@@ -1,7 +1,9 @@
 # OpenSSF Best Practices: Passing gap analysis
 
-Assessment date: 2026-09-09; release evidence reviewed 2026-09-11. This is evidence preparation, not a certification or
-completed questionnaire. [Official Passing criteria](https://www.bestpractices.dev/en/criteria/0?details=true&rationale=true)
+Assessment date: 2026-09-11; release evidence reviewed 2026-09-11. The repository
+state under review is `e4580129e746110cdacf3b4644757c9575c56a93`. This is evidence
+preparation, not a certification or completed questionnaire. [Official Passing
+criteria](https://www.bestpractices.dev/en/criteria/0?details=true&rationale=true)
 remain authoritative; review every applicable MUST/MUST NOT and justify SHOULD items
 when registering. Silver and Gold are outside scope.
 
@@ -25,19 +27,30 @@ transitive dependency or the maintainer's historical response performance.
 
 | Work | Status / evidence needed |
 | --- | --- |
-| Static analysis for application and workflow sources | CodeQL and Scorecard workflows pass on current main; ongoing finding triage remains |
+| Static analysis for application and workflow sources | CodeQL and Scorecard workflow runs for `e458012` completed successfully. Scorecard v5.3.0 still reports open findings, including SAST 7 with 8 of 23 sampled PR heads checked; the four CodeQL baseline findings were reproduced locally with CodeQL 2.27.0. A successful workflow or local reproduction is not alert closure. |
 | Automated dependency review and updates | Dependency Review passed; Dependabot alerts, security updates and weekly version updates are enabled |
 | Verifiable release integrity | v0.10.0 is public with npm OIDC provenance, an SSH-signed tag, checksums, an SPDX SBOM and a GitHub attestation; future releases must repeat the same gates |
-| Document operational trust boundaries | Release/settings/Action decision documents added |
+| Document operational trust boundaries | Release/settings/Action decision documents added; the direct private-report link is a local working-tree change in this remediation and is not public evidence until merged |
+| OpenSSF CII-Best-Practices check | Scorecard v5.3.0 reports score 0 because no badge is detected. Its evaluation maps InProgress to 2, Passing to 5, Silver to 7 and Gold to 10. This workflow has no custom policy input; the pinned action v2.4.3 template uses 5 as the default Passing threshold. Read the effective SARIF policy and the per-commit result before declaring an alert cleared. |
 | Release notes for security fixes | Changelog process exists; describe actual fixes and identifiers when applicable |
+
+The current repository administration readback reports private vulnerability
+reporting `enabled: true`. The working-tree `SECURITY.md` now links the direct
+[private report form](https://github.com/cucuwang/geoptimize/security/advisories/new);
+the link becomes public evidence only after this change is merged and the next
+Scorecard result is read back.
 
 ## Maintainer/manual verification required
 
-- Register the project and answer all Passing criteria with public evidence links.
-- `know_secure_design` / `know_common_errors`: identify a primary developer who can
-  substantiate secure-design and common-error knowledge. A workflow cannot prove this.
-- Private reporting is enabled; monitor acknowledgement/remediation performance rather
-  than inferring historical responsiveness from a written target.
+- Register the canonical project URL `https://github.com/cucuwang/geoptimize` at
+  [bestpractices.dev](https://www.bestpractices.dev/) and answer every applicable
+  Passing criterion with public evidence links. The external questionnaire and
+  its service-assigned project identity are required for the CII check.
+- `know_secure_design` / `know_common_errors`: identify a primary developer who
+  can substantiate both areas and complete the service's human attestations. A
+  workflow, agent review or test count cannot provide these attestations.
+- Private reporting is enabled; monitor acknowledgement/remediation performance
+  rather than inferring historical responsiveness from a written target.
 - Review outstanding static-analysis, dependency and reported vulnerability findings;
   document severity, disposition and timely fixes. Audit success is time-bound.
 - Confirm test-policy enforcement for new functionality and fixes, and that important
@@ -47,8 +60,9 @@ transitive dependency or the maintainer's historical response performance.
   requirements where relevant, and absence of known unpatched exploitable vulnerabilities.
 - Confirm English/public documentation and issue/release accessibility, user support
   expectations, and release-note practice against the complete live questionnaire.
-- Only insert the Best Practices badge after the service awards Passing. Scorecard is
-  a separate automated assessment and does not award this badge.
+- Only insert the Best Practices badge after the service awards Passing or higher.
+  Read back the public project status and the [Scorecard API result](https://api.securityscorecards.dev/projects/github.com/cucuwang/geoptimize).
+  Scorecard is a separate automated assessment and does not award this badge.
 
 ## Not applicable (bounded, requires maintainer confirmation)
 
@@ -59,3 +73,6 @@ transitive dependency or the maintainer's historical response performance.
   this does not exempt dependencies, browser interaction or input validation.
 - No specific N/A questionnaire answer is preselected. Use N/A only where the actual
   criterion allows it and the current code review supports the explanation.
+
+The per-alert implementation, acceptance readback, rollback notes and remote gates
+are tracked in [docs/code-scanning-remediation.md](code-scanning-remediation.md).
