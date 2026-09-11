@@ -1,6 +1,6 @@
 # OpenSSF Best Practices: Passing gap analysis
 
-Assessment date: 2026-09-09. This is evidence preparation, not a certification or
+Assessment date: 2026-09-09; release evidence reviewed 2026-09-11. This is evidence preparation, not a certification or
 completed questionnaire. [Official Passing criteria](https://www.bestpractices.dev/en/criteria/0?details=true&rationale=true)
 remain authoritative; review every applicable MUST/MUST NOT and justify SHOULD items
 when registering. Silver and Gold are outside scope.
@@ -21,13 +21,13 @@ These are observable artifacts, not a declaration that every criterion in an are
 is met. Public source availability does not establish license compatibility of every
 transitive dependency or the maintainer's historical response performance.
 
-## Repository changes required
+## Repository and evidence status
 
 | Work | Status / evidence needed |
 | --- | --- |
-| Static analysis for application and workflow sources | CodeQL passed on PR #19; first main run and ongoing finding triage remain |
+| Static analysis for application and workflow sources | CodeQL and Scorecard workflows pass on current main; ongoing finding triage remains |
 | Automated dependency review and updates | Dependency Review passed; Dependabot alerts, security updates and weekly version updates are enabled |
-| Verifiable release integrity | OIDC workflow, SBOM, checksums and attestation prepared; next authorized release supplies public evidence |
+| Verifiable release integrity | v0.10.0 is public with npm OIDC provenance, an SSH-signed tag, checksums, an SPDX SBOM and a GitHub attestation; future releases must repeat the same gates |
 | Document operational trust boundaries | Release/settings/Action decision documents added |
 | Release notes for security fixes | Changelog process exists; describe actual fixes and identifiers when applicable |
 

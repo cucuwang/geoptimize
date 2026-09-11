@@ -2,6 +2,13 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## Unreleased
+
+### Documentation
+
+- Updated current-state documentation after the verified v0.10.0 publication.
+- Aligned migration, maintainer-security, OpenSSF, Action sample, and plugin descriptions with the published release.
+
 ## 0.10.0
 
 ### Added

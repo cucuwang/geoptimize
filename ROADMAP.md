@@ -30,12 +30,12 @@ The code-level gates are enforced by `npm run release:check`, `src/core/__tests_
 - automatic deployment of generated JSON-LD or crawler policy;
 - adding more AI scorers and calling their average consensus.
 
-## v0.10 — Trust hardening
+## v0.10 — Trust hardening (released)
 
 Repository preparation covers SHA-pinned Actions, minimal token permissions, a
 reusable release pipeline, OIDC preparation, tarball hashes/SPDX/attestations,
 dependency review, CodeQL, Dependabot, Scorecard and maintainer governance guidance.
-Account settings, signing identity and actual publication are separate gates;
-OpenSSF Passing is pending assessment. Package version remains 0.9.0 until release
-approval. Bundled Action runtime evaluation is tracked separately to preserve the
-package-spec contract. See [release-v0.10](docs/release-v0.10.md).
+Version 0.10.0 is published with npm OIDC provenance, an SSH-signed immutable tag,
+SHA-256 checksums, an SPDX SBOM and a GitHub artifact attestation. OpenSSF Passing
+remains pending assessment. Bundled Action runtime evaluation is tracked separately
+to preserve the package-spec contract. See [release-v0.10](docs/release-v0.10.md).

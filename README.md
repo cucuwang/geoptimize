@@ -330,13 +330,13 @@ npx skills add cucuwang/geoptimize
 
 ## Project status
 
-Version 0.10 adds a separate, evidence-bounded SEO experiment ledger while retaining the existing readiness score and audit contracts. Release acceptance and rollback are documented in [docs/release-v0.10.md](docs/release-v0.10.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
+Version 0.10.0 is published on [npm](https://www.npmjs.com/package/geoptimize) and [GitHub](https://github.com/cucuwang/geoptimize/releases/tag/v0.10.0). It adds a separate, evidence-bounded SEO experiment ledger while retaining the existing readiness score and audit contracts. Release acceptance and rollback are documented in [docs/release-v0.10.md](docs/release-v0.10.md); longer-term adoption work remains in [ROADMAP.md](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 
 ## Release integrity and security maintenance
 
-The next-release trust-hardening path is documented in [the v0.10 runbook](docs/release-v0.10.md).
+The v0.10 trust-hardening and release path is documented in [the v0.10 runbook](docs/release-v0.10.md).
 CI validates Node 22/24 tarballs, package contents and CLI/Action contracts; the
 release preparation exports SHA-256 checksums and an SPDX production-dependency SBOM.
 Repository settings and npm authorization remain explicit [maintainer gates](docs/maintainer-security-settings.md).
