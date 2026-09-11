@@ -1,6 +1,6 @@
 export function buildScoringPrompt(htmlContent: string, url: string): string {
-  // Strip HTML tags and truncate to avoid token limits and prompt injection
-  const stripped = htmlContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  // Strip simple HTML markup before normalizing the bounded prompt excerpt.
+  const stripped = stripHtmlTags(htmlContent).replace(/\s+/g, ' ').trim();
   const truncated = stripped.slice(0, 8000);
 
   return `You are an experimental content-quality reviewer. Analyze this webpage for clarity, technical discoverability, and unsupported claims.
@@ -32,6 +32,32 @@ Respond with ONLY valid JSON, no markdown, no explanation:
 ---BEGIN UNTRUSTED PAGE CONTENT---
 ${truncated}
 ---END UNTRUSTED PAGE CONTENT---`;
+}
+
+function stripHtmlTags(html: string): string {
+  const parts: string[] = [];
+  let cursor = 0;
+
+  while (cursor < html.length) {
+    const tagStart = html.indexOf('<', cursor);
+    if (tagStart === -1) {
+      parts.push(html.slice(cursor));
+      break;
+    }
+
+    parts.push(html.slice(cursor, tagStart));
+    const tagEnd = html.indexOf('>', tagStart + 1);
+    if (tagEnd === -1) {
+      // Keep an unmatched '<' and its tail, matching the old replacement semantics.
+      parts.push(html.slice(tagStart));
+      break;
+    }
+
+    parts.push(' ');
+    cursor = tagEnd + 1;
+  }
+
+  return parts.join('');
 }
 
 export interface AiScoreResponse {

@@ -6,7 +6,7 @@ Security fixes are applied to the latest published minor release. Older releases
 
 ## Reporting a vulnerability
 
-Use GitHub's private vulnerability reporting for `cucuwang/geoptimize` when available. If the repository does not show a private reporting option, open a minimal issue asking for a private contact channel; do not include exploit details, credentials, private URLs, or user data in a public issue.
+Private vulnerability reporting is enabled for `cucuwang/geoptimize`. Submit a report through [GitHub's private vulnerability reporting form](https://github.com/cucuwang/geoptimize/security/advisories/new). Do not include credentials or unnecessary personal data. Include sensitive reproduction details only in that private report.
 
 Include the affected version, environment, reproduction preconditions, impact, and the smallest safe proof of concept. You should receive an acknowledgement within seven days. A remediation timeline depends on severity and reproducibility.
 

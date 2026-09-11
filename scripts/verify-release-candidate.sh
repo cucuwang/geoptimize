@@ -18,9 +18,14 @@ fi
 
 VERIFY_BASE=${TMPDIR:-/tmp}
 VERIFY_BASE=${VERIFY_BASE%/}
+if ! VERIFY_BASE=$(cd -- "$VERIFY_BASE" 2>/dev/null && pwd -P); then
+  echo "temporary directory is unavailable: ${TMPDIR:-/tmp}" >&2
+  exit 2
+fi
 VERIFY_ROOT=$(mktemp -d "$VERIFY_BASE/geoptimize-release-candidate.XXXXXX")
 PACK_ROOT="$VERIFY_ROOT/pack"
 CONSUMER_ROOT="$VERIFY_ROOT/consumer"
+SOURCE_LOCK="$REPO_ROOT/package-lock.json"
 PACK_JSON="$VERIFY_ROOT/pack.json"
 NORMALIZED_PACK_JSON="$VERIFY_ROOT/pack-normalized.json"
 
@@ -82,7 +87,8 @@ jq -e '
   (.[0].files | map(.path) | index("fixtures/v0.6/rule-corpus.ts")) != null and
   (.[0].files | map(.path) | index("examples/github-action-sample/.github/workflows/geoptimize.yml")) != null and
   (.[0].files | map(.path) | index("scripts/verify-release-candidate.sh")) != null and
-  (.[0].files | map(.path) | index("scripts/verify-release-v0.8.sh")) != null
+  (.[0].files | map(.path) | index("scripts/verify-release-v0.8.sh")) != null and
+  (.[0].files | map(.path) | index("scripts/prepare-release-consumer.mjs")) != null
 ' "$PACK_JSON" >/dev/null
 
 if ! tar -xOf "$PACKAGE_TARBALL" package/README.md > "$VERIFY_ROOT/README.md" || \
@@ -91,9 +97,16 @@ if ! tar -xOf "$PACKAGE_TARBALL" package/README.md > "$VERIFY_ROOT/README.md" ||
   exit 1
 fi
 
-npm_config_dry_run=false npm --cache "$VERIFY_ROOT/npm-cache" install \
+if [ ! -f "$SOURCE_LOCK" ]; then
+  echo "canonical source package-lock.json is required for the clean consumer" >&2
+  exit 1
+fi
+
+node "$REPO_ROOT/scripts/prepare-release-consumer.mjs" \
+  "$PACKAGE_TARBALL" "$CONSUMER_ROOT" "$SOURCE_LOCK" "$PACKAGE_SHA256"
+npm_config_dry_run=false npm --cache "$VERIFY_ROOT/npm-cache" ci \
   --ignore-scripts --no-audit --no-fund \
-  --prefix "$CONSUMER_ROOT" "$PACKAGE_TARBALL" >/dev/null
+  --prefix "$CONSUMER_ROOT"
 
 for binary in geoptimize geo geo-cli; do
   BINARY_VERSION=$("$CONSUMER_ROOT/node_modules/.bin/$binary" --version)

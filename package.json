@@ -23,6 +23,7 @@
     "scripts/verify-release-candidate.sh",
     "scripts/verify-publish-source.sh",
     "scripts/verify-release-v0.6.sh",
+    "scripts/prepare-release-consumer.mjs",
     ".claude-plugin/",
     "docs/methodology.md",
     "docs/release-v0.6.md",
@@ -51,6 +52,7 @@
     "release:check": "bash scripts/verify-release-candidate.sh",
     "dev": "tsc --watch",
     "test": "vitest run",
+    "test:fuzz": "vitest run src/core/__tests__/security-fuzz.test.ts",
     "test:watch": "vitest",
     "prepublishOnly": "npm run release:check && bash scripts/verify-publish-source.sh"
   },
@@ -87,6 +89,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "fast-check": "4.10.0",
     "typescript": "^5.4.0",
     "vitest": "^4.1.10"
   }
