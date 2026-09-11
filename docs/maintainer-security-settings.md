@@ -1,8 +1,8 @@
 # Maintainer security settings
 
-Snapshot: 2026-09-09. Configuration files do not prove account settings are enabled.
-The states below were read back through the repository administration API after an
-authorized settings update. No credentials, production tags or releases were changed.
+Snapshot: 2026-09-11. Configuration files do not prove account settings are enabled.
+The states below were read back through the repository administration API, npm package
+settings and the completed v0.10 release. No credential values are stored here.
 
 ## GitHub rulesets
 
@@ -36,8 +36,9 @@ The first five job identifiers and Node matrix values are preserved. The ruleset
 the observed PR context names rather than nested `validate / …` names from the manual
 release workflow. It requires branches to be up to date and has no path filters.
 
-`protect-release-tags` (ID 22617499) is already Active for `v*.*.*`, blocking updates,
-deletion and non-fast-forward changes with no bypass actors. Preserve it and v0.9.0.
+`protect-release-tags` (ID 22617499) is Active for `v*.*.*`, blocking updates,
+deletion and non-fast-forward changes with no bypass actors. Preserve the existing
+v0.9.0 and signed v0.10.0 tags.
 
 ## Security feature settings
 
@@ -52,49 +53,50 @@ and analysis). Enable/check each independently:
 | Secret Protection → Secret scanning | Enabled |
 | Secret Protection → Push protection | Enabled |
 | Private vulnerability reporting | Enabled; the repository API returned `enabled: true` |
-| Code scanning → CodeQL | Advanced workflow passed on PR #19; first main execution remains pending |
+| Code scanning → CodeQL | Advanced workflow passes on current main and protected pull requests |
 
 The initial Dependency Review failure reported that the dependency graph was disabled.
 After enablement, the same head passed without suppressing the check or adding a PAT.
 Recheck these settings through the API and UI after ownership or security-plan changes.
 
-## Immutable releases (state not confirmed)
+## Immutable releases
 
-Settings → General → Releases → **Enable release immutability**. This applies to
-future releases, not existing v0.9.0. Save before the next publication.
-The workflow creates a draft, uploads tarball/checksums/SBOM, publishes npm, then
-publishes the draft. A finalized immutable release cannot have assets replaced;
-recover by fixing forward. Review Marketplace metadata/terms before dispatch because
-finalization must happen only after all desired assets and metadata are in place.
+Release immutability is enabled for the repository. It applies to v0.10.0 and future
+releases; historical v0.9.0 predates this setting. The workflow creates a draft,
+uploads tarball/checksums/SBOM, publishes npm, then publishes the draft. A finalized
+immutable release cannot have assets replaced; recover by fixing forward. Review all
+assets and metadata before finalization.
 
 ## npm Trusted Publisher and release gate
 
-1. npmjs.com → package **geoptimize** → Settings → Trusted Publisher → GitHub Actions.
-2. Organization/user: `cucuwang`; repository: `geoptimize`; workflow filename:
-   `release.yml`; environment: `npm-release` (exact spelling; no directory prefix).
-3. GitHub Settings → Environments → New environment `npm-release`. Restrict deployment
-   branches to `main`. Configure cucuwang as reviewer if available; allow self-review
-   for a single maintainer, otherwise the workflow cannot be approved.
-4. After all checklist items and a successful dry run, Settings → Secrets and
-   variables → Actions → Variables: set `RELEASE_ENABLED` to `true`.
-5. Do not add an npm token. The publication job uses GitHub-hosted Node 24 and checks
-   npm >=11.5.1; npm OIDC supplies short-lived authorization.
-6. Actual publication requires a separate authorization and manual dispatch with
-   `publish=true`; the default remains false. No tag-push auto-publication exists.
+Current state
+
+- npm Trusted Publisher binds `cucuwang/geoptimize`, `release.yml` and the
+  `npm-release` environment. It permits `npm publish` and `npm stage publish`.
+- The GitHub `npm-release` environment accepts only `main` through a custom branch
+  policy. Repository variable `RELEASE_ENABLED` is `true`.
+- The publication job uses GitHub-hosted Node 24 and npm OIDC. No long-lived npm token
+  is configured for this path.
+- Publication still requires a separately authorized manual dispatch with
+  `publish=true`; the default remains false. Tag pushes do not publish automatically.
+
+For future releases, preserve the exact publisher owner, repository, workflow filename
+and environment spelling. Review the signed tag, source SHA and release assets before
+dispatching publication.
 
 ## Signing identity and OpenSSF
 
-GitHub account Settings → SSH and GPG keys: register an existing approved public
-signing key (SSH key type: Signing key, or GPG public key). Configure signing locally
-following GitHub's signing guide. This PR does not create or manage keys. Verify a
-new annotated signed tag with `git tag -v` and GitHub's Verified indicator; a verified
-commit with an unsigned/lightweight tag is insufficient.
+An approved existing SSH public key is registered with GitHub as a signing key. The
+repository-local signing configuration uses that public-key path, while the private key
+remains local. GitHub verified the annotated v0.10.0 tag as valid and linked it to the
+release commit. Future release tags require the same explicit signing and readback;
+a verified commit with an unsigned or lightweight tag is insufficient.
 
 At https://www.bestpractices.dev/ sign in and register
 `https://github.com/cucuwang/geoptimize`. Complete the Passing questionnaire using
 [the gap analysis](openssf-best-practices.md). Only add its badge after the service
-actually awards Passing. Scorecard's result badge is likewise deferred until a
-successful main-branch upload is visible at scorecard.dev.
+actually awards Passing. Scorecard workflows now succeed on main; add a result badge
+only after its public score page and repository identity are read back.
 
 References: [npm OIDC](https://docs.npmjs.com/trusted-publishers/),
 [immutable releases](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes),

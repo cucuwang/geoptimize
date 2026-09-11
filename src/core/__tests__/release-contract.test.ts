@@ -217,6 +217,8 @@ describe('v0.6 JSON automation contract', () => {
     expect(workflow).not.toContain('--notes-file docs/release-v0.10.md');
     expect(releaseNotes).toContain('# geoptimize 0.10.0');
     expect(releaseNotes).not.toContain('repository preparation');
-    expect(runbook).toContain('Status: release candidate preparation');
+    expect(runbook).toContain('Status: published and verified on 2026-09-11.');
+    expect(runbook).toContain('## Publication receipt');
+    expect(runbook).not.toContain('release candidate preparation');
   });
 });

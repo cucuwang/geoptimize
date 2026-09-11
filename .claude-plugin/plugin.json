@@ -1,6 +1,6 @@
 {
   "name": "geoptimize",
-  "description": "Content-readiness lint and evidence-bounded discovery experiments",
+  "description": "Content-readiness lint with an evidence-bounded SEO experiment ledger",
   "version": "0.10.0",
   "author": {
     "name": "Te-Shu Wang"

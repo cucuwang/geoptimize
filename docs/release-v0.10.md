@@ -1,9 +1,11 @@
 # v0.10 trust-hardening release runbook
 
-Status: release candidate preparation; package version 0.10.0 is under review.
-Nothing in this document asserts that 0.10.0 has been published. This release
-adds the `geo seo` CLI, API, data contract, and skill while preserving the
-readiness score, existing audit JSON, and composite Action scoring contracts.
+Status: published and verified on 2026-09-11.
+Version 0.10.0 was published from commit
+`01ac0f19e2a7f8f8854b3304ecd0193a6a9d2b63` with an SSH-signed tag, npm OIDC
+provenance and a GitHub artifact attestation. This release adds the `geo seo`
+CLI, API, data contract, and skill while preserving the readiness score,
+existing audit JSON, and composite Action scoring contracts.
 
 ## Candidate and dry run
 
@@ -46,31 +48,48 @@ All CI gates run and release-assets is retained; no signing, OIDC publication,
 attestation or GitHub Release writes occur. A successful dry run proves packaging,
 not external npm authorization or immutable-release settings.
 
-## Authorized next release
+## Executed release procedure
 
-1. Complete [maintainer settings](maintainer-security-settings.md), including npm
-   environment binding, main required checks, immutable releases and signing identity.
-2. Review the version-bump PR that updates package/lock, CLI and plugin metadata,
-   both Action defaults, sample pins, hard-coded CI tarball fixtures, changelog,
-   the SEO workflow, and release-contract expectations. Run all gates. Preserve v0.9.0.
-3. Merge the approved release commit, fetch origin/main, and ensure it is still main's
-   exact HEAD. With explicit release authorization, create an annotated signed tag
-   (`git tag -s v0.10.0 <commit> -m 'geoptimize 0.10.0'`) and push only that tag.
-   Verify it locally and on GitHub. Do not create or move tags as part of hardening.
-4. Dispatch Release on main with tag `v0.10.0`, publish true. Confirm the run commit
-   matches the tag. Approve npm-release after reviewing the CI results and artifacts.
-5. Preflight rejects unsigned/lightweight tags, wrong SHA/version/repository, dirty
-   source, changed main HEAD, corrupted artifacts and already-published npm versions.
-6. Attest the tarball; create a draft with all assets; publish that exact tarball with
-   npm OIDC/provenance; finalize the draft; run the existing public readback verifier.
+1. Maintainer settings were completed, including the npm environment binding, main
+   required checks, immutable releases and an approved signing identity.
+2. The version update aligned package/lock, CLI and plugin metadata, both Action
+   defaults, sample pins, CI tarball fixtures, changelog, the SEO workflow and release
+   contract expectations. All release gates passed before publication.
+3. The approved release commit was merged and re-fetched as the exact main HEAD. The
+   annotated SSH-signed `v0.10.0` tag was created for that commit and verified on GitHub.
+4. Release was dispatched from main with tag `v0.10.0` and `publish=true`. The
+   npm-release environment admitted the job after the source and artifact checks passed.
+5. Preflight rejected wrong or previously published versions and required the signed
+   tag, exact main SHA, expected repository and byte-identical candidate.
+6. The workflow attested the tarball, staged a draft with all assets, published the
+   verified tarball through npm OIDC, and finalized the GitHub Release.
 
 The GitHub Release uses [public release notes](release-notes-v0.10.md). Keep setup,
 approval and recovery instructions in this runbook rather than publishing them as the
 release description.
 
-Expected assets: `geoptimize-0.10.0.tgz`, `geoptimize-0.10.0.spdx.json`, `SHA256SUMS`.
+Published assets: `geoptimize-0.10.0.tgz`, `geoptimize-0.10.0.spdx.json`, `SHA256SUMS`.
 The Actions artifact also retains candidate.json. Filenames are version-derived.
 Checksums are calculated from actual artifact bytes, including the SBOM.
+
+## Publication receipt
+
+| Evidence | Verified value |
+| --- | --- |
+| Release commit | `01ac0f19e2a7f8f8854b3304ecd0193a6a9d2b63` |
+| Signed tag | `v0.10.0`, GitHub verification `valid` |
+| npm package | `geoptimize@0.10.0`, dist-tag `latest` |
+| Tarball SHA-256 | `dbe2d0702020875a1cbef60a52c82cf3415c5f75ee2b44ff88dacb021e023d7c` |
+| GitHub Release | [geoptimize 0.10.0](https://github.com/cucuwang/geoptimize/releases/tag/v0.10.0) |
+| Publication workflow | [Release run 34567150571](https://github.com/cucuwang/geoptimize/actions/runs/34567150571) |
+| Provenance signer | `.github/workflows/release.yml` on `refs/heads/main` |
+
+The npm publish command succeeded at 05:46:10Z and reported that registry processing
+could take a few minutes. The same workflow ran its public verifier one second later,
+before npm exposed the new packument, so the run retained a failed final check. npm
+published the version at 05:49:19Z. After propagation, the same verifier passed the npm
+version, repository identity, tarball hash, all three CLI aliases, tag target and
+non-draft GitHub Release. Publication must not be rerun for this immutable version.
 
 ## What the evidence establishes
 

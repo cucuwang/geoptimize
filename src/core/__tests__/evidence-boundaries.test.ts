@@ -119,6 +119,37 @@ describe('public metadata', () => {
     expect(compatibilityAction).toContain(`default: 'geoptimize@${packageJson.version}'`);
     expect(compatibilityAction).toContain("default: 'false'");
     expect(pluginJson.commands).toContain('./skills/seo-experiment-ledger/SKILL.md');
+    expect(pluginJson.description).toBe(
+      'Content-readiness lint with an evidence-bounded SEO experiment ledger',
+    );
+    expect(marketplaceJson.metadata.description).toBe(pluginJson.description);
+    expect(marketplaceJson.plugins[0].description).toContain('SEO experiments');
+  });
+
+  it('keeps current user documentation aligned with the published version', async () => {
+    const packageJson = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+    const version = packageJson.version as string;
+    const [readme, roadmap, security, migration, sample, settings, openSsf] = await Promise.all([
+      readFile(join(root, 'README.md'), 'utf8'),
+      readFile(join(root, 'ROADMAP.md'), 'utf8'),
+      readFile(join(root, 'SECURITY.md'), 'utf8'),
+      readFile(join(root, 'docs', 'migrating-from-aeoptimize.md'), 'utf8'),
+      readFile(join(root, 'examples', 'github-action-sample', 'README.md'), 'utf8'),
+      readFile(join(root, 'docs', 'maintainer-security-settings.md'), 'utf8'),
+      readFile(join(root, 'docs', 'openssf-best-practices.md'), 'utf8'),
+    ]);
+
+    expect(readme).toContain(`Version ${version} is published`);
+    expect(roadmap).toContain(`Version ${version} is published`);
+    expect(roadmap).not.toContain('Package version remains 0.9.0');
+    expect(security).toContain(`Version ${version} is the first release`);
+    expect(migration).toContain(`geoptimize@${version}`);
+    expect(migration).toContain(`installed version should be \`${version}\``);
+    expect(sample).toContain(`published \`geoptimize@${version}\` package`);
+    expect(sample).not.toContain('Until both artifacts exist');
+    expect(settings).toContain('Release immutability is enabled');
+    expect(settings).toContain('npm Trusted Publisher binds');
+    expect(openSsf).toContain(`${version} is public with npm OIDC provenance`);
   });
 
   it('keeps npm publisher metadata normalized and exposes every CLI alias', async () => {
