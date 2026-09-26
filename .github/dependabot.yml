@@ -4,7 +4,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    # Disable routine version-update PRs; Dependabot security updates remain enabled.
+    open-pull-requests-limit: 0
     ignore:
       # Adopt new Node type majors only with a deliberate runtime-support review.
       - dependency-name: '@types/node'
@@ -20,7 +21,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 3
+    # Disable routine version-update PRs.
+    open-pull-requests-limit: 0
     groups:
       actions:
         patterns: ['*']
