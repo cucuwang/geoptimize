@@ -57,6 +57,10 @@ function normalizeUrl(value: string, base?: string): string {
   return url.toString();
 }
 
+function isCloudflareEmailProtection(url: string): boolean {
+  return new URL(url).pathname === '/cdn-cgi/l/email-protection';
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -322,6 +326,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
   const sitemapQueue = [...sitemapUrls];
   const linkScheduled = new Set<string>();
   const pages: CrawledPage[] = [];
+  let skippedEmailProtectionLinks = 0;
 
   const addSource = (url: string, source: string): void => {
     const sources = discoverySources.get(url) ?? new Set<string>();
@@ -357,6 +362,11 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
       for (const link of htmlDocument.links) {
         const internal = internalUrl(link.href, resource.finalUrl, origin);
         if (internal) {
+          // Cloudflare decodes these email links in the browser; they are not content pages.
+          if (isCloudflareEmailProtection(internal)) {
+            skippedEmailProtectionLinks += 1;
+            continue;
+          }
           internalTargets.push(internal);
           scheduleLink(internal, normalizeUrl(resource.finalUrl));
         } else {
@@ -537,7 +547,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
     ? indexableCrawledUrls.filter((url) => !sitemapUrls.has(url))
     : [];
   const orphanCandidates = [...sitemapUrls].filter((url) => {
-    if (url === normalizedStartUrl || robotsSkipped.has(url)) return false;
+    if (url === normalizedStartUrl || robotsSkipped.has(url) || isCloudflareEmailProtection(url)) return false;
     const sources = [...(inlinks.get(url) ?? [])].filter((source) => source !== url);
     return sources.length === 0;
   });
@@ -779,6 +789,9 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
     summary,
     limitations: [
       'The crawl is same-origin, sequential, response-HTML only, and bounded by --max-pages. JavaScript-inserted links are not discovered.',
+      ...(skippedEmailProtectionLinks > 0
+        ? [`Skipped ${skippedEmailProtectionLinks} Cloudflare email-protection link(s) in crawled HTML; /cdn-cgi/l/email-protection links are excluded from page discovery and internal link targets.`]
+        : []),
       'robots.txt matching supports applicable user-agent groups, Allow, Disallow, * wildcards, and $ endings. Review unusual policies manually.',
       'Sitemap-only pages are orphan candidates until a sufficiently complete crawl or server-log evidence confirms their link discovery state.',
       'The report does not claim actual search-engine crawl, index state, ranking, traffic, conversion, or AI citation outcomes.',
