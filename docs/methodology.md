@@ -85,6 +85,8 @@ The `audit-site` contract uses a same-origin, sequential queue with an explicit 
 
 The crawler uses response HTML without browser rendering. A Sitemap-only URL with no internal inlink is reported as an orphan candidate because JavaScript navigation, pages beyond the configured limit, and other discovery sources may still link to it. Broken-link findings require an observed failed response; queued but unfetched links remain warnings.
 
+Same-origin HTML links whose resolved pathname is exactly `/cdn-cgi/l/email-protection` are skipped before page discovery and internal-target counting, including links with fragments or query strings. Cloudflare uses this endpoint for browser-decoded email addresses. When links are skipped, the existing JSON `limitations` array records their total occurrence count across crawled HTML pages, before URL deduplication. These endpoint URLs are excluded from orphan candidates; sitemap entries still undergo the usual HTTP requests and sitemap checks. Other `/cdn-cgi/` paths remain subject to the usual crawl rules.
+
 robots.txt matching covers applicable user-agent groups, `Allow`, `Disallow`, `*` wildcards, and `$` endings. Unusual policies need manual review. An unavailable robots.txt response that is not an ordinary 404 causes conservative skipping of subsequent matching URLs.
 
 ## Primary sources
