@@ -2,6 +2,9 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## Unreleased
+- Fixed false HTTP and broken-internal-target failures from Cloudflare email-protection links in `audit-site`; skipped link occurrences are recorded in `limitations`.
+
 ## 0.11.0 (2026-09-13)
 
 ### Added
