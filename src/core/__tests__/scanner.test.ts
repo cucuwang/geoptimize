@@ -25,6 +25,45 @@ describe('parseHtml', () => {
     expect(doc.metaTags['author']).toBe('Fixture Author');
   });
 
+  it('extracts canonical links, repeated named metadata, and image attributes', () => {
+    const doc = parseHtml(`
+      <html>
+        <head>
+          <link rel="canonical" href="https://example.com/first">
+          <link rel="alternate canonical" href="https://example.com/second">
+          <meta name="robots" content="index">
+          <meta name="ROBOTS" content="follow">
+        </head>
+        <body>
+          <img src="hero.jpg" alt="A mountain" width="640" height="360" loading="lazy">
+          <img src="logo.svg">
+        </body>
+      </html>
+    `, 'https://example.com');
+
+    expect(doc.canonicalLinks).toEqual([
+      'https://example.com/first',
+      'https://example.com/second',
+    ]);
+    expect(doc.metaTagValues['robots']).toEqual(['index', 'follow']);
+    expect(doc.images).toEqual([
+      {
+        src: 'hero.jpg',
+        alt: 'A mountain',
+        width: '640',
+        height: '360',
+        loading: 'lazy',
+      },
+      {
+        src: 'logo.svg',
+        alt: undefined,
+        width: undefined,
+        height: undefined,
+        loading: undefined,
+      },
+    ]);
+  });
+
   it('handles minimal HTML without crashing', () => {
     const doc = parseHtml('<html><body><p>This is a test paragraph with enough words.</p></body></html>', 'test.html');
     expect(doc.title).toBe('test.html');
