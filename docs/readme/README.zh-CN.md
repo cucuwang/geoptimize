@@ -4,7 +4,7 @@
 
 **原名 aeoptimize。** 项目从 `0.8.0` 起更名为 `geoptimize`，并延续同一份开发历史。现有用户可参考[迁移指南](../migrating-from-aeoptimize.md)。
 
-`geoptimize` 是面向静态网站和技术文档的确定性内容就绪度检查工具。它可以在本地、CI 或 pre-commit 阶段检查文档结构、量化主张的来源信号、结构化数据、索引控制、metadata 质量和重复用语。
+`geoptimize` 是在 CI 或 pre-commit 阶段运行的内容质量 lint 工具，帮助在发布前拦截文档和静态网站的内容退化。它通过确定性规则检查文档结构、量化主张的来源信号、metadata 质量、JSON-LD 结构、noindex 和 canonical 等索引控制，以及重复用语。文档团队和前端工程师可以在 PR 中查看问题、审计构建后的 HTML，并在确认项目基线后设置阻断阈值；GEO 和 AI 搜索是次要应用场景。
 
 ## 安装与快速开始
 

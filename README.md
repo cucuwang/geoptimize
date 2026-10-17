@@ -10,9 +10,9 @@
 [![CI](https://github.com/cucuwang/geoptimize/actions/workflows/ci.yml/badge.svg)](https://github.com/cucuwang/geoptimize/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/geoptimize.svg)](https://github.com/cucuwang/geoptimize/blob/main/LICENSE)
 
-**AI crawlers read your pages before humans do. Lint them like code.**
+**Content quality lint for CI. Catch regressions before you publish.**
 
-`geoptimize` is a deterministic content-readiness lint for static websites and documentation. It checks reproducible properties such as document structure, sourced quantitative claims, structured-data hygiene, indexing controls, metadata quality, and repetitive wording — locally, in CI, or pre-commit.
+`geoptimize` runs content lint in CI or pre-commit to catch regressions in documentation and static sites before publication. Its deterministic checks flag document-structure issues, source signals missing from quantitative claims, metadata problems, JSON-LD structural issues, indexing controls such as noindex and canonical, and repetitive wording. Review findings in pull requests, audit built HTML, and choose a project-specific threshold when you are ready to block regressions.
 
 https://github.com/user-attachments/assets/5dafd888-92c9-428b-b372-62864c58059a
 
@@ -23,6 +23,24 @@ https://github.com/user-attachments/assets/5dafd888-92c9-428b-b372-62864c58059a
 [Open the offline example](docs/assets/report-demo.html) · [After improvements](docs/assets/report-demo-after.html)
 
 ![geoptimize terminal demo](docs/assets/demo.gif)
+
+## Who it is for
+
+- Documentation teams that want repeatable content checks in pull requests.
+- Frontend engineers and maintainers of static or documentation sites built with Astro, Docusaurus, VitePress, MkDocs, or similar tools that output HTML.
+- Teams that want CI to flag content regressions and block changes below an accepted project baseline.
+
+After your workflow builds the site into `dist`, add this GitHub Actions step. Review the baseline before enabling blocking mode; `60` is an example threshold, not a universal quality target.
+
+```yaml
+- uses: cucuwang/geoptimize@v0.11.0
+  with:
+    path: dist
+    fail-on-low-score: 'true'
+    min-score: '60'
+```
+
+The Action is advisory by default. See the [CI contract](#ci-contract) for outputs and reproducibility details.
 
 It does **not** predict ranking, indexing, rich results, Google AI Overviews, or citation by ChatGPT, Perplexity, or another AI system. Google states that its AI search features need no special AI text file or schema, and valid structured data does not guarantee a search feature. See [methodology and limitations](docs/methodology.md).
 
@@ -43,16 +61,6 @@ npx geoptimize audit-site https://example.com --max-pages 20 --json
 ```
 
 Version 0.11.0 adds a guided terminal menu for scanning a target and saving an offline HTML report. See [the interactive CLI guide](docs/interactive-cli.md) for `npm install` and `npx` usage; explicit commands remain available for scripts and non-TTY environments.
-
-For measured Google Search experiments, initialize the separate SEO ledger:
-
-```bash
-geo seo init .
-geo seo add . --keyword "energy management system integration" --page /services/ems/ --priority high
-geo seo status .
-```
-
-The ledger allows one monitoring experiment at a time and preserves fixed query, page, country, device, search type, and date-window evidence. Start its seven-day review period only after the changed page is publicly deployed and read back. The ledger does not affect the readiness score. See [SEO experiment ledger](docs/seo-experiment-ledger.md).
 
 Example output:
 
@@ -185,13 +193,13 @@ also accepts an empty output directory for inspecting readiness and site JSON re
 
 | | geoptimize | Lighthouse-style SEO audits | Hosted GEO platforms |
 | --- | --- | --- | --- |
-| Question it answers | Is this content machine-readable and citable? | Does the page pass classic SEO checks? | Did my AI visibility change this week? |
+| Question it answers | Did this change introduce content-quality issues? | Does the page pass classic SEO checks? | Did my AI visibility change this week? |
 | Deterministic | Yes — versioned rules, fixture-tested | Partially | No — model output varies run to run |
 | Runs where | Local CLI, CI, pre-commit hook, Vite/Next plugins | Browser / DevTools | Vendor cloud |
 | Blocks regressions in CI | Yes, via a stable `--json` contract | Possible with extra wiring | Rarely |
 | Cost | Free, MIT | Free | Varies by vendor |
 
-Visibility trackers answer "did rankings change?". geoptimize answers the question you can act on in a pull request: "is this page ready?". The two compose rather than compete.
+geoptimize gives teams reproducible content checks they can act on in a pull request. Visibility trackers provide separate measurements of search and AI visibility outcomes.
 
 ## CI contract
 
@@ -260,6 +268,20 @@ Rules follow the [robots meta specification](https://developers.google.com/searc
 and [canonical URL guidance](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls).
 A syntax pass does not establish eligibility under the
 [structured-data policies](https://developers.google.com/search/docs/appearance/structured-data/sd-policies).
+
+## Secondary use: GEO and AI search
+
+Teams working on GEO or AI search can use the same checks to review content structure, source signals, and discovery controls. Search and AI visibility outcomes require separate measurement.
+
+For measured Google Search experiments, initialize the separate SEO ledger:
+
+```bash
+geo seo init .
+geo seo add . --keyword "energy management system integration" --page /services/ems/ --priority high
+geo seo status .
+```
+
+The ledger allows one monitoring experiment at a time and preserves fixed query, page, country, device, search type, and date-window evidence. Start its seven-day review period only after the changed page is publicly deployed and read back. The ledger does not affect the readiness score. See [SEO experiment ledger](docs/seo-experiment-ledger.md).
 
 ## Optional generators
 

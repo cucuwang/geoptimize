@@ -120,7 +120,7 @@ describe('public metadata', () => {
     expect(compatibilityAction).toContain("default: 'false'");
     expect(pluginJson.commands).toContain('./skills/seo-experiment-ledger/SKILL.md');
     expect(pluginJson.description).toBe(
-      'Content-readiness lint with an evidence-bounded SEO experiment ledger',
+      'Content quality lint for CI and pre-commit in documentation and static sites, with optional SEO experiments',
     );
     expect(marketplaceJson.metadata.description).toBe(pluginJson.description);
     expect(marketplaceJson.plugins[0].description).toContain('SEO experiments');

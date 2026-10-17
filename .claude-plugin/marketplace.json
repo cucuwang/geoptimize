@@ -4,14 +4,14 @@
     "name": "Te-Shu Wang"
   },
   "metadata": {
-    "description": "Content-readiness lint with an evidence-bounded SEO experiment ledger",
+    "description": "Content quality lint for CI and pre-commit in documentation and static sites, with optional SEO experiments",
     "version": "0.11.0"
   },
   "plugins": [
     {
       "name": "geoptimize",
       "source": "./",
-      "description": "CLI and skills for content-readiness checks and SEO experiments",
+      "description": "CLI and skills for content quality lint in documentation and static-site workflows, with optional SEO experiments",
       "category": "seo",
       "tags": ["geo", "seo", "ai-search", "llms-txt", "structured-data"],
       "homepage": "https://github.com/cucuwang/geoptimize",

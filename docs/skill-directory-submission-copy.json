@@ -4,9 +4,9 @@
   "repository_url": "https://github.com/cucuwang/geoptimize",
   "author_name": "Te-Shu Wang",
   "license": "MIT",
-  "short_description": "Four agent skills for deterministic website audits, optional discovery-file previews, focused content edits, and evidence-based SEO experiments.",
-  "description": "Four MIT-licensed agent skills for websites and documentation: geo-scan runs deterministic content-readiness audits; geo-generate previews optional discovery artifacts; geo-transform guides focused content edits; seo-experiment-ledger maintains evidence-based SEO experiments. Install from the public GitHub repository with npx skills add cucuwang/geoptimize.",
-  "tags": ["seo", "content-audit", "agent-skills", "claude-code", "documentation"],
+  "short_description": "Agent skills for content quality lint in CI and pre-commit, helping documentation and static-site teams catch regressions before publication.",
+  "description": "Four MIT-licensed agent skills for documentation teams, static-site maintainers, and frontend engineers using content quality lint in CI or pre-commit. geo-scan runs deterministic checks to review content regressions and built HTML; geo-transform proposes focused content edits. Secondary GEO and search workflows include geo-generate for optional discovery-artifact previews and seo-experiment-ledger for evidence-based SEO experiments. These checks do not predict rankings, indexing, rich results, or AI citations. Install with npx skills add cucuwang/geoptimize.",
+  "tags": ["content-lint", "docs", "documentation", "ci", "static-site", "seo", "content-audit", "agent-skills", "claude-code"],
   "install_command": "npx skills add cucuwang/geoptimize",
   "skills": [
     {"name": "geo-scan", "url": "https://github.com/cucuwang/geoptimize/blob/main/skills/geo-scan/SKILL.md"},
@@ -16,5 +16,5 @@
   ],
   "contact_email": null,
   "contact_email_note": "Use the address provided by the maintainer for the current submission. Contact data is omitted from this reusable public template.",
-  "claims_boundary": "Readiness scores describe inspected content and reproducible checks; they do not predict search rankings or AI citations. The proposed interactive CLI menu is not a shipped feature."
+  "claims_boundary": "Readiness scores describe inspected content and reproducible checks; they do not predict search rankings or AI citations."
 }

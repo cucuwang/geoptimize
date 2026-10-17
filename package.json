@@ -1,7 +1,7 @@
 {
   "name": "geoptimize",
   "version": "0.11.0",
-  "description": "Deterministic content-readiness lint for static websites and documentation",
+  "description": "Deterministic content quality lint for CI and pre-commit in documentation and static sites",
   "type": "module",
   "main": "./dist/core/index.js",
   "bin": {
@@ -70,7 +70,12 @@
     "generative-engine-optimization",
     "claude-code-skill",
     "vite-plugin",
-    "nextjs-plugin"
+    "nextjs-plugin",
+    "content-lint",
+    "docs",
+    "documentation",
+    "ci",
+    "static-site"
   ],
   "homepage": "https://github.com/cucuwang/geoptimize",
   "repository": {

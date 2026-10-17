@@ -4,7 +4,7 @@
 
 **原名 aeoptimize。** 專案自 `0.8.0` 起改名為 `geoptimize` 並延續同一份開發歷史。既有使用者可參考[遷移指南](../migrating-from-aeoptimize.md)。
 
-`geoptimize` 是給靜態網站與技術文件使用的確定性內容就緒度檢查工具。它可以在本機、CI 或 pre-commit 階段檢查文件結構、量化主張的來源訊號、結構化資料、索引控制、metadata 品質與重複用語。
+`geoptimize` 是在 CI 或 pre-commit 執行的內容品質 lint 工具，協助在發布前攔下文件與靜態網站的內容退化。它以確定性規則檢查文件結構、量化主張的來源訊號、metadata 品質、JSON-LD 結構、noindex 與 canonical 等索引控制，以及重複用語。文件團隊與前端工程師可在 PR 檢視問題、稽核建置後的 HTML，並在確認專案基準後設定阻擋門檻；GEO 與 AI 搜尋是次要應用情境。
 
 ## 安裝與快速開始
 
