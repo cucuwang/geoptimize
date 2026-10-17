@@ -163,7 +163,34 @@ export function auditHtml(html: string, target: string, options: StaticAuditOpti
   return { target, checks };
 }
 
-function markDuplicates(pages: StaticPageAudit[], sourceId: string, id: string, normalize: (value: string) => string): void {
+/** Resolve language alternates against the observed deployed URL, without fetching. */
+export function hreflangPage(html: string, url: string) {
+  const $ = cheerio.load(html);
+  const language = $('html').attr('lang')?.trim().toLowerCase() || '';
+  const alternates = new Map<string, Set<string>>();
+  $('link[hreflang][href]').each((_, el) => {
+    if (!($(el).attr('rel') || '').toLowerCase().split(/\s+/).includes('alternate')) return;
+    const lang = $(el).attr('hreflang')!.trim().toLowerCase();
+    try {
+      const target = httpUrl($(el).attr('href')!.trim(), url);
+      target.hash = '';
+      const languages = alternates.get(target.href) ?? new Set<string>();
+      languages.add(lang);
+      alternates.set(target.href, languages);
+    } catch {
+      // Invalid declarations cannot establish a reciprocal language relationship.
+    }
+  });
+  return { url, language, alternates };
+}
+
+export function reciprocalHreflang(left: ReturnType<typeof hreflangPage>, right: ReturnType<typeof hreflangPage>): boolean {
+  return Boolean(left.language && right.language && left.language !== right.language &&
+    left.alternates.get(right.url)?.has(right.language) && right.alternates.get(left.url)?.has(left.language));
+}
+
+function markDuplicates(pages: StaticPageAudit[], sourceId: string, id: string, normalize: (value: string) => string,
+  intentionalPair: (left: StaticPageAudit, right: StaticPageAudit) => boolean = () => false): void {
   const groups = new Map<string, StaticPageAudit[]>();
   for (const page of pages) {
     const check = page.checks.find((item) => item.id === sourceId);
@@ -174,6 +201,7 @@ function markDuplicates(pages: StaticPageAudit[], sourceId: string, id: string, 
   }
   for (const [value, matches] of groups) {
     if (matches.length < 2) continue;
+    if (matches.every((page, index) => matches.slice(index + 1).every((other) => intentionalPair(page, other)))) continue;
     for (const page of matches) {
       page.checks.push({
         id, status: 'WARNING', evidence: [value, ...matches.map((match) => match.target)],
@@ -213,6 +241,7 @@ export async function auditPath(input: string, options: StaticAuditOptions = {})
   await collect(root);
   if (!files.length) throw new Error('No HTML files found to audit.');
   const pages: StaticPageAudit[] = [];
+  const languagePages = new Map<StaticPageAudit, ReturnType<typeof hreflangPage>>();
   for (const file of files.sort()) {
     const info = await lstat(file);
     if (info.isSymbolicLink() || !info.isFile()) throw new Error(`Input changed during audit: ${file}`);
@@ -225,9 +254,14 @@ export async function auditPath(input: string, options: StaticAuditOptions = {})
       const deployedPath = relative(root, file).split(sep).map(encodeURIComponent).join('/');
       baseUrl = new URL(deployedPath, rootUrl).href;
     }
-    pages.push(auditHtml(await readFile(file, 'utf8'), file, { ...options, baseUrl }));
+    const html = await readFile(file, 'utf8');
+    const page = auditHtml(html, file, { ...options, baseUrl });
+    pages.push(page);
+    if (baseUrl) languagePages.set(page, hreflangPage(html, httpUrl(baseUrl).href));
   }
-  markDuplicates(pages, 'document-title', 'duplicate-document-title', (value) => value.replace(/\s+/g, ' ').trim().toLowerCase());
+  markDuplicates(pages, 'document-title', 'duplicate-document-title', (value) => value.replace(/\s+/g, ' ').trim().toLowerCase(),
+    (left, right) => Boolean(languagePages.has(left) && languagePages.has(right) &&
+      reciprocalHreflang(languagePages.get(left)!, languagePages.get(right)!)));
   markDuplicates(pages, 'canonical', 'duplicate-canonical', (value) => value);
   const summary: Record<StaticAuditStatus, number> = { PASS: 0, WARNING: 0, FAIL: 0, 'N/A': 0 };
   for (const page of pages) for (const check of page.checks) summary[check.status]++;

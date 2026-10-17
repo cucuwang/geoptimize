@@ -90,6 +90,119 @@ describe('sitemap parsing', () => {
 });
 
 describe('auditSite', () => {
+  async function canonicalFixture(targetStatus: number | null = 200, canonical = '/contact/', sitemapTarget = true) {
+    const paths = ['/', '/contact/?service=integration', '/contact/?service=ai'];
+    if (targetStatus !== null) paths.push('/contact/');
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/sitemap.xml') {
+        return new Response(`<urlset><url><loc>https://example.com/</loc></url>${sitemapTarget ? '<url><loc>https://example.com/contact/</loc></url>' : ''}</urlset>`);
+      }
+      if (url.pathname === '/robots.txt') return new Response('', { status: 404 });
+      const path = url.pathname + url.search;
+      if (!paths.includes(path)) throw new Error(`Unexpected fetch: ${url}`);
+      const home = path === '/';
+      return new Response(`<html lang="en"><head><title>${home ? 'Home' : 'Contact'}</title>
+        <link rel="canonical" href="${home ? '/' : canonical}"></head><body>
+        ${home ? paths.slice(1).map(p => `<a href="${p}">Page</a>`).join('') : ''}</body></html>`,
+      { status: path === '/contact/' ? targetStatus! : 200, headers: { 'content-type': 'text/html' } });
+    });
+    // Withhold the sitemap-only target when testing an unobserved destination.
+    return auditSite('https://example.com/', { maxPages: paths.length });
+  }
+
+  it('consolidates parameter URLs under a verified canonical for titles and sitemap membership', async () => {
+    const report = await canonicalFixture();
+    expect(report.metricEvidenceVersion).toBe('1.1');
+    for (const id of ['canonical-consistency', 'duplicate-titles', 'sitemap-consistency']) {
+      expect(report.checks.find(c => c.id === id)?.status).toBe('PASS');
+    }
+    expect(report.findings).toEqual([]);
+  });
+
+  it.each([404, null, 201])('retains canonical, title and sitemap findings for an invalid target: %s', async (status) => {
+    const report = await canonicalFixture(status);
+    for (const kind of ['non-self-canonical', 'shared-canonical', 'duplicate-title', 'sitemap-omission']) {
+      expect(report.findings?.some(f => f.kind === kind)).toBe(true);
+    }
+  });
+
+  it('counts a verified canonical missing from the sitemap once for its entire group', async () => {
+    const report = await canonicalFixture(200, '/contact/', false);
+    expect(report.findings?.filter(f => f.kind === 'sitemap-omission')).toEqual([
+      { kind: 'sitemap-omission', target: 'https://example.com/contact/' },
+    ]);
+  });
+
+  it('keeps duplicate titles and sitemap omissions when the canonical is malformed', async () => {
+    const report = await canonicalFixture(200, 'http://[');
+    expect(report.checks.find(c => c.id === 'canonical-consistency')?.status).toBe('FAIL');
+    expect(report.findings?.some(f => f.kind === 'duplicate-title')).toBe(true);
+    expect(report.findings?.filter(f => f.kind === 'sitemap-omission')).toHaveLength(2);
+  });
+
+  it('removes the three warning classes in an offline multilingual contact-and-insights fixture', async () => {
+    const locales = [
+      { prefix: '', language: 'zh-TW', contactTitle: '聯絡 Example', insightsTitle: '洞察｜Example' },
+      { prefix: '/en', language: 'en', contactTitle: 'Contact Example', insightsTitle: 'Insights | Example' },
+      { prefix: '/zh-cn', language: 'zh-CN', contactTitle: '联系 Example', insightsTitle: '洞察｜Example' },
+    ];
+    const queries = ['?service=integration&inquiry=project', '?service=field-operations&inquiry=project',
+      '?service=ai&inquiry=project', '?inquiry=partnership'];
+    const canonicalPaths = ['/', ...locales.flatMap(l => [`${l.prefix}/contact/`, `${l.prefix}/insights/`])];
+    const paths = [...canonicalPaths, ...locales.flatMap(l => queries.map(q => `${l.prefix}/contact/${q}`))];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/robots.txt') return new Response('', { status: 404 });
+      if (url.pathname === '/sitemap.xml') {
+        return new Response(`<urlset>${canonicalPaths.map(p => `<url><loc>https://example.com${p}</loc></url>`).join('')}</urlset>`);
+      }
+      expect(paths).toContain(url.pathname + url.search);
+      const home = url.pathname === '/';
+      const locale = locales.find(l => url.pathname === `${l.prefix}/contact/` || url.pathname === `${l.prefix}/insights/`)!;
+      const insights = url.pathname.endsWith('/insights/');
+      return new Response(`<html lang="${home ? 'zh-TW' : locale.language}"><head>
+        <title>${home ? 'Home' : insights ? locale.insightsTitle : locale.contactTitle}</title>
+        <link rel="canonical" href="${url.origin}${url.pathname}">
+        ${insights ? locales.map(l => `<link rel="alternate" hreflang="${l.language}" href="${l.prefix}/insights/">`).join('') : ''}
+        </head><body>${home ? paths.slice(1).map(p => `<a href="${p}">Page</a>`).join('') : ''}</body></html>`,
+      { headers: { 'content-type': 'text/html' } });
+    });
+    const report = await auditSite('https://example.com/', { maxPages: 200 });
+    expect(report.crawledPages).toBe(19);
+    expect(report.summary).toEqual({ PASS: 8, WARNING: 0, FAIL: 0, 'N/A': 1 });
+    expect(report.findings).toEqual([]);
+  });
+
+  it('retains warnings for cross-origin canonical targets', async () => {
+    const report = await canonicalFixture(200, 'https://other.example/contact/');
+    expect(report.checks.find(c => c.id === 'canonical-consistency')?.status).toBe('WARNING');
+    expect(report.checks.find(c => c.id === 'duplicate-titles')?.status).toBe('WARNING');
+    expect(report.findings?.filter(f => f.kind === 'sitemap-omission')).toHaveLength(2);
+  });
+
+  it.each(['reciprocal', 'one-way', 'none', 'same-language', 'wrong-language', 'partial-group'])(
+    'checks language declarations before suppressing duplicate titles: %s', async (mode) => {
+      const paths = mode === 'partial-group' ? ['/insights/', '/zh-cn/insights/', '/en/insights/'] : ['/insights/', '/zh-cn/insights/'];
+      const languages = ['zh-TW', mode === 'same-language' ? 'zh-TW' : 'zh-CN', 'en'];
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url = new URL(String(input));
+        const index = paths.indexOf(url.pathname);
+        if (index < 0) return new Response('', { status: 404 });
+        const targets = mode === 'none' || (mode === 'one-way' && index === 1) ? []
+          : mode === 'partial-group' ? [1] : [1 - index];
+        return new Response(`<html lang="${languages[index]}"><head><title>洞察｜Example</title>
+          <link rel="canonical" href="${url}">
+          ${targets.map(i => `<link rel="alternate" hreflang="${mode === 'wrong-language' ? 'fr' : languages[i]}" href="${paths[i]}">`).join('')}
+          </head><body>${paths.map(p => `<a href="${p}">Page</a>`).join('')}</body></html>`,
+        { headers: { 'content-type': 'text/html' } });
+      });
+      const report = await auditSite('https://example.com/insights/', { maxPages: 10 });
+      expect(report.checks.find(c => c.id === 'duplicate-titles')?.status).toBe(mode === 'reciprocal' ? 'PASS' : 'WARNING');
+      expect(report.findings?.some(f => f.kind === 'duplicate-title')).toBe(mode !== 'reciprocal');
+    },
+  );
+
   it.each([
     ['/cdn-cgi/l/email-protection#abc123'],
     [

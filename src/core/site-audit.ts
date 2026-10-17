@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { fetchUrlResource, parseHtml, type UrlResource } from './scanner.js';
+import { hreflangPage, reciprocalHreflang } from './static-audit.js';
 import type {
   AuditCheck,
   AuditEvidence,
@@ -489,6 +490,20 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
   const malformedCanonicals: string[] = [];
   const nonSelfCanonicals: string[] = [];
   const canonicalOwners = new Map<string, string[]>();
+  const validCanonicalTargets = new Map<CrawledPage, string>();
+  for (const page of htmlPages) {
+    const canonicals = page.document!.canonicalLinks ?? [];
+    if (canonicals.length !== 1) continue;
+    try {
+      const resolved = normalizeUrl(canonicals[0], page.output.finalUrl);
+      const target = pageLookup.get(resolved);
+      if (new URL(resolved).origin === origin && target?.output.status === 200 && target.document) {
+        validCanonicalTargets.set(page, normalizeUrl(target.output.finalUrl));
+      }
+    } catch {
+      // Malformed and unverified canonicals retain their existing findings.
+    }
+  }
   for (const page of htmlPages) {
     const canonicals = page.document!.canonicalLinks ?? [];
     if (canonicals.length === 0) {
@@ -502,7 +517,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
         const owners = canonicalOwners.get(resolved) ?? [];
         owners.push(page.output.finalUrl);
         canonicalOwners.set(resolved, owners);
-        if (resolved !== normalizeUrl(page.output.finalUrl)) {
+        if (resolved !== normalizeUrl(page.output.finalUrl) && !validCanonicalTargets.has(page)) {
           nonSelfCanonicals.push(`${page.output.finalUrl} -> ${resolved}`);
         }
       } catch {
@@ -512,19 +527,31 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
   }
   const duplicateCanonicals = [...canonicalOwners.entries()]
     .filter(([, owners]) => new Set(owners).size > 1)
+    .filter(([canonical, owners]) => !owners.every((owner) => {
+      const page = pageLookup.get(owner)!;
+      return validCanonicalTargets.get(page) === normalizeUrl(pageLookup.get(canonical)?.output.finalUrl ?? canonical);
+    }))
     .map(([canonical, owners]) => `${canonical} <= ${[...new Set(owners)].join(', ')}`);
 
-  const titleOwners = new Map<string, string[]>();
+  const languagePages = new Map(htmlPages.map((page) =>
+    [page, hreflangPage(page.document!.html ?? '', normalizeUrl(page.output.finalUrl))]));
+  const titleOwners = new Map<string, CrawledPage[]>();
   for (const page of htmlPages) {
     const title = page.output.title?.trim();
     if (!title) continue;
     const owners = titleOwners.get(title.toLocaleLowerCase()) ?? [];
-    owners.push(page.output.finalUrl);
+    owners.push(page);
     titleOwners.set(title.toLocaleLowerCase(), owners);
   }
   const duplicateTitles = [...titleOwners.entries()]
-    .filter(([, owners]) => new Set(owners).size > 1)
-    .map(([title, owners]) => `${title} <= ${[...new Set(owners)].join(', ')}`);
+    .filter(([, owners]) => owners.some((left, index) => owners.slice(index + 1).some((right) => {
+      const leftUrl = validCanonicalTargets.get(left) ?? normalizeUrl(left.output.finalUrl);
+      const rightUrl = validCanonicalTargets.get(right) ?? normalizeUrl(right.output.finalUrl);
+      if (leftUrl === rightUrl) return false;
+      return !reciprocalHreflang(languagePages.get(pageLookup.get(leftUrl) ?? left)!,
+        languagePages.get(pageLookup.get(rightUrl) ?? right)!);
+    })))
+    .map(([title, owners]) => `${title} <= ${[...new Set(owners.map((page) => page.output.finalUrl))].join(', ')}`);
 
   const brokenSitemapPages = [...sitemapUrls].filter((url) => {
     const page = pageLookup.get(url);
@@ -542,9 +569,9 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
   );
   const indexableCrawledUrls = pages
     .filter((page) => page.document && page.output.status >= 200 && page.output.status < 300 && !page.blocksIndexing)
-    .map((page) => normalizeUrl(page.output.finalUrl));
+    .map((page) => validCanonicalTargets.get(page) ?? normalizeUrl(page.output.finalUrl));
   const missingFromSitemap = sitemapUrls.size > 0
-    ? indexableCrawledUrls.filter((url) => !sitemapUrls.has(url))
+    ? [...new Set(indexableCrawledUrls)].filter((url) => !sitemapUrls.has(url))
     : [];
   const orphanCandidates = [...sitemapUrls].filter((url) => {
     if (url === normalizedStartUrl || robotsSkipped.has(url) || isCloudflareEmailProtection(url)) return false;
@@ -686,7 +713,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
         duplicateCanonicals: duplicateCanonicals.slice(0, 20),
       },
       canonicalStatus === 'PASS'
-        ? 'Each inspected HTML page exposes one valid self-referencing canonical.'
+        ? 'No missing or malformed canonical, or unverified non-self or shared canonical, was found.'
         : canonicalStatus === 'N/A'
           ? 'No successful HTML page was available for canonical inspection.'
           : 'Canonical observations require repair or contextual review. A non-self canonical can be intentional.',
@@ -746,7 +773,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
       { duplicateGroupCount: duplicateTitles.length, groups: duplicateTitles.slice(0, 20) },
       duplicateTitles.length > 0
         ? 'Multiple crawled pages expose the same non-empty document title. Shared titles need intent and template review.'
-        : 'No duplicate non-empty document title was found in the bounded HTML sample.',
+        : 'No unexplained duplicate title was found after grouping verified canonicals and reciprocal language alternates.',
       duplicateTitles.length > 0 ? 'Give pages distinct titles when they serve different content or consolidate pages that serve the same purpose.' : null,
       'Inspect the affected pages and verify their rendered titles after the template build.',
       'html',
@@ -762,7 +789,7 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
     origin,
     maxPages,
     crawledPages: pages.length,
-    metricEvidenceVersion: '1.0',
+    metricEvidenceVersion: '1.1',
     findings: [
       ...failedPages.map(p => ({ kind: 'http-error', target: p.output.requestedUrl })),
       ...longRedirectChains.map(p => ({ kind: 'multi-hop-redirect', target: p.output.requestedUrl })),
