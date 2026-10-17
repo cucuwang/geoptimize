@@ -2,6 +2,10 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## Unreleased
+
+- Docs: Position geoptimize as content quality lint for CI and pre-commit across READMEs and package, Action, plugin, and skill-directory descriptions; retain GEO and AI search as secondary uses.
+
 ## 0.11.0 (2026-09-13)
 
 ### Added

@@ -1,5 +1,5 @@
 name: geoptimize Content Readiness Check
-description: Run the deterministic geoptimize readiness lint against a build directory
+description: Lint content quality in CI for documentation and static-site builds, with optional regression blocking
 author: Te-Shu Wang
 branding:
   icon: search

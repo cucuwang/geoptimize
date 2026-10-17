@@ -1,6 +1,6 @@
 {
   "name": "geoptimize",
-  "description": "Content-readiness lint with an evidence-bounded SEO experiment ledger",
+  "description": "Content quality lint for CI and pre-commit in documentation and static sites, with optional SEO experiments",
   "version": "0.11.0",
   "author": {
     "name": "Te-Shu Wang"

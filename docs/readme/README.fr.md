@@ -4,7 +4,7 @@
 
 **Anciennement aeoptimize.** Depuis la version `0.8.0`, le même projet continue sous le nom `geoptimize`. Les utilisateurs existants peuvent consulter le [guide de migration](../migrating-from-aeoptimize.md).
 
-`geoptimize` est un linter déterministe de préparation du contenu pour les sites statiques et la documentation technique. Il vérifie la structure du document, les signaux de source des affirmations chiffrées, les données structurées, les contrôles d'indexation, la qualité des metadata et les formulations répétitives. Il fonctionne en local, en CI ou en pre-commit.
+`geoptimize` est un linter de qualité du contenu qui s’exécute en CI ou en pre-commit pour détecter les régressions dans la documentation et les sites statiques avant publication. Ses règles déterministes vérifient la structure du document, les indices de sources des affirmations chiffrées, la qualité des métadonnées, la structure JSON-LD, les contrôles d’indexation comme noindex et canonical, et les formulations répétitives. Les équipes de documentation et les développeurs frontend peuvent examiner les problèmes dans les PR, auditer le HTML généré et choisir un seuil bloquant après validation de la référence du projet ; le GEO et la recherche par IA sont des usages secondaires.
 
 ## Installation et démarrage rapide
 
