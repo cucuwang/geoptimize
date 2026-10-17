@@ -464,9 +464,10 @@ const metaDescriptionQuality: ScoringRule = {
     }
 
     const words = desc.trim().split(/\s+/).filter(Boolean);
-    const looksGeneric = words.length < 3 || /^(home|welcome|official site|website)$/i.test(desc.trim());
-    const commaCount = (desc.match(/,/g) || []).length;
-    const looksLikeKeywordList = commaCount >= 4 && !/[.!?]/.test(desc);
+    const cjkLength = (desc.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu) || []).length;
+    const looksGeneric = (words.length < 3 && cjkLength < 10) || /^(home|welcome|official site|website)$/i.test(desc.trim());
+    const commaCount = (desc.match(/[,，、]/g) || []).length;
+    const looksLikeKeywordList = commaCount >= 4 && !/[.!?。！？]/.test(desc);
 
     if (looksGeneric) {
       suggestions.push({
@@ -555,7 +556,7 @@ const keywordStuffingDetection: ScoringRule = {
     const diversity = uniqueWords / contentWords.length; // 0-1, higher = more diverse
 
     // Signal 2: Consecutive repetition — same word appearing in adjacent sentences
-    const sentences = doc.rawText.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+    const sentences = doc.rawText.split(/(?<!\d)\.|\.(?!\d)|[!?。！？]+/).filter((s) => s.trim().length > 10);
     let consecutiveHits = 0;
     if (sentences.length >= 2) {
       const freq = new Map<string, number>();

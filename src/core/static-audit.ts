@@ -52,7 +52,7 @@ export function auditHtml(html: string, target: string, options: StaticAuditOpti
   };
 
   const pageUrl = options.baseUrl ? httpUrl(options.baseUrl).href : undefined;
-  const titles = $('title').map((_, el) => $(el).text().trim()).get();
+  const titles = $('head > title').map((_, el) => $(el).text().trim()).get();
   const titleOk = titles.length === 1 && titles[0].length > 0;
   add('document-title', titleOk ? 'PASS' : 'WARNING', titles,
     titleOk ? 'One non-empty title element found.' : 'Expected one non-empty title element.',

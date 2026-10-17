@@ -20,7 +20,7 @@ import type {
   ScanOptions,
 } from './types.js';
 import { allRules } from './rules.js';
-export const SCORING_VERSION = 'readiness-v0.6.0-details-v1';
+export const SCORING_VERSION = 'readiness-v0.6.1-details-v1';
 
 // ── Parsers ────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ export function parseHtml(html: string, url: string): ParsedDocument {
   const $ = cheerio.load(html);
 
   // Extract title
-  const documentTitle = $('title').first().text().trim();
+  const documentTitle = $('head > title').first().text().trim();
   const title = documentTitle || $('h1').first().text().trim() || url;
 
   // Extract headings
@@ -55,20 +55,31 @@ export function parseHtml(html: string, url: string): ParsedDocument {
   jsonLdScripts.each((index, el) => {
     try {
       const parsed = JSON.parse($(el).html() || '');
-      const candidates = Array.isArray(parsed) ? parsed : [parsed];
-      for (const [candidateIndex, candidate] of candidates.entries()) {
+      const appendNodes = (value: unknown, location: string, inheritedContext?: unknown): void => {
+        if (Array.isArray(value)) {
+          value.forEach((item, itemIndex) => appendNodes(item, `${location} item ${itemIndex + 1}`, inheritedContext));
+          return;
+        }
+        const candidate = value;
+        if (candidate && typeof candidate === 'object') {
+          const node = candidate as JsonLdObject;
+          const context = node['@context'] ?? inheritedContext;
+          const { '@graph': graph, ...fields } = node;
+          // Graph envelopes carry context, not an entity requiring its own type.
+          // Keep wrappers that also describe an entity, including untyped ones.
+          if (graph === undefined || Object.keys(fields).some((key) => key !== '@context' && key !== '@id')) {
+            jsonLd.push({ ...(context !== undefined ? { '@context': context } : {}), ...fields } as JsonLdObject);
+          }
+          if (graph !== undefined) appendNodes(graph, `${location} @graph`, context);
+          return;
+        }
         if (candidate !== null) {
-          // Keep the v0.6 scoring input compatible. The audit contract records
-          // non-object values separately, but the score historically counted them.
+          // Preserve primitive inputs for the audit's invalid-value evidence.
           jsonLd.push(candidate as JsonLdObject);
         }
-        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
-          continue;
-        } else {
-          const location = Array.isArray(parsed) ? ` item ${candidateIndex + 1}` : '';
-          jsonLdErrors.push(`JSON-LD block ${index + 1}${location}: expected an object`);
-        }
-      }
+        jsonLdErrors.push(`${location}: expected an object`);
+      };
+      appendNodes(parsed, `JSON-LD block ${index + 1}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown JSON parse error';
       jsonLdErrors.push(`JSON-LD block ${index + 1}: ${message}`);

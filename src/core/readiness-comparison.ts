@@ -10,6 +10,13 @@ const dimensions = [
 
 /** Verify opt-in evidence against the versioned rule roster and original aggregation. */
 export function validateReadinessDetails(report: ScanReport): void {
+  // v0.6.0 used the same rule roster and aggregation, but different evaluators.
+  // Keep its saved reports readable while withholding cross-version deltas.
+  validateVersionedReadinessDetails(report, report?.scoringVersion === 'readiness-v0.6.0-details-v1'
+    ? report.scoringVersion : SCORING_VERSION);
+}
+
+function validateVersionedReadinessDetails(report: ScanReport, scoringVersion: string): void {
   const validScores = (s: DimensionScores) => s && dimensions.every(([key, , maximum]) =>
     Number.isInteger(s[key]) && s[key] >= 0 && s[key] <= maximum) &&
     Number.isInteger(s.total) && s.total === dimensions.reduce((sum, [key]) => sum + s[key], 0);
@@ -23,7 +30,7 @@ export function validateReadinessDetails(report: ScanReport): void {
     throw new Error('Overall readiness does not match page averages.');
   }
   if (new Set(report.pages.map(p => p.url)).size !== report.pages.length) throw new Error('Readiness page URLs must be unique.');
-  if (report.scoringVersion !== undefined && report.scoringVersion !== SCORING_VERSION) throw new Error('Unsupported readiness scoring version.');
+  if (report.scoringVersion !== undefined && report.scoringVersion !== scoringVersion) throw new Error('Unsupported readiness scoring version.');
   for (const page of report.pages) {
     const preview = page.sourcePreview;
     if (preview !== undefined && (!preview || typeof preview.text !== 'string' || preview.text.length > 6000 ||
@@ -32,7 +39,7 @@ export function validateReadinessDetails(report: ScanReport): void {
         (preview.capture === 'markdown') !== (preview.format === 'markdown'))) throw new Error('Invalid bounded source preview.');
     const evidence = page.ruleResults;
     if (evidence === undefined && report.scoringVersion === undefined) continue;
-    if (report.scoringVersion !== SCORING_VERSION || !Array.isArray(evidence) || evidence.length !== allRules.length ||
+    if (report.scoringVersion !== scoringVersion || !Array.isArray(evidence) || evidence.length !== allRules.length ||
         new Set(evidence.map(r => r?.id)).size !== allRules.length) throw new Error('Detailed scans require the complete versioned rule evidence.');
     for (const rule of allRules) {
       const item = evidence.find(r => r.id === rule.id);
