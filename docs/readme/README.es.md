@@ -54,7 +54,7 @@ Los datos se guardan en `data/seo/queries.json`, `observations.json` y `experime
 La GitHub Action es informativa de forma predeterminada. Después de aceptar una línea base, el equipo puede configurar una puntuación mínima para bloquear regresiones.
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
 ```

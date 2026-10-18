@@ -54,7 +54,7 @@ geo seo status .
 GitHub Action は既定で助言のみを行います。チームが基準値を確認した後、最低スコアを設定して回帰をブロックできます。
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
 ```

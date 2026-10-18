@@ -1,6 +1,6 @@
 {
   "name": "geoptimize",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Deterministic content quality lint for CI and pre-commit in documentation and static sites",
   "type": "module",
   "main": "./dist/core/index.js",
@@ -48,7 +48,9 @@
     "docs/interactive-cli.md",
     "scripts/verify-release-public.sh",
     "docs/release-v0.11.md",
-    "docs/release-notes-v0.11.md"
+    "docs/release-notes-v0.11.md",
+    "docs/release-v0.12.md",
+    "docs/release-notes-v0.12.md"
   ],
   "scripts": {
     "build": "tsc",

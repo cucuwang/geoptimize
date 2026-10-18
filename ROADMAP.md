@@ -47,3 +47,13 @@ HTML report. Explicit commands and the existing scoring and JSON contracts remai
 available. The release also updates supported dependencies and adds bounded npm
 visibility polling to the existing publication verifier. See the
 [v0.11 release runbook](docs/release-v0.11.md).
+
+## v0.12 Readiness and audit evidence corrections
+
+Version 0.12.0 fixes readiness scoring for JSON-LD graphs, CJK text, SVG titles,
+and Chinese term definitions. Site audits handle verified canonical consolidation
+and reciprocal hreflang pages more accurately. Scoring advances to
+`readiness-v0.6.1-details-v1`, and metric evidence advances to `1.1`. Older detailed
+reports remain readable; previous scoring baselines are non-comparable, and
+cross-version metric evidence produces no deltas. See the
+[v0.12 release runbook](docs/release-v0.12.md).

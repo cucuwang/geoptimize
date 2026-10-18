@@ -203,7 +203,7 @@ describe('v0.6 JSON automation contract', () => {
       'npm run release:check && bash scripts/verify-publish-source.sh',
     );
     expect(releaseGuide).toContain('## Rollback');
-    expect(releaseGuide).toContain('npm dist-tag add geoptimize@0.10.0 latest');
+    expect(releaseGuide).toContain('npm dist-tag add geoptimize@0.11.0 latest');
     expect(releaseGuide).toContain('<verified-package-sha256>');
     expect(candidateVerifier).toContain('index("README.md")');
     expect(candidateVerifier).toContain('tar -xOf "$PACKAGE_TARBALL" package/README.md');
@@ -216,15 +216,15 @@ describe('v0.6 JSON automation contract', () => {
 
   it('keeps public release notes separate from the maintainer runbook', async () => {
     const workflow = await readFile(join(repositoryRoot, '.github/workflows/release.yml'), 'utf8');
-    const releaseNotes = await readFile(join(repositoryRoot, 'docs/release-notes-v0.11.md'), 'utf8');
-    const runbook = await readFile(join(repositoryRoot, 'docs/release-v0.11.md'), 'utf8');
+    const releaseNotes = await readFile(join(repositoryRoot, 'docs/release-notes-v0.12.md'), 'utf8');
+    const runbook = await readFile(join(repositoryRoot, 'docs/release-v0.12.md'), 'utf8');
 
-    expect(workflow).toContain('--notes-file docs/release-notes-v0.11.md');
-    expect(workflow).not.toContain('--notes-file docs/release-v0.11.md');
-    expect(releaseNotes).toContain('# geoptimize 0.11.0');
+    expect(workflow).toContain('--notes-file docs/release-notes-v0.12.md');
+    expect(workflow).not.toContain('--notes-file docs/release-v0.12.md');
+    expect(releaseNotes).toContain('# geoptimize 0.12.0');
     expect(releaseNotes).not.toContain('repository preparation');
     expect(runbook).toContain('## Publication verification');
-    expect(runbook).toContain('v0.11.0');
+    expect(runbook).toContain('v0.12.0');
     expect(runbook).toContain('scripts/verify-release-public.sh');
   });
 });

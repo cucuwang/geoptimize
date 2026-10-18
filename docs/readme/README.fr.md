@@ -54,7 +54,7 @@ Les données sont enregistrées dans `data/seo/queries.json`, `observations.json
 La GitHub Action fournit des résultats consultatifs par défaut. Après validation d'une référence, l'équipe peut définir un score minimal pour bloquer les régressions.
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
 ```
