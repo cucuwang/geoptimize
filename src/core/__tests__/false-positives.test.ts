@@ -41,6 +41,21 @@ describe('JSON-LD graph normalization', () => {
     });
   });
 
+  it('resets inherited context for descendants of a graph with explicit null context', () => {
+    const doc = jsonLdPage({ '@context': 'https://schema.org', '@graph': [
+      { '@context': null, '@graph': [{ '@type': 'WebPage' }] },
+    ] });
+    const direct = jsonLdPage({ '@context': null, '@type': 'WebPage' });
+
+    expect(doc.jsonLd).toEqual(direct.jsonLd);
+    expect(evaluate('json-ld-completeness', doc)).toEqual(evaluate('json-ld-completeness', direct));
+    expect(evaluate('json-ld-completeness', doc)).toMatchObject({
+      score: 6,
+      maxScore: 12,
+      issues: [{ message: 'JSON-LD (WebPage) missing fields: @context' }],
+    });
+  });
+
   it('checks author and publication date on Article nodes inside a graph', () => {
     const doc = jsonLdPage({ '@context': 'https://schema.org', '@graph': [{ '@type': 'Article' }] });
     expect(evaluate('json-ld-completeness', doc).suggestions.map(suggestion => suggestion.action)).toEqual([

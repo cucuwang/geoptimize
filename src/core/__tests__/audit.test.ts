@@ -7,6 +7,22 @@ afterEach(() => {
 });
 
 describe('auditDocument', () => {
+  it.each([1, 2])('reports %i empty JSON-LD graph scripts as present with their actual block count', (blockCount) => {
+    const html = '<script type="application/ld+json">{"@context":"https://schema.org","@graph":[]}</script>'.repeat(blockCount);
+    const doc = parseHtml(html, 'fixture.html');
+    const report = auditDocument(doc, {
+      target: { type: 'file', input: doc.url },
+      rendering: 'local-html',
+    });
+    const check = report.checks.find((check) => check.id === 'json-ld-structure');
+
+    expect(doc.jsonLd).toEqual([]);
+    expect(doc.jsonLdBlockCount).toBe(blockCount);
+    expect(check?.status).toBe('PASS');
+    expect(check?.evidence).toEqual([{ source: 'html', observed: { blockCount, schemaTypes: [] } }]);
+    expect(check?.explanation).not.toContain('No JSON-LD was found');
+  });
+
   it('reports evidence-backed checks without a score', () => {
     const html = `<!doctype html>
       <html lang="en">

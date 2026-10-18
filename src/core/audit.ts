@@ -410,6 +410,7 @@ function checkImages(doc: ParsedDocument, context: AuditContext): AuditCheck {
 
 function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
   const errors = doc.jsonLdErrors ?? [];
+  const blockCount = doc.jsonLdBlockCount ?? doc.jsonLd.length;
   const parsedObjects = doc.jsonLd.filter((value) =>
     value !== null && typeof value === 'object' && !Array.isArray(value));
   const invalidValueCount = doc.jsonLd.length - parsedObjects.length;
@@ -420,7 +421,7 @@ function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
       'JSON-LD structure',
       'FAIL',
       [evidence(sourceFor(context), {
-        blockCount: doc.jsonLdBlockCount ?? doc.jsonLd.length,
+        blockCount,
         parsedObjectCount: parsedObjects.length,
         invalidValueCount,
         parseErrors: errors,
@@ -431,7 +432,7 @@ function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
     );
   }
 
-  if (doc.jsonLd.length === 0) {
+  if (blockCount === 0) {
     return makeCheck(
       'json-ld-structure',
       'JSON-LD structure',
@@ -448,7 +449,7 @@ function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
     'JSON-LD structure',
     'PASS',
     [evidence(sourceFor(context), {
-      blockCount: doc.jsonLdBlockCount ?? doc.jsonLd.length,
+      blockCount,
       schemaTypes: parsedObjects.map((value) => value['@type'] || '[unknown]'),
     })],
     'Every JSON-LD value parsed to an object. Context, type, feature eligibility, and visible-content agreement require schema-specific validation.',

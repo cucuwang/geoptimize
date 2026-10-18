@@ -63,7 +63,7 @@ export function parseHtml(html: string, url: string): ParsedDocument {
         const candidate = value;
         if (candidate && typeof candidate === 'object') {
           const node = candidate as JsonLdObject;
-          const context = node['@context'] ?? inheritedContext;
+          const context = Object.hasOwn(node, '@context') ? node['@context'] : inheritedContext;
           const { '@graph': graph, ...fields } = node;
           // Graph envelopes carry context, not an entity requiring its own type.
           // Keep wrappers that also describe an entity, including untyped ones.
