@@ -17,6 +17,19 @@ async function crawl(fixed = false, count = 3, maxPages = 200) {
 }
 
 describe('site metrics', () => {
+  it('reads evidence 1.0 and 1.1 but withholds comparisons across their different finding semantics', async () => {
+    const current = await crawl();
+    expect(current.metricEvidenceVersion).toBe('1.1');
+    const baseline = { ...structuredClone(current), metricEvidenceVersion: '1.0' as const };
+    expect(parseSiteReport(baseline)).toBe(baseline);
+    expect(parseSiteReport(current)).toBe(current);
+    const comparison = summarizeSite(current, baseline).comparison!;
+    expect(comparison.comparable).toBe(false);
+    expect(comparison.reasons).toEqual(['Metric evidence version is missing or changed.']);
+    expect(comparison.changes.every(c => c.delta === null)).toBe(true);
+    expect(comparison.findings).toBeNull();
+    expect(summarizeSite(baseline, baseline).comparison?.comparable).toBe(true);
+  });
   it('counts full findings beyond the twenty-item evidence sample', async () => {
     const report = await crawl(false, 25);
     const raw = report.checks.find(c => c.id === 'canonical-consistency')!.evidence[0].observed;

@@ -26,7 +26,7 @@ export interface SiteMetricsReport {
 export function parseSiteReport(value: unknown): SiteAuditReport {
   const r = value as SiteAuditReport;
   const count = (v: unknown) => typeof v === 'number' && Number.isInteger(v) && v >= 0;
-  if (!r || r.contractVersion !== '1.0' || (r.metricEvidenceVersion !== undefined && r.metricEvidenceVersion !== '1.0') || typeof r.startUrl !== 'string' ||
+  if (!r || r.contractVersion !== '1.0' || (r.metricEvidenceVersion !== undefined && !['1.0', '1.1'].includes(r.metricEvidenceVersion)) || typeof r.startUrl !== 'string' ||
       typeof r.origin !== 'string' || typeof r.timestamp !== 'string' || !Number.isFinite(Date.parse(r.timestamp)) ||
       !count(r.maxPages) || r.maxPages < 1 || r.maxPages > 200 ||
       !count(r.crawledPages) || r.crawledPages > r.maxPages || typeof r.truncated !== 'boolean' ||

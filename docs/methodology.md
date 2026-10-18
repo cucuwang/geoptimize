@@ -100,7 +100,7 @@ robots.txt matching covers applicable user-agent groups, `Allow`, `Disallow`, `*
 
 Last reviewed: 2026-08-22.
 
-## Site metric evidence version 1.0
+## Site metric evidence version 1.1
 
 `audit-site` adds optional `metricEvidenceVersion` and complete `findings` fields to
 its 1.0 report, plus complete numeric counts alongside existing capped URL samples.
@@ -108,6 +108,30 @@ Existing fields and readiness scoring remain unchanged. Consumers that assert an
 exact top-level key set must accept these additive fields. The `metrics` command
 accepts older 1.0 reports, but missing counts stay null and unversioned evidence
 cannot produce comparison deltas.
+
+Evidence version 1.1 groups pages by a single same-origin canonical whose target
+was crawled and returned HTTP 200 HTML directly, with no redirects. The declared
+target URL must match the final URL, and the target must be indexable according to
+its meta robots and X-Robots-Tag directives and have exactly one self-referencing
+canonical. These verified consolidations do not create
+non-self or shared-canonical findings. Duplicate titles and sitemap omissions use
+the canonical target URL; missing, failed, external, malformed, noindex, redirected,
+or non-self-canonical targets retain the usual findings, including canonical chains
+and cycles. Noindex targets are excluded from sitemap inclusion requirements. A
+verified canonical target omitted from the sitemap still creates an
+omission, counted once per target.
+
+Shared titles among different language pages are accepted when every pair has
+reciprocal HTML hreflang links matching the other page's declared HTML language.
+One-way links, equal language declarations, and incomplete groups retain duplicate
+title warnings. Directory audits apply the same language check when a deployed
+base URL establishes the file URLs. For hreflang comparison only, a trailing
+`index.html` or `index.htm` is equivalent to the directory URL ending in `/`.
+Hosting rewrites are not inferred; other checks retain their existing URL handling
+and evidence.
+
+The metrics reader accepts evidence versions 1.0 and 1.1. Comparisons across these
+versions withhold deltas and finding differences because their semantics differ.
 
 Metric units distinguish pages, target URLs, canonical entries, and duplicate groups.
 Canonical review observations and orphan candidates are contextual findings, not

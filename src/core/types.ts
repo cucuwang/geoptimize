@@ -152,7 +152,7 @@ export interface SiteAuditReport {
   maxPages: number;
   crawledPages: number;
   findings?: SiteFinding[];
-  metricEvidenceVersion?: '1.0';
+  metricEvidenceVersion?: '1.0' | '1.1';
   truncated: boolean;
   robots: {
     url: string;

@@ -4,6 +4,7 @@ All notable user-visible changes will be documented here. The project follows Se
 
 ## Unreleased
 
+- Fixed `audit-site` consolidation of parameter URLs through a verified canonical target that returns HTTP 200 directly, is indexable, has no redirects, and declares a single self-canonical; chains, cycles, noindex targets, and redirecting targets retain warnings. Different-language pages with reciprocal hreflang links no longer trigger duplicate-title warnings in `audit-site` and `audit-build`, including directory `index.html` and `index.htm` layouts in `audit-build`. Bumped `metricEvidenceVersion` to `1.1`; `1.0` reports remain readable, with no cross-version comparison deltas.
 - Recognize bounded Traditional and Simplified Chinese term definitions; add public regression corpus coverage for Chinese definitions, descriptions, sentence boundaries, and JSON-LD graph completeness and attribution under the existing scoring version.
 - Fixed JSON-LD graph and array handling with inherited context, SVG titles being counted as document titles, CJK description quality checks, and sentence boundaries around CJK punctuation and numeric versions. Readiness scoring is now `readiness-v0.6.1-details-v1`; previous scoring baselines are reported as non-comparable.
 - Fixed false HTTP and broken-internal-target failures from Cloudflare email-protection links in `audit-site`; skipped link occurrences are recorded in `limitations`.
