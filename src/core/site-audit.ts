@@ -497,9 +497,13 @@ export async function auditSite(startUrl: string, options: SiteAuditOptions = {}
     try {
       const resolved = normalizeUrl(canonicals[0], page.output.finalUrl);
       const target = pageLookup.get(resolved);
-      if (new URL(resolved).origin === origin && target?.output.status === 200 && target.document) {
-        validCanonicalTargets.set(page, normalizeUrl(target.output.finalUrl));
-      }
+      if (new URL(resolved).origin !== origin || target?.output.status !== 200 || !target.document
+        || target.blocksIndexing || target.output.redirects.length > 0
+        || resolved !== normalizeUrl(target.output.finalUrl)) continue;
+      const targetCanonicals = target.document.canonicalLinks ?? [];
+      if (targetCanonicals.length !== 1
+        || normalizeUrl(targetCanonicals[0], target.output.finalUrl) !== resolved) continue;
+      validCanonicalTargets.set(page, resolved);
     } catch {
       // Malformed and unverified canonicals retain their existing findings.
     }

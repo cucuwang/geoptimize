@@ -110,10 +110,15 @@ accepts older 1.0 reports, but missing counts stay null and unversioned evidence
 cannot produce comparison deltas.
 
 Evidence version 1.1 groups pages by a single same-origin canonical whose target
-was crawled and returned HTTP 200 HTML. These verified consolidations do not create
+was crawled and returned HTTP 200 HTML directly, with no redirects. The declared
+target URL must match the final URL, and the target must be indexable according to
+its meta robots and X-Robots-Tag directives and have exactly one self-referencing
+canonical. These verified consolidations do not create
 non-self or shared-canonical findings. Duplicate titles and sitemap omissions use
-the canonical target URL; missing, failed, external, or malformed targets retain
-the usual findings. A canonical target omitted from the sitemap still creates an
+the canonical target URL; missing, failed, external, malformed, noindex, redirected,
+or non-self-canonical targets retain the usual findings, including canonical chains
+and cycles. Noindex targets are excluded from sitemap inclusion requirements. A
+verified canonical target omitted from the sitemap still creates an
 omission, counted once per target.
 
 Shared titles among different language pages are accepted when every pair has

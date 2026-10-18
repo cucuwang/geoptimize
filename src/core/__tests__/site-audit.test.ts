@@ -120,6 +120,70 @@ describe('auditSite', () => {
     expect(report.findings).toEqual([]);
   });
 
+  async function canonicalTargetFixture(mode: 'chain' | 'cycle' | 'meta-noindex' | 'header-noindex' | 'redirect' | 'missing' | 'multiple' | 'valid') {
+    const source = '/contact/?service=ai';
+    const target = '/contact/';
+    const final = '/final/';
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/robots.txt') return new Response('', { status: 404 });
+      if (url.pathname === '/sitemap.xml') {
+        const listed = ['/', ...(mode === 'valid' ? [target] : mode === 'redirect' || mode === 'chain' ? [final] : [])];
+        return new Response(`<urlset>${listed.map(p => `<url><loc>https://example.com${p}</loc></url>`).join('')}</urlset>`);
+      }
+      const path = url.pathname + url.search;
+      expect(['/', source, target, final]).toContain(path);
+      if (path === target && mode === 'redirect') {
+        return new Response(null, { status: 301, headers: { location: final } });
+      }
+      const home = path === '/';
+      const isTarget = path === target;
+      const canonical = home ? '/' : path === source ? target : isTarget && mode === 'chain' ? final
+        : isTarget && mode === 'cycle' ? source : url.pathname;
+      const canonicalTag = `<link rel="canonical" href="${canonical}">`;
+      const headers: Record<string, string> = { 'content-type': 'text/html' };
+      if (isTarget && mode === 'header-noindex') headers['x-robots-tag'] = 'noindex';
+      return new Response(`<html lang="en"><head><title>${home ? 'Home' : 'Contact'}</title>
+        ${isTarget && mode === 'missing' ? '' : canonicalTag}
+        ${isTarget && mode === 'multiple' ? canonicalTag : ''}
+        ${isTarget && mode === 'meta-noindex' ? '<meta name="robots" content="noindex">' : ''}
+        </head><body>${home ? [source, target].map(p => `<a href="${p}">Contact</a>`).join('') : ''}</body></html>`,
+      { headers });
+    });
+    return auditSite('https://example.com/', { maxPages: 10 });
+  }
+
+  it.each(['chain', 'cycle', 'meta-noindex', 'header-noindex', 'redirect', 'missing', 'multiple'] as const)(
+    'retains findings when a canonical target is not a direct indexable self-canonical page: %s', async (mode) => {
+      const report = await canonicalTargetFixture(mode);
+      expect(report.checks.find(c => c.id === 'canonical-consistency')?.status).toBe(mode === 'multiple' ? 'FAIL' : 'WARNING');
+      expect(report.checks.find(c => c.id === 'duplicate-titles')?.status).toBe('WARNING');
+      expect(report.checks.find(c => c.id === 'sitemap-consistency')?.status).toBe('WARNING');
+      expect(report.findings).toContainEqual({
+        kind: 'non-self-canonical', target: 'https://example.com/contact/?service=ai -> https://example.com/contact/',
+      });
+      expect(report.findings?.some(f => f.kind === 'duplicate-title')).toBe(true);
+      expect(report.findings).toContainEqual({ kind: 'sitemap-omission', target: 'https://example.com/contact/?service=ai' });
+      if (mode === 'meta-noindex' || mode === 'header-noindex') {
+        expect(report.findings?.filter(f => f.kind === 'sitemap-omission')).toEqual([
+          { kind: 'sitemap-omission', target: 'https://example.com/contact/?service=ai' },
+        ]);
+      }
+      if (mode === 'redirect') {
+        expect(report.pages.find(p => p.requestedUrl === 'https://example.com/contact/')?.redirects).toHaveLength(1);
+      }
+    },
+  );
+
+  it('preserves exemptions for a direct 200 indexable self-canonical target', async () => {
+    const report = await canonicalTargetFixture('valid');
+    expect(report.metricEvidenceVersion).toBe('1.1');
+    for (const id of ['canonical-consistency', 'duplicate-titles', 'sitemap-consistency']) {
+      expect(report.checks.find(c => c.id === id)?.status).toBe('PASS');
+    }
+    expect(report.findings).toEqual([]);
+  });
+
   it.each([404, null, 201])('retains canonical, title and sitemap findings for an invalid target: %s', async (status) => {
     const report = await canonicalFixture(status);
     for (const kind of ['non-self-canonical', 'shared-canonical', 'duplicate-title', 'sitemap-omission']) {
