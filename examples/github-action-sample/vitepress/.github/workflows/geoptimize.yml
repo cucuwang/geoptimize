@@ -20,7 +20,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run docs:build
-      - uses: cucuwang/geoptimize@v0.11.0
+      - uses: cucuwang/geoptimize@v0.12.0
         with:
           path: docs/.vitepress/dist
           fail-on-low-score: 'false'

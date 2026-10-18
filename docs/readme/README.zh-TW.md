@@ -54,7 +54,7 @@ geo seo status .
 GitHub Action 預設提供建議性檢查。團隊接受基準後，可設定最低分數來阻擋回歸。
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
 ```

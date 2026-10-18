@@ -1,9 +1,9 @@
 # Interactive CLI
 
-The guided flow is included in `geoptimize@0.11.0`. Install the package and run the bare command:
+The guided flow is included in `geoptimize@0.12.0`. Install the package and run the bare command:
 
 ```bash
-npm install --save-dev geoptimize@0.11.0
+npm install --save-dev geoptimize@0.12.0
 npx --no-install geoptimize
 ```
 
@@ -18,4 +18,4 @@ The flow lets the operator choose a website URL, a local HTML or Markdown file, 
 
 Enter `b` or `back` to return to the previous menu, or `c`, `cancel`, `q`, or `quit` to leave the flow. At any prompt, EOF or Ctrl-C leaves without creating a report. Before scanning starts, the prompt closes; Ctrl-C during the scan is then handled by the normal process interrupt. EOF after that point is no longer a prompt cancellation. A scan that returns no pages is reported as an error and cannot produce an empty success report.
 
-Explicit commands and flags keep their existing Commander behaviour. The menu is not entered for `--help`, `--version`, or non-TTY invocation. All three package aliases, `geoptimize`, `geo`, and `geo-cli`, support the same entry point in the v0.11.0 release. URL and directory results retain the scanner's evidence and coverage limits; the guided flow does not turn a bounded scan into a complete site audit.
+Explicit commands and flags keep their existing Commander behaviour. The menu is not entered for `--help`, `--version`, or non-TTY invocation. All three package aliases, `geoptimize`, `geo`, and `geo-cli`, support the same entry point in the v0.12.0 release. URL and directory results retain the scanner's evidence and coverage limits; the guided flow does not turn a bounded scan into a complete site audit.

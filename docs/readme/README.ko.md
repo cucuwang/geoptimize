@@ -54,7 +54,7 @@ geo seo status .
 GitHub Action은 기본적으로 권고 결과만 제공합니다. 팀에서 기준값을 승인한 뒤 최소 점수로 회귀를 차단할 수 있습니다.
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
 ```

@@ -22,6 +22,6 @@ triage. Configuration alone does not establish a clean scan or certification.
 
 Automated releases use npm OIDC, tarball attestations, checksums and a locked
 production SBOM. Version 0.10.0 is the first release published through this path.
-Follow [release verification](docs/release-v0.11.md) and [maintainer security
+Follow [release verification](docs/release-v0.12.md) and [maintainer security
 settings](docs/maintainer-security-settings.md). Earlier releases are not
 retroactively signed or attested. No long-lived npm credential is required.

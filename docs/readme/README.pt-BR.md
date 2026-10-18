@@ -54,7 +54,7 @@ Os dados ficam em `data/seo/queries.json`, `observations.json` e `experiments.js
 A GitHub Action fornece resultados consultivos por padrão. Depois que a equipe aceitar uma linha de base, ela pode definir uma pontuação mínima para bloquear regressões.
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
 ```

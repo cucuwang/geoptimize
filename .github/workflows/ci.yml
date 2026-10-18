@@ -127,7 +127,7 @@ jobs:
         with:
           path: .github/fixtures/action-low
           min-score: '100'
-          package-spec: ./geoptimize-0.11.0.tgz
+          package-spec: ./geoptimize-0.12.0.tgz
 
       - name: Validate Action outputs
         env:
@@ -144,7 +144,7 @@ jobs:
         uses: ./
         with:
           path: examples/github-action-sample/site
-          package-spec: ./geoptimize-0.11.0.tgz
+          package-spec: ./geoptimize-0.12.0.tgz
 
       - name: Validate sample outputs
         env:
@@ -163,7 +163,7 @@ jobs:
           path: .github/fixtures/action-low
           min-score: '0'
           fail-on-low-score: 'true'
-          package-spec: ./geoptimize-0.11.0.tgz
+          package-spec: ./geoptimize-0.12.0.tgz
 
       - name: Validate blocking outputs
         env:
@@ -183,7 +183,7 @@ jobs:
           path: .github/fixtures/action-low
           min-score: '100'
           fail-on-low-score: 'true'
-          package-spec: ./geoptimize-0.11.0.tgz
+          package-spec: ./geoptimize-0.12.0.tgz
 
       - name: Invalid choice is rejected
         id: invalid-choice
@@ -192,7 +192,7 @@ jobs:
         with:
           path: .github/fixtures/action-low
           fail-on-low-score: sometimes
-          package-spec: ./geoptimize-0.11.0.tgz
+          package-spec: ./geoptimize-0.12.0.tgz
 
       - name: Out-of-range threshold is rejected
         id: invalid-threshold
@@ -201,7 +201,7 @@ jobs:
         with:
           path: .github/fixtures/action-low
           min-score: '101'
-          package-spec: ./geoptimize-0.11.0.tgz
+          package-spec: ./geoptimize-0.12.0.tgz
 
       - name: Assert expected failures
         env:

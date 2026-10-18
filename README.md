@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/5dafd888-92c9-428b-b372-62864c58059a
 After your workflow builds the site into `dist`, add this GitHub Actions step. Review the baseline before enabling blocking mode; `60` is an example threshold, not a universal quality target.
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -60,7 +60,7 @@ npx geoptimize audit https://example.com --json
 npx geoptimize audit-site https://example.com --max-pages 20 --json
 ```
 
-Version 0.11.0 adds a guided terminal menu for scanning a target and saving an offline HTML report. See [the interactive CLI guide](docs/interactive-cli.md) for `npm install` and `npx` usage; explicit commands remain available for scripts and non-TTY environments.
+Version 0.12.0 includes a guided terminal menu for scanning a target and saving an offline HTML report. See [the interactive CLI guide](docs/interactive-cli.md) for `npm install` and `npx` usage; explicit commands remain available for scripts and non-TTY environments.
 
 Example output:
 
@@ -213,7 +213,7 @@ node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.tot
 The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimize-content-readiness-check) is advisory by default. It reports findings without blocking the workflow:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
 ```
@@ -221,7 +221,7 @@ The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimiz
 Projects can explicitly choose blocking mode after accepting a baseline:
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
     fail-on-low-score: 'true'
@@ -359,13 +359,13 @@ npx skills add cucuwang/geoptimize
 
 ## Project status
 
-Version 0.11.0 adds a guided terminal menu for saving offline HTML reports, updates supported dependencies, and improves public release verification. The readiness score and existing audit contracts remain unchanged. See the [release notes](https://github.com/cucuwang/geoptimize/releases/tag/v0.11.0), [release runbook](docs/release-v0.11.md), and [roadmap](ROADMAP.md).
+Version 0.12.0 fixes readiness scoring for JSON-LD graphs, CJK text, and SVG titles, and improves canonical consolidation and hreflang handling in site audits. Scoring is now `readiness-v0.6.1-details-v1`, and metric evidence is `1.1`. Older detailed reports remain readable; previous scoring baselines are non-comparable, and cross-version metric evidence produces no deltas. See the [release notes](https://github.com/cucuwang/geoptimize/releases/tag/v0.12.0), [release runbook](docs/release-v0.12.md), and [roadmap](ROADMAP.md).
 
 Contributions are welcome. Rule changes require an evidence note and positive/negative fixtures; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 
 ## Release integrity and security maintenance
 
-The v0.11 release path is documented in [the v0.11 runbook](docs/release-v0.11.md). The v0.10 runbook remains the historical record for the verified v0.10.0 release.
+The v0.12 release path is documented in [the v0.12 runbook](docs/release-v0.12.md). The v0.10 runbook remains the historical record for the verified v0.10.0 release.
 CI validates Node 22/24 tarballs, package contents and CLI/Action contracts; the
 release preparation exports SHA-256 checksums and an SPDX production-dependency SBOM.
 Repository settings and npm authorization remain explicit [maintainer gates](docs/maintainer-security-settings.md).

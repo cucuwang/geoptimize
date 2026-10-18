@@ -54,7 +54,7 @@ Die Daten liegen in `data/seo/queries.json`, `observations.json` und `experiment
 Die GitHub Action liefert standardmäßig Hinweise. Nachdem ein Team den Ausgangswert akzeptiert hat, kann es einen Mindestwert zum Blockieren von Regressionen setzen.
 
 ```yaml
-- uses: cucuwang/geoptimize@v0.11.0
+- uses: cucuwang/geoptimize@v0.12.0
   with:
     path: dist
 ```

@@ -73,6 +73,8 @@ jq -e '
   (.[0].files | map(.path) | index("docs/release-v0.10.md")) != null and
   (.[0].files | map(.path) | index("docs/release-v0.11.md")) != null and
   (.[0].files | map(.path) | index("docs/release-notes-v0.11.md")) != null and
+  (.[0].files | map(.path) | index("docs/release-v0.12.md")) != null and
+  (.[0].files | map(.path) | index("docs/release-notes-v0.12.md")) != null and
   (.[0].files | map(.path) | index("docs/interactive-cli.md")) != null and
   (.[0].files | map(.path) | index("dist/cli/interactive.js")) != null and
   (.[0].files | map(.path) | index("docs/seo-experiment-ledger.md")) != null and
