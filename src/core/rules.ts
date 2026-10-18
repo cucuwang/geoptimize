@@ -231,6 +231,23 @@ const dataStatsPresence: ScoringRule = {
   },
 };
 
+// Class C heuristic: bounded term subjects reduce ordinary Chinese copula matches.
+// Reuse the repetition rule's CJK sentence boundaries and decimal protection.
+function countChineseDefinitions(text: string): number {
+  return text.split(/(?<!\d)\.|\.(?!\d)|[!?。！？\n]+/).filter((part) => {
+    const sentence = part.trim();
+    if (sentence.length > 160 || /(?:是否|但是|於是|于是|還是|还是|就是)/.test(sentence)) return false;
+    const match = sentence.match(/^(?:所謂|所谓)\s*([\p{Script=Han}A-Za-z0-9 _/+.-]{2,24}?)[，,]\s*(.{4,})$/u)
+      ?? sentence.match(/^([\p{Script=Han}A-Za-z0-9 _/+.-]{2,24}?)\s*(?:定義為|定义为|意指|稱為|称为|是|指(?!定|令|示|出|導|导|向|標|标))\s*(.{4,})$/u);
+    if (!match) return false;
+    const subject = match[1].trim();
+    if (/^(?:這|这|那|它|他|她|我|你|您|此|其|目前|現在|现在|當前|当前|今天|當時|当时|本次)/.test(subject)) return false;
+    if (/[的地得是，,]/.test(subject)) return false;
+    // ASCII terms must look like an abbreviation or named technical term.
+    return /\p{Script=Han}/u.test(subject) || /[A-Z0-9]/.test(subject);
+  }).length;
+}
+
 const clearDefinitions: ScoringRule = {
   id: 'clear-definitions',
   dimension: 'citability',
@@ -241,12 +258,18 @@ const clearDefinitions: ScoringRule = {
     // Look for "X is Y" patterns, definition lists
     const definitionPatterns = /\b\w+\s+(?:is|are|refers to|means|defines?|defined as)\s+/gi;
     const matches = doc.rawText.match(definitionPatterns) || [];
+    // Paragraph boundaries preserve definitions following a heading in extracted text.
+    const chineseCount = Math.max(
+      countChineseDefinitions(doc.rawText),
+      doc.paragraphs.reduce((count, paragraph) => count + countChineseDefinitions(paragraph), 0),
+    );
+    const definitionCount = matches.length + chineseCount;
 
     const hasDlElements = /<dl/i.test(doc.html || '');
 
     let score = 0;
-    if (matches.length >= 3 || hasDlElements) score = 5;
-    else if (matches.length >= 1) score = 3;
+    if (definitionCount >= 3 || hasDlElements) score = 5;
+    else if (definitionCount >= 1) score = 3;
     else {
       score = 1;
       suggestions.push({

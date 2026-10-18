@@ -94,10 +94,17 @@ describe('v0.6 public rule fixture corpus', () => {
 
   for (const rule of scoredRules) {
     describe(rule.id, () => {
-      for (const kind of fixtureKinds) {
+      const fixtureSet = ruleFixtureCorpus[rule.id];
+      const cases = [
+        ...fixtureKinds.map(kind => ({ ...fixtureSet[kind], kind })),
+        ...(fixtureSet.additional ?? []),
+      ];
+      for (const [index, fixture] of cases.entries()) {
+        const kind = `${fixture.kind} ${index + 1}`;
         it(`${kind} fixture matches the versioned expectation`, () => {
-          const fixture = ruleFixtureCorpus[rule.id][kind];
-          const result = rule.evaluate(makeDocument(fixture.document));
+          const result = rule.evaluate(fixture.sourceHtml
+            ? parseHtml(fixture.sourceHtml, 'fixture://source.html')
+            : makeDocument(fixture.document));
 
           expect(fixture.purpose.length).toBeGreaterThan(20);
           expect(result.maxScore).toBe(rule.weight);
@@ -109,8 +116,7 @@ describe('v0.6 public rule fixture corpus', () => {
         });
 
         it(`${kind} fixture survives the HTML parser boundary`, () => {
-          const fixture = ruleFixtureCorpus[rule.id][kind];
-          const parsedDocument = parseHtml(renderFixtureHtml(fixture.document), 'fixture://v0.6-rule-corpus.html');
+          const parsedDocument = parseHtml(fixture.sourceHtml ?? renderFixtureHtml(fixture.document), 'fixture://v0.6-rule-corpus.html');
           const result = rule.evaluate(parsedDocument);
 
           expect(result.maxScore).toBe(rule.weight);

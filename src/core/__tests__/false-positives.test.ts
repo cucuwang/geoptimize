@@ -159,3 +159,44 @@ describe('readiness scoring version compatibility', () => {
     expect(compareReadiness(current, current).comparable).toBe(true);
   });
 });
+
+
+describe('Chinese clear definitions', () => {
+  it.each([
+    'API 是系統提供給其他程式使用的介面。',
+    'API 是系统提供给其他程序使用的接口。',
+    '所謂 RAG，結合檢索資料與生成回答的技術。',
+    '所谓 RAG，结合检索资料与生成回答的技术。',
+    'Modbus 指設備之間交換資料的通訊協定。',
+    'Modbus 指设备之间交换数据的通信协议。',
+    '遙測意指遠端量測設備狀態的技術。',
+    '遥测意指远程测量设备状态的技术。',
+    '訊息佇列稱為非同步傳遞訊息的機制。',
+    '消息队列称为异步传递消息的机制。',
+    '延遲定義為請求送出至回應抵達的時間。',
+    '延迟定义为请求发出至响应到达的时间。',
+  ])('recognizes one bounded term definition: %s', text => {
+    const doc = parseHtml(`<h1>Technical guide</h1><p>${text}</p>`, 'fixture.html');
+    expect(evaluate('clear-definitions', doc)).toMatchObject({ score: 3, suggestions: [] });
+  });
+
+  it.each([
+    '這是我們的做法。', '这是我们的做法。', '目前是第一階段。',
+    '它是系統提供給其他程式使用的介面。', '我們是系統維護人員。',
+    '此介面是系統提供的功能。', '那個是系統提供的介面。',
+    'Modbus 以功能碼與位址指定讀寫內容。', '建立工單或送出指令時，重試方式尤其重要。',
+    'API 是否需要驗證。', '但是需要確認。', '於是開始工作。',
+    '于是开始工作。', '還是先回報。', '还是先汇报。', 'API 就是這個方式。',
+    `API 是${'設備資料傳輸流程'.repeat(24)}。`,
+    '一個具有非常多修飾詞而且超過主詞長度限制的設備資料傳輸系統是現場使用的介面。',
+  ])('rejects ordinary statements and ambiguous boundaries: %s', text => {
+    const doc = parseHtml(`<p>${text}</p>`, 'fixture.html');
+    expect(evaluate('clear-definitions', doc)).toMatchObject({ score: 1, suggestions: [expect.anything()] });
+  });
+
+  it('counts paragraphs once and combines Chinese with existing English definitions', () => {
+    const doc = parseHtml('<p>API 是系統提供給其他程式使用的介面。</p><p>A fixture means a controlled input.</p><p>Modbus 指設備之間交換資料的通訊協定。</p>', 'fixture.html');
+    expect(evaluate('clear-definitions', doc).score).toBe(5);
+    expect(evaluate('clear-definitions', parseHtml('<p>API 是系統提供給其他程式使用的介面。</p>', 'fixture.html')).score).toBe(3);
+  });
+});
