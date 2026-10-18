@@ -164,7 +164,11 @@ export function auditHtml(html: string, target: string, options: StaticAuditOpti
 }
 
 /** Resolve language alternates against the observed deployed URL, without fetching. */
-export function hreflangPage(html: string, url: string) {
+export function hreflangPage(html: string, url: string, normalizeDirectoryIndex = false) {
+  const comparisonUrl = (value: URL): string => {
+    if (normalizeDirectoryIndex) value.pathname = value.pathname.replace(/\/index\.html?$/, '/');
+    return value.href;
+  };
   const $ = cheerio.load(html);
   const language = $('html').attr('lang')?.trim().toLowerCase() || '';
   const alternates = new Map<string, Set<string>>();
@@ -174,14 +178,15 @@ export function hreflangPage(html: string, url: string) {
     try {
       const target = httpUrl($(el).attr('href')!.trim(), url);
       target.hash = '';
-      const languages = alternates.get(target.href) ?? new Set<string>();
+      const key = comparisonUrl(target);
+      const languages = alternates.get(key) ?? new Set<string>();
       languages.add(lang);
-      alternates.set(target.href, languages);
+      alternates.set(key, languages);
     } catch {
       // Invalid declarations cannot establish a reciprocal language relationship.
     }
   });
-  return { url, language, alternates };
+  return { url: comparisonUrl(httpUrl(url)), language, alternates };
 }
 
 export function reciprocalHreflang(left: ReturnType<typeof hreflangPage>, right: ReturnType<typeof hreflangPage>): boolean {
@@ -257,7 +262,7 @@ export async function auditPath(input: string, options: StaticAuditOptions = {})
     const html = await readFile(file, 'utf8');
     const page = auditHtml(html, file, { ...options, baseUrl });
     pages.push(page);
-    if (baseUrl) languagePages.set(page, hreflangPage(html, httpUrl(baseUrl).href));
+    if (baseUrl) languagePages.set(page, hreflangPage(html, httpUrl(baseUrl).href, rootStat.isDirectory()));
   }
   markDuplicates(pages, 'document-title', 'duplicate-document-title', (value) => value.replace(/\s+/g, ' ').trim().toLowerCase(),
     (left, right) => Boolean(languagePages.has(left) && languagePages.has(right) &&

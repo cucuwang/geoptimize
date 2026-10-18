@@ -125,7 +125,10 @@ Shared titles among different language pages are accepted when every pair has
 reciprocal HTML hreflang links matching the other page's declared HTML language.
 One-way links, equal language declarations, and incomplete groups retain duplicate
 title warnings. Directory audits apply the same language check when a deployed
-base URL establishes the file URLs. Hosting rewrites are not inferred.
+base URL establishes the file URLs. For hreflang comparison only, a trailing
+`index.html` or `index.htm` is equivalent to the directory URL ending in `/`.
+Hosting rewrites are not inferred; other checks retain their existing URL handling
+and evidence.
 
 The metrics reader accepts evidence versions 1.0 and 1.1. Comparisons across these
 versions withhold deltas and finding differences because their semantics differ.
