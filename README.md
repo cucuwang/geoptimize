@@ -94,6 +94,8 @@ Two often-promoted GEO signals are deliberately excluded from the score:
 
 Every rule, its evidence class, and known false-positive boundary is documented in [docs/methodology.md](docs/methodology.md) and exercised by the [versioned public fixture corpus](fixtures/v0.6/rule-corpus.ts).
 
+[Follow the CI content quality tutorial](docs/tutorials/ci-content-quality.md) for a two-page static site, JSON output, build audit failures, and an optional Action threshold.
+
 ## Evidence-backed page audit
 
 `audit` inspects one public URL or one local HTML/Markdown file. It is a separate, versioned contract and does not change the v0.6 readiness score or `scan --json` output.
