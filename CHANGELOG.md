@@ -7,6 +7,7 @@ All notable user-visible changes will be documented here. The project follows Se
 ### Fixed
 
 - Report JSON-LD parse errors as `scan` warnings instead of the misleading "No JSON-LD structured data found" note, and point to `audit-build` for the syntax check. Readiness scores remain unchanged.
+- Fixed pre-commit scoring of staged HTML and Markdown by preserving temporary file names and extensions; failed scans now emit a warning with the first stderr line instead of silently skipping the file.
 
 ## 0.12.0 (2026-10-18)
 
