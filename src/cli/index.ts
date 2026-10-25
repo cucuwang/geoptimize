@@ -551,18 +551,33 @@ IFS='
 '
 for FILE in $FILES; do
   [ -n "$FILE" ] || continue
-  TEMP_FILE=$(mktemp "\${TMPDIR:-/tmp}/geoptimize.XXXXXX") || exit 1
+  TEMP_DIR=$(mktemp -d "\${TMPDIR:-/tmp}/geoptimize.XXXXXX") || exit 1
+  TEMP_FILE="$TEMP_DIR/\${FILE##*/}"
   if ! git show ":$FILE" > "$TEMP_FILE" 2>/dev/null; then
-    rm -f "$TEMP_FILE"
+    rm -rf "$TEMP_DIR"
     echo "[geoptimize] WARN: Could not read staged version of $FILE"
     continue
   fi
-  SCORE=$(npx geoptimize scan "$TEMP_FILE" --json 2>/dev/null | node -e "
-    try { const j=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); console.log(j.overall.total); }
-    catch(e) { console.log(-1); }
-  ")
-  rm -f "$TEMP_FILE"
-  if [ "$SCORE" = "-1" ]; then
+  SCAN_STATUS=0
+  npx geoptimize scan "$TEMP_FILE" --json > "$TEMP_DIR/scan.json" 2> "$TEMP_DIR/scan.stderr" || SCAN_STATUS=$?
+  SCORE=$(node -e "
+    try {
+      const j=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
+      const score=j.overall.total;
+      console.log(typeof score === 'number' && Number.isInteger(score) && score >= 0 && score <= 100 ? score : -1);
+    } catch(e) { console.log(-1); }
+  " "$TEMP_DIR/scan.json") || SCORE=-1
+  SCAN_ERROR=$(sed -n '1p' "$TEMP_DIR/scan.stderr")
+  rm -rf "$TEMP_DIR"
+  if [ "$SCAN_STATUS" -ne 0 ] || [ "$SCORE" = "-1" ]; then
+    REASON="invalid or missing score"
+    if [ "$SCAN_STATUS" -ne 0 ]; then
+      REASON="scan exited $SCAN_STATUS"
+    fi
+    if [ -n "$SCAN_ERROR" ]; then
+      REASON="$REASON: $SCAN_ERROR"
+    fi
+    echo "[geoptimize] WARN: Could not score $FILE ($REASON)"
     continue
   fi
   if [ "$SCORE" -lt "$MIN_SCORE" ]; then

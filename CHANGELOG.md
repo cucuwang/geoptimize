@@ -2,6 +2,12 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## Unreleased
+
+### Fixed
+
+- Fixed pre-commit scoring of staged HTML and Markdown by preserving temporary file names and extensions; failed scans now emit a warning with the first stderr line instead of silently skipping the file.
+
 ## 0.12.0 (2026-10-18)
 
 ### Fixed
