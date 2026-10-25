@@ -55,7 +55,7 @@ if (mode === 'string') { console.log(JSON.stringify({overall:{total:'82'}})); pr
 if (mode === 'fraction') { console.log(JSON.stringify({overall:{total:82.5}})); process.exit(0); }
 if (mode === 'range') { console.log(JSON.stringify({overall:{total:101}})); process.exit(0); }
 // Both the original basename and staged content must reach the scanner.
-const expected = { 'guide.html': 82, 'index.html': 90, 'read me.md': 45, 'notes.mdx': 70, 'page.htm': 75 };
+const expected = { 'guide.html': 82, 'index.html': 90, 'read me.md': 45, 'notes.mdx': 70, 'page.htm': 75, '[a].html': 82, 'a.html': 90, '中文.md': 45 };
 const score = Number(fs.readFileSync(file, 'utf8'));
 if (expected[path.basename(file)] !== score) { console.error('wrong basename or staged content'); process.exit(1); }
 console.log(JSON.stringify({ overall: { total: score } }));
@@ -121,6 +121,20 @@ describe('installed pre-commit hook script', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('WARN: Could not score guide.html (invalid or missing score)');
     expect(result.stderr).toBe('');
+    expect(readdirSync(f.temp)).toEqual([]);
+  });
+
+  it('does not glob bracketed names or lose quoted non-ASCII names', () => {
+    const f = fixture();
+    f.stage('[a].html', '82');
+    f.stage('a.html', '90');
+    f.stage('中文.md', '45');
+    const result = f.run();
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('FAIL: [a].html scored 82/100 (minimum: 90)');
+    expect(result.stdout).toContain('PASS: a.html scored 90/100');
+    expect(result.stdout).toContain('FAIL: 中文.md scored 45/100 (minimum: 90)');
+    expect(result.stdout).not.toContain('WARN');
     expect(readdirSync(f.temp)).toEqual([]);
   });
 

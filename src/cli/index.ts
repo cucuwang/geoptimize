@@ -538,7 +538,7 @@ hookCmd
 MIN_SCORE=${minScore}
 
 # Find staged HTML and MD files
-FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.html' '*.htm' '*.md' '*.mdx')
+FILES=$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACM -- '*.html' '*.htm' '*.md' '*.mdx')
 if [ -z "$FILES" ]; then
   exit 0
 fi
@@ -549,6 +549,8 @@ FAILED=0
 OLD_IFS=$IFS
 IFS='
 '
+# Disable pathname expansion so names such as [a].html are not globbed.
+set -f
 for FILE in $FILES; do
   [ -n "$FILE" ] || continue
   TEMP_DIR=$(mktemp -d "\${TMPDIR:-/tmp}/geoptimize.XXXXXX") || exit 1
@@ -587,6 +589,7 @@ for FILE in $FILES; do
     echo "[geoptimize] PASS: $FILE scored $SCORE/100"
   fi
 done
+set +f
 IFS=$OLD_IFS
 if [ "$FAILED" = "1" ]; then
   echo ""
