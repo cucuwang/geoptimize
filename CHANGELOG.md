@@ -2,6 +2,12 @@
 
 All notable user-visible changes will be documented here. The project follows Semantic Versioning after the v0.6 evidence baseline is released.
 
+## Unreleased
+
+### Fixed
+
+- Report JSON-LD parse errors as `scan` warnings instead of the misleading "No JSON-LD structured data found" note, and point to `audit-build` for the syntax check. Readiness scores remain unchanged.
+
 ## 0.12.0 (2026-10-18)
 
 ### Fixed
