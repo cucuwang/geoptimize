@@ -40,7 +40,7 @@ Exit code `0`. This is an excerpt of the actual terminal output, with the closin
 
 ```text
   Content Readiness Report
-  2026-10-19T06:27:33.209Z
+  2026-10-25T16:29:47.818Z
   2 pages scanned
 
   Score: 86/100  Content readiness: Excellent (86/100) across 2 pages
@@ -54,6 +54,9 @@ Exit code `0`. This is an excerpt of the actual terminal output, with the closin
   Critical Issues:
   ✗ Page has a noindex meta tag. Search engines may exclude it from results; review whether that is intentional.
 
+  Warnings:
+  ! JSON-LD could not be parsed: JSON-LD block 1: Expected double-quoted property name in JSON at position 63 (line 2 column 63). This warning does not change the readiness score; fix the block and run audit-build to check structured data syntax.
+
   Per-Page Scores:
    82 Preview guide | Field Notes
    90 Field Notes documentation
@@ -61,7 +64,7 @@ Exit code `0`. This is an excerpt of the actual terminal output, with the closin
 
 The report flags `noindex`, but the scan still succeeds. `scan` uses exit code `0` for completed scans regardless of the score. Command or input errors can still fail.
 
-The 86/100 score is a versioned heuristic. Review the individual findings before choosing a project baseline. In this version, malformed JSON-LD is omitted by the scoring parser, so this page still receives full schema points. The build audit below detects the syntax error explicitly.
+The 86/100 score is a versioned heuristic. Review the individual findings before choosing a project baseline. In this version, malformed JSON-LD is omitted by the scoring parser, so this page still receives full schema points. `scan` now lists JSON-LD parse errors as warnings without deducting points and points to `audit-build` for the syntax check. The build audit below detects the syntax error explicitly.
 
 ## 3. Read the JSON output
 

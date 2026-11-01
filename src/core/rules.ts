@@ -328,13 +328,21 @@ const jsonLdPresence: ScoringRule = {
   evaluate(doc: ParsedDocument): RuleResult {
     const issues: Issue[] = [];
 
-    if (doc.jsonLd.length === 0) {
+    const errors = doc.jsonLdErrors ?? [];
+    const blockCount = doc.jsonLdBlockCount ?? doc.jsonLd.length;
+
+    if (errors.length > 0) {
+      issues.push({
+        dimension: 'schema',
+        severity: 'warning',
+        message: `JSON-LD could not be parsed: ${errors.join('; ')}. This warning does not change the readiness score; fix the block and run audit-build to check structured data syntax.`,
+      });
+    } else if (blockCount === 0) {
       issues.push({
         dimension: 'schema',
         severity: 'info',
         message: 'No JSON-LD structured data found. Add a supported type only when it matches visible content and serves a defined search feature.',
       });
-      return { score: 8, maxScore: 8, issues, suggestions: [] };
     }
 
     return { score: 8, maxScore: 8, issues, suggestions: [] };
