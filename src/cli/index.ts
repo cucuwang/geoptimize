@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import chalk from 'chalk';
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { join, extname } from 'node:path';
@@ -47,8 +47,15 @@ program
   .option('--json', 'Output raw JSON report')
   .option('--dir', 'Treat target as a local directory instead of a URL')
   .option('--details', 'Include rule evidence and up to 6000 characters of source per page')
+  .option('--fail-under <score>', 'Exit 1 when the deterministic overall score is below this threshold (0-100)', (value: string) => {
+    const score = Number(value);
+    if (value.trim() === '' || !Number.isFinite(score) || score < 0 || score > 100) {
+      throw new InvalidArgumentError('Expected a finite score from 0 to 100.');
+    }
+    return score;
+  })
   .option('--multi-ai', 'Add experimental reviews from available AI CLIs (gemini, copilot)')
-  .action(async (target: string, options: { json?: boolean; dir?: boolean; multiAi?: boolean; details?: boolean }) => {
+  .action(async (target: string, options: { json?: boolean; dir?: boolean; multiAi?: boolean; details?: boolean; failUnder?: number }) => {
     try {
       if (!target || target.trim().length === 0) {
         console.error(chalk.red('Error: Please provide a URL or directory path.'));
@@ -74,6 +81,10 @@ program
           printReport(report);
           printSkillCta();
         }
+      }
+      if (options.failUnder !== undefined && report.overall.total < options.failUnder) {
+        console.error(`Score ${report.overall.total}/100 is below --fail-under ${options.failUnder} (deterministic overall score).`);
+        process.exitCode = 1;
       }
     } catch (err) {
       console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -664,7 +675,7 @@ if (shouldLaunchInteractive(process.argv.slice(2), Boolean(process.stdin.isTTY),
     process.exitCode = 1;
   });
 } else {
-  program.parse();
+  await program.parseAsync();
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -745,14 +756,14 @@ function printReport(report: ScanReport): void {
   console.log('');
 
   // Top issues
-  const allIssues = report.pages.flatMap((p) => p.issues);
+  const allIssues = report.pages.flatMap((p) => p.issues.map(issue => ({ ...issue, url: p.url })));
   const criticalIssues = allIssues.filter((i) => i.severity === 'critical');
   const warningIssues = allIssues.filter((i) => i.severity === 'warning');
 
   if (criticalIssues.length > 0) {
     console.log(chalk.red.bold('  Critical Issues:'));
     for (const issue of criticalIssues.slice(0, 5)) {
-      console.log(`  ${chalk.red('✗')} ${issue.message}`);
+      console.log(`  ${chalk.red('✗')} ${issue.line ? `${issue.url}:${issue.line}: ` : ''}${issue.message}`);
     }
     console.log('');
   }
@@ -760,7 +771,7 @@ function printReport(report: ScanReport): void {
   if (warningIssues.length > 0) {
     console.log(chalk.yellow.bold('  Warnings:'));
     for (const issue of warningIssues.slice(0, 5)) {
-      console.log(`  ${chalk.yellow('!')} ${issue.message}`);
+      console.log(`  ${chalk.yellow('!')} ${issue.line ? `${issue.url}:${issue.line}: ` : ''}${issue.message}`);
     }
     console.log('');
   }
@@ -978,12 +989,21 @@ function printMultiAiReport(report: MultiAiReport): void {
   }
 
   // Issues and suggestions from rule engine
-  const allIssues = report.pages.flatMap((p) => p.issues);
+  const allIssues = report.pages.flatMap((p) => p.issues.map(issue => ({ ...issue, url: p.url })));
   const criticalIssues = allIssues.filter((i) => i.severity === 'critical');
   if (criticalIssues.length > 0) {
     console.log(chalk.red.bold('  Critical Issues:'));
     for (const issue of criticalIssues.slice(0, 5)) {
-      console.log(`  ${chalk.red('✗')} ${issue.message}`);
+      console.log(`  ${chalk.red('✗')} ${issue.line ? `${issue.url}:${issue.line}: ` : ''}${issue.message}`);
+    }
+    console.log('');
+  }
+
+  const schemaWarnings = allIssues.filter(issue => issue.dimension === 'schema' && issue.severity === 'warning');
+  if (schemaWarnings.length > 0) {
+    console.log(chalk.yellow.bold('  JSON-LD Warnings:'));
+    for (const issue of schemaWarnings.slice(0, 5)) {
+      console.log(`  ${chalk.yellow('!')} ${issue.line ? `${issue.url}:${issue.line}: ` : ''}${issue.message}`);
     }
     console.log('');
   }

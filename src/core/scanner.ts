@@ -6,7 +6,6 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import type {
   ParsedDocument,
-  JsonLdObject,
   Heading,
   Link,
   PageAnalysis,
@@ -20,12 +19,13 @@ import type {
   ScanOptions,
 } from './types.js';
 import { allRules } from './rules.js';
+import { extractJsonLd } from './json-ld.js';
 export const SCORING_VERSION = 'readiness-v0.6.1-details-v1';
 
 // ── Parsers ────────────────────────────────────────────────────────
 
 export function parseHtml(html: string, url: string): ParsedDocument {
-  const $ = cheerio.load(html);
+  const $ = cheerio.load(html, { sourceCodeLocationInfo: true });
 
   // Extract title
   const documentTitle = $('head > title').first().text().trim();
@@ -48,43 +48,7 @@ export function parseHtml(html: string, url: string): ParsedDocument {
     if (text.length > 20) paragraphs.push(text);
   });
 
-  // Extract JSON-LD
-  const jsonLd: JsonLdObject[] = [];
-  const jsonLdErrors: string[] = [];
-  const jsonLdScripts = $('script[type="application/ld+json"]');
-  jsonLdScripts.each((index, el) => {
-    try {
-      const parsed = JSON.parse($(el).html() || '');
-      const appendNodes = (value: unknown, location: string, inheritedContext?: unknown): void => {
-        if (Array.isArray(value)) {
-          value.forEach((item, itemIndex) => appendNodes(item, `${location} item ${itemIndex + 1}`, inheritedContext));
-          return;
-        }
-        const candidate = value;
-        if (candidate && typeof candidate === 'object') {
-          const node = candidate as JsonLdObject;
-          const context = Object.hasOwn(node, '@context') ? node['@context'] : inheritedContext;
-          const { '@graph': graph, ...fields } = node;
-          // Graph envelopes carry context, not an entity requiring its own type.
-          // Keep wrappers that also describe an entity, including untyped ones.
-          if (graph === undefined || Object.keys(fields).some((key) => key !== '@context' && key !== '@id')) {
-            jsonLd.push({ ...(context !== undefined ? { '@context': context } : {}), ...fields } as JsonLdObject);
-          }
-          if (graph !== undefined) appendNodes(graph, `${location} @graph`, context);
-          return;
-        }
-        if (candidate !== null) {
-          // Preserve primitive inputs for the audit's invalid-value evidence.
-          jsonLd.push(candidate as JsonLdObject);
-        }
-        jsonLdErrors.push(`${location}: expected an object`);
-      };
-      appendNodes(parsed, `JSON-LD block ${index + 1}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown JSON parse error';
-      jsonLdErrors.push(`JSON-LD block ${index + 1}: ${message}`);
-    }
-  });
+  const jsonLd = extractJsonLd($);
 
   // Extract meta tags
   const metaTags: Record<string, string> = {};
@@ -133,9 +97,7 @@ export function parseHtml(html: string, url: string): ParsedDocument {
     html,
     headings,
     paragraphs,
-    jsonLd,
-    jsonLdBlockCount: jsonLdScripts.length,
-    jsonLdErrors,
+    ...jsonLd,
     metaTags,
     metaTagValues,
     links,
@@ -146,16 +108,36 @@ export function parseHtml(html: string, url: string): ParsedDocument {
   };
 }
 
+function withoutFencedCode(content: string): string {
+  let fence: { marker: string; length: number } | undefined;
+  return content.split(/\r?\n/).map((line) => {
+    if (fence) {
+      const closing = /^ {0,3}(`{3,}|~{3,})[ \t]*$/.exec(line);
+      if (closing && closing[1][0] === fence.marker && closing[1].length >= fence.length) {
+        fence = undefined;
+      }
+      return '';
+    }
+    const opening = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    if (opening && !(opening[1][0] === '`' && opening[2].includes('`'))) {
+      fence = { marker: opening[1][0], length: opening[1].length };
+      return '';
+    }
+    return line;
+  }).join('\n');
+}
+
 export function parseMarkdown(md: string, url: string): ParsedDocument {
   const { data: frontmatter, content } = matter(md);
 
-  const title = (frontmatter.title as string) || '';
+  const title = typeof frontmatter.title === 'string' ? frontmatter.title : '';
+  const visibleContent = withoutFencedCode(content);
 
   // Extract headings from markdown
   const headings: Heading[] = [];
   const headingRegex = /^(#{1,6})\s+(.+)$/gm;
   let match: RegExpExecArray | null;
-  while ((match = headingRegex.exec(content)) !== null) {
+  while ((match = headingRegex.exec(visibleContent)) !== null) {
     headings.push({
       level: match[1].length,
       text: match[2].trim(),
@@ -167,17 +149,10 @@ export function parseMarkdown(md: string, url: string): ParsedDocument {
 
   // Extract paragraphs (non-empty lines that aren't headings, lists, or code blocks)
   const paragraphs: string[] = [];
-  let inCodeBlock = false;
-  const lines = content.split('\n');
+  const lines = visibleContent.split('\n');
   let currentParagraph = '';
 
   for (const line of lines) {
-    if (line.trim().startsWith('```')) {
-      inCodeBlock = !inCodeBlock;
-      continue;
-    }
-    if (inCodeBlock) continue;
-
     const trimmed = line.trim();
     if (trimmed === '') {
       if (currentParagraph.length > 0) {
@@ -193,8 +168,7 @@ export function parseMarkdown(md: string, url: string): ParsedDocument {
   }
 
   // Raw text (strip markdown syntax roughly)
-  const rawText = content
-    .replace(/```[\s\S]*?```/g, '')
+  const rawText = visibleContent
     .replace(/`[^`]+`/g, '')
     .replace(/!\[.*?\]\(.*?\)/g, '')
     .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
@@ -204,7 +178,7 @@ export function parseMarkdown(md: string, url: string): ParsedDocument {
 
   const links: Link[] = [];
   const images = [];
-  for (const match of content.matchAll(/(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g)) {
+  for (const match of visibleContent.matchAll(/(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g)) {
     const [, imageMarker, text, href] = match;
     if (imageMarker) {
       images.push({ src: href, alt: text });
@@ -566,8 +540,9 @@ async function walkDir(dirPath: string, pages: PageAnalysis[], options: ScanOpti
         try {
           const analysis = await scanFile(fullPath, options);
           pages.push(analysis);
-        } catch {
-          // Skip files that can't be parsed
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed to scan ${fullPath}: ${message}`, { cause: error });
         }
       }
     }

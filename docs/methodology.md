@@ -37,6 +37,37 @@ The total remains 0–100 for backward-compatible CI output. Compare scores only
 | `keyword-stuffing-detection` | 5 | C | Vocabulary diversity plus repeated terms across adjacent sentences. Language and domain terminology affect results. |
 | `content-uniqueness-signals` | 5 | C | Presence of selected original-data language or code examples. Absence is not proof of low quality. |
 
+### JSON-LD structural diagnostics
+
+`scan`, `audit` and `audit-build` share JSON-LD syntax and structure checks.
+They report malformed JSON, non-object roots or graph entries, missing entity
+`@context`/`@type`, invalid contexts and invalid type values. A context can be a
+non-empty string, an object, or a non-empty array of contexts. A type can be a
+non-empty string or non-empty array of strings. Graph entities inherit context;
+graph envelopes need no entity type, and nested property objects such as `author`
+are not independently required to declare context or type. Severity in `scan`
+and `audit`: malformed JSON and missing `@context`/`@type` (including empty
+strings and `null`, which count as missing) are warnings; non-object roots or
+graph entries and context or type values of the wrong kind are critical. In
+`audit-build`, malformed JSON and invalid roots fail the check and the other
+structural diagnostics are warnings. No contexts are fetched
+and no schema vocabulary or feature-specific property rules are inferred.
+
+Diagnostics identify the source page and one-based script start line. Audit
+evidence also identifies the block number and object/graph path. Missing JSON-LD
+remains optional. These are Class B implementation checks. The existing
+`json-ld-completeness` field-presence points and `readiness-v0.6.1-details-v1`
+scoring version remain unchanged; new syntax and field-type diagnostics add
+findings without additional point deductions.
+
+`scan --fail-under <score>` gates the deterministic overall score (the directory
+average), with exit 1 strictly below the threshold and exit 0 at or above it.
+Completed ungated scans remain advisory. `audit` remains advisory;
+`audit-build --fail-on-error` exits 1 for malformed JSON or invalid root shapes,
+independently of the readiness score. Missing context or type and other new
+structural diagnostics are `WARNING` and do not trigger that exit. The existing `jsonld-syntax` build-audit check ID is retained
+and now covers the shared structure checks as well as syntax.
+
 ## Explicit exclusions
 
 - Google says its AI search features require no special AI text file, special markup, or additional schema beyond established Search requirements. `llms.txt` therefore carries zero points.

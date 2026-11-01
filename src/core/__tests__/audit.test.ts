@@ -110,7 +110,7 @@ describe('auditDocument', () => {
       <meta name="RoBoTs" content="index,follow">
       <meta name="GOOGLEBOT" content="NoIndex,nofollow">
       <meta name="robots" content="index">
-      <script type="application/ld+json">{"name":"A structurally valid object"}</script>
+      <script type="application/ld+json">{"@context":"https://schema.org","@type":"Thing","name":"A structurally valid object"}</script>
       </head><body><h1>Local page</h1></body></html>`, 'page.html');
     const report = auditDocument(document, {
       target: { type: 'file', input: 'page.html' },

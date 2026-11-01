@@ -4,7 +4,15 @@ All notable user-visible changes will be documented here. The project follows Se
 
 ## Unreleased
 
+### Added
+
+- Added `scan --fail-under <score>` to gate the deterministic overall score. Complete reports remain on stdout and threshold explanations on stderr.
+- Shared JSON-LD structural diagnostics include source lines, block numbers and object or graph paths. The build audit reports missing context or type and other new structural diagnostics as warnings; malformed JSON and invalid roots remain failures. In `scan` and `audit`, malformed JSON and missing or empty `@context`/`@type` stay warnings, while non-object roots or graph entries and context or type values of the wrong kind (for example a number) are reported as critical issues.
+
 ### Fixed
+
+- Propagate directory scan failures, exclude fenced Markdown code from content extraction, fall back from non-string titles, and handle whitespace in robots parameters.
+- Reject oversized Action score thresholds before scanning without integer overflow.
 
 - Report JSON-LD parse errors as `scan` warnings instead of the misleading "No JSON-LD structured data found" note, and point to `audit-build` for the syntax check. Readiness scores remain unchanged.
 - Fixed pre-commit scoring of staged HTML and Markdown by preserving temporary file names and extensions; failed scans now emit a warning with the first stderr line instead of silently skipping the file. Staged names with brackets or non-ASCII characters are no longer globbed or quoted away.

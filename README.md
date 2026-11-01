@@ -56,6 +56,7 @@ npm install --save-dev geoptimize
 npx geoptimize scan https://example.com
 npx geoptimize scan ./dist --dir
 npx geoptimize scan ./dist --dir --json
+npx geoptimize scan ./dist --dir --fail-under 60 --json
 npx geoptimize audit https://example.com --json
 npx geoptimize audit-site https://example.com --max-pages 20 --json
 ```
@@ -198,7 +199,7 @@ also accepts an empty output directory for inspecting readiness and site JSON re
 | Question it answers | Did this change introduce content-quality issues? | Does the page pass classic SEO checks? | Did my AI visibility change this week? |
 | Deterministic | Yes — versioned rules, fixture-tested | Partially | No — model output varies run to run |
 | Runs where | Local CLI, CI, pre-commit hook, Vite/Next plugins | Browser / DevTools | Vendor cloud |
-| Blocks regressions in CI | Yes, via a stable `--json` contract | Possible with extra wiring | Rarely |
+| Blocks regressions in CI | Yes, with `scan --fail-under` and `audit-build --fail-on-error` | Possible with extra wiring | Rarely |
 | Cost | Free, MIT | Free | Varies by vendor |
 
 geoptimize gives teams reproducible content checks they can act on in a pull request. Visibility trackers provide separate measurements of search and AI visibility outcomes.
@@ -208,9 +209,26 @@ geoptimize gives teams reproducible content checks they can act on in a pull req
 `--json` is the stable automation surface. A non-zero threshold is useful only after your team reviews the baseline and accepts the current methodology version.
 
 ```bash
-npx geoptimize scan ./dist --dir --json > geoptimize-report.json
-node -e "const r=require('./geoptimize-report.json'); process.exit(r.overall.total < 60 ? 1 : 0)"
+npx geoptimize scan ./dist --dir --fail-under 60 --json > geoptimize-report.json
 ```
+
+`scan` remains advisory by default. Add `--fail-under <score>` to exit `1` when
+the deterministic overall score is strictly below the selected threshold. Scores
+equal to or above the threshold exit `0`. The threshold accepts finite numbers
+from 0 to 100, including decimals. For directories it applies to the overall
+average, rather than each page. With `--multi-ai`, it uses the deterministic
+`ruleScore`, even when the experimental blend is higher.
+
+The complete report is written to stdout before a threshold failure; its explanation
+is written to stderr, so redirected `--json` stays valid JSON. Invalid options,
+unreadable inputs and scan execution errors exit `1`. A completed scan without
+`--fail-under` exits `0`, including an empty directory (reported with score 0).
+
+JSON-LD findings include the file or URL and the one-based source line of the
+script's opening tag. The existing readiness point calculations are preserved;
+syntax and field-type diagnostics add findings without additional point deductions.
+Use `audit-build ./dist --fail-on-error` alongside a score threshold to block
+malformed JSON-LD and invalid root shapes independently of the score.
 
 The [GitHub Marketplace Action](https://github.com/marketplace/actions/geoptimize-content-readiness-check) is advisory by default. It reports findings without blocking the workflow:
 
@@ -245,7 +263,12 @@ npx geoptimize audit-build ./dist --json
 npx geoptimize audit-build ./dist --base-url https://example.com/ --expect-indexable --fail-on-error --json > audit.json
 ```
 
-Malformed JSON-LD and invalid or multiple canonical declarations produce `FAIL`.
+Malformed JSON-LD, invalid root shapes, and invalid or multiple canonical declarations
+produce `FAIL`. Missing entity `@context`/`@type` and other structural diagnostics
+produce `WARNING`. JSON-LD evidence identifies
+the page, script start line, block number and object/graph path. Graph entities can
+inherit their envelope's context; an envelope containing only graph metadata needs
+no entity type. A type can be a string or a non-empty array of strings.
 HTML `noindex` and `none` are warnings unless `--expect-indexable` is supplied.
 Missing or repeated titles/descriptions and cross-page title/canonical reuse are
 advisory. Shared canonicals can be intentional; they are never automatically rewritten.
@@ -256,7 +279,7 @@ Use `--expect-indexable` only for pages intended for standalone search indexing.
 
 This command reads source HTML without fetching URLs or launching a browser.
 HTTP headers, robots.txt and actual indexing are explicitly unassessed. JSON-LD
-checks cover JSON syntax and root shape; schema semantics and visible-content
+checks cover JSON syntax, root shape, context shape and entity types; schema semantics and visible-content
 consistency require separate validation. Missing JSON-LD is `N/A`.
 
 For a file, `--base-url` is its deployed page URL. For a directory, it is the
