@@ -330,7 +330,6 @@ const jsonLdPresence: ScoringRule = {
 
     const errors = doc.jsonLdErrors ?? [];
     const blockCount = doc.jsonLdBlockCount ?? doc.jsonLd.length;
-
     if (errors.length > 0) {
       issues.push({
         dimension: 'schema',
@@ -354,7 +353,13 @@ const jsonLdCompleteness: ScoringRule = {
   dimension: 'schema',
   weight: 12,
   evaluate(doc: ParsedDocument): RuleResult {
-    const issues: Issue[] = [];
+    const issues: Issue[] = (doc.jsonLdDiagnostics ?? []).map(diagnostic => ({
+      dimension: 'schema',
+      severity: diagnostic.severity,
+      message: diagnostic.message,
+      line: diagnostic.line,
+      selector: 'script',
+    }));
     const suggestions: Suggestion[] = [];
 
     if (doc.jsonLd.length === 0) {
@@ -373,18 +378,24 @@ const jsonLdCompleteness: ScoringRule = {
         totalScore += 12;
       } else {
         totalScore += Math.max(0, 12 - missing.length * 6);
-        issues.push({
-          dimension: 'schema',
-          severity: 'warning',
-          message: `JSON-LD (${ld['@type'] || 'unknown'}) missing fields: ${missing.join(', ')}`,
-        });
+        if (!doc.jsonLdDiagnostics) {
+          issues.push({
+            dimension: 'schema',
+            severity: 'warning',
+            message: `JSON-LD (${ld['@type'] || 'unknown'}) missing fields: ${missing.join(', ')}`,
+          });
+        }
       }
     }
 
     const score = Math.round(totalScore / checked);
 
     // Check for author/datePublished on Article types
-    const articles = doc.jsonLd.filter((ld) => /article/i.test(ld['@type'] || ''));
+    const articles = doc.jsonLd.filter((ld) => {
+      const type: unknown = ld['@type'];
+      return typeof type === 'string' ? /article/i.test(type)
+        : Array.isArray(type) && type.some(item => typeof item === 'string' && /article/i.test(item));
+    });
     for (const article of articles) {
       if (!article.author) {
         suggestions.push({

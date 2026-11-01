@@ -8,7 +8,10 @@ case "$MIN_SCORE" in
     ;;
 esac
 
-if [ "$MIN_SCORE" -lt 0 ] || [ "$MIN_SCORE" -gt 100 ]; then
+# Normalize leading zeros before comparing, without passing unbounded input to test.
+MIN_SCORE=$(printf '%s' "$MIN_SCORE" | sed 's/^0*//')
+MIN_SCORE=${MIN_SCORE:-0}
+if [ "${#MIN_SCORE}" -gt 3 ] || { [ "${#MIN_SCORE}" -eq 3 ] && [ "$MIN_SCORE" -gt 100 ]; }; then
   echo "::error::min-score must be an integer from 0 to 100"
   exit 2
 fi

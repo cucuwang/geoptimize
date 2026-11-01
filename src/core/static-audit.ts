@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import { extractJsonLd, formatJsonLdDiagnostic } from './json-ld.js';
 import { lstat, readFile, readdir } from 'node:fs/promises';
 import { extname, join, relative, resolve, sep } from 'node:path';
 
@@ -44,7 +45,7 @@ function httpUrl(value: string, base?: string): URL {
 
 /** Audits observed source HTML only; it neither fetches URLs nor changes the readiness score. */
 export function auditHtml(html: string, target: string, options: StaticAuditOptions = {}): StaticPageAudit {
-  const $ = cheerio.load(html);
+  const $ = cheerio.load(html, { sourceCodeLocationInfo: true });
   const checks: StaticAuditCheck[] = [];
   const add = (id: string, status: StaticAuditStatus, evidence: string[], message: string,
     remediation: string | null, validation: string) => {
@@ -130,30 +131,18 @@ export function auditHtml(html: string, target: string, options: StaticAuditOpti
     blocksIndexing ? 'Confirm the page policy. Remove noindex/none only if this page should be indexed.' : null,
     'Inspect every robots/googlebot tag after rebuilding, then check deployed headers and Search Console URL Inspection.');
 
-  const blocks = $('script').filter((_, el) =>
-    ($(el).attr('type') || '').trim().toLowerCase() === 'application/ld+json');
-  const jsonEvidence: string[] = [];
-  let invalidJson = false;
-  const isObject = (value: unknown): boolean => value !== null && typeof value === 'object' && !Array.isArray(value);
-  blocks.each((index, el) => {
-    try {
-      const value: unknown = JSON.parse($(el).html() || '');
-      if (!(isObject(value) || (Array.isArray(value) && value.every(isObject)))) {
-        invalidJson = true;
-        jsonEvidence.push(`Block ${index + 1}: expected an object or an array of objects.`);
-      } else {
-        jsonEvidence.push(`Block ${index + 1}: JSON parses with an object or object-array root.`);
-      }
-    } catch {
-      invalidJson = true;
-      jsonEvidence.push(`Block ${index + 1}: malformed JSON.`);
-    }
-  });
-  add('jsonld-syntax', blocks.length === 0 ? 'N/A' : invalidJson ? 'FAIL' : 'PASS', jsonEvidence,
-    blocks.length === 0 ? 'No JSON-LD present; structured data is optional.'
+  const jsonLd = extractJsonLd($);
+  const invalidJson = jsonLd.jsonLdDiagnostics.some(diagnostic => diagnostic.kind === 'syntax' || diagnostic.kind === 'root');
+  const hasDiagnostics = jsonLd.jsonLdDiagnostics.length > 0;
+  const jsonEvidence = hasDiagnostics
+    ? jsonLd.jsonLdDiagnostics.map(formatJsonLdDiagnostic)
+    : [`${jsonLd.jsonLdBlockCount} JSON-LD block(s) passed structural checks.`];
+  add('jsonld-syntax', jsonLd.jsonLdBlockCount === 0 ? 'N/A' : invalidJson ? 'FAIL' : hasDiagnostics ? 'WARNING' : 'PASS', jsonEvidence,
+    jsonLd.jsonLdBlockCount === 0 ? 'No JSON-LD present; structured data is optional.'
       : invalidJson ? 'JSON-LD has a syntax or root-shape error.'
-        : 'JSON syntax and root shape pass. Schema vocabulary, visible-content consistency and rich-result eligibility were not validated.',
-    invalidJson ? 'Fix the reported blocks and validate the appropriate schema against visible page content.' : null,
+        : hasDiagnostics ? 'JSON-LD has structural warnings.'
+        : 'JSON syntax, root shape, context and entity types pass structural checks. Schema vocabulary, visible-content consistency and rich-result eligibility were not validated.',
+    hasDiagnostics ? 'Fix the reported blocks and validate the appropriate schema against visible page content.' : null,
     'Re-run this audit, then use Schema Markup Validator and the applicable search-engine validation tool.');
 
   add('http-indexing', 'N/A', [],

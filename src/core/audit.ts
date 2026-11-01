@@ -1,3 +1,4 @@
+import { formatJsonLdDiagnostic } from './json-ld.js';
 import { readFile, stat } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { fetchUrlResource, parseHtml, parseMarkdown, type RedirectHop } from './scanner.js';
@@ -319,7 +320,10 @@ function checkRobots(doc: ParsedDocument, context: AuditContext): AuditCheck {
     ?? (doc.metaTags[name] ? [doc.metaTags[name]] : []);
   const metaRobots = [...valuesFor('robots'), ...valuesFor('googlebot')].join(', ');
   const xRobotsTag = context.http?.xRobotsTag ?? '';
-  const combined = `${metaRobots}, ${xRobotsTag}`;
+  // Bind parameter values before looking for standalone restriction tokens.
+  // Header user-agent prefixes (e.g. googlebot: noindex) remain separate.
+  const combined = `${metaRobots}, ${xRobotsTag}`
+    .replace(/\b(max-snippet|max-image-preview|max-video-preview|unavailable_after):\s+/gi, '$1:');
   const blocksIndexing = /(?:^|[,\s])(?:noindex|none)(?:$|[,\s])/i.test(combined);
   const blocksFollowing = /(?:^|[,\s])nofollow(?:$|[,\s])/i.test(combined);
   const status: AuditStatus = blocksIndexing || blocksFollowing ? 'WARNING' : 'PASS';
@@ -409,7 +413,9 @@ function checkImages(doc: ParsedDocument, context: AuditContext): AuditCheck {
 }
 
 function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
-  const errors = doc.jsonLdErrors ?? [];
+  const errors = doc.jsonLdDiagnostics
+    ? doc.jsonLdDiagnostics.map(formatJsonLdDiagnostic)
+    : doc.jsonLdErrors ?? [];
   const blockCount = doc.jsonLdBlockCount ?? doc.jsonLd.length;
   const parsedObjects = doc.jsonLd.filter((value) =>
     value !== null && typeof value === 'object' && !Array.isArray(value));
@@ -426,8 +432,8 @@ function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
         invalidValueCount,
         parseErrors: errors,
       })],
-      'Malformed JSON-LD or a non-object top-level value was detected. Feature-specific eligibility and visible-content agreement remain outside this structural check.',
-      'Correct the JSON syntax and top-level structure, then validate the specific schema type against the applicable primary documentation and visible content.',
+      'JSON-LD syntax or structural errors were detected. Feature-specific eligibility and visible-content agreement remain outside this structural check.',
+      'Correct the reported JSON syntax, root shape, context and entity types, then validate the specific schema type against the applicable primary documentation and visible content.',
       'Parse every JSON-LD block again and run the relevant structured-data validator for the page type.',
     );
   }
@@ -450,9 +456,13 @@ function checkJsonLd(doc: ParsedDocument, context: AuditContext): AuditCheck {
     'PASS',
     [evidence(sourceFor(context), {
       blockCount,
-      schemaTypes: parsedObjects.map((value) => value['@type'] || '[unknown]'),
+      schemaTypes: parsedObjects.flatMap((value) => {
+        const type: unknown = value['@type'];
+        return typeof type === 'string' ? [type]
+          : Array.isArray(type) ? type.filter((item): item is string => typeof item === 'string') : ['[unknown]'];
+      }),
     })],
-    'Every JSON-LD value parsed to an object. Context, type, feature eligibility, and visible-content agreement require schema-specific validation.',
+    'JSON-LD syntax, root shape, context and entity types pass structural checks. Feature eligibility and visible-content agreement require schema-specific validation.',
     null,
     'Compare each structured-data field with visible content and the current documentation for its intended feature.',
   );

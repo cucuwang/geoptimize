@@ -62,6 +62,16 @@ export interface JsonLdObject {
   [key: string]: unknown;
 }
 
+export interface JsonLdDiagnostic {
+  message: string;
+  severity: Severity;
+  kind: 'syntax' | 'root' | 'structure';
+  /** One-based source line of the script's opening tag. */
+  line: number;
+  block: number;
+  path: string;
+}
+
 export interface ParsedDocument {
   url: string;
   title: string;
@@ -74,6 +84,7 @@ export interface ParsedDocument {
   jsonLd: JsonLdObject[];
   jsonLdBlockCount?: number;
   jsonLdErrors?: string[];
+  jsonLdDiagnostics?: JsonLdDiagnostic[];
   metaTags: Record<string, string>;
   metaTagValues?: Record<string, string[]>;
   links: Link[];

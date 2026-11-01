@@ -245,9 +245,9 @@ describe('auditHtml', () => {
 
   it('passes JSON-LD objects, arrays of objects, and @graph without checking rich-result eligibility', () => {
     const jsonLd = [
-      jsonLdScript('{"name":"A structurally valid object"}'),
-      jsonLdScript('[{"@type":"Thing"},{"@type":"WebPage"}]'),
-      jsonLdScript('{"@context":"https://schema.org","@type":"NotARealSchemaType","@graph":[{"name":"Nested object"}]}'),
+      jsonLdScript('{"@context":"https://schema.org","@type":"Thing","name":"A structurally valid object"}'),
+      jsonLdScript('[{"@context":"https://schema.org","@type":"Thing"},{"@context":"https://schema.org","@type":"WebPage"}]'),
+      jsonLdScript('{"@context":"https://schema.org","@type":"NotARealSchemaType","@graph":[{"@type":"Thing","name":"Nested object"}]}'),
     ].join('');
     const page = auditHtml(htmlPage({ jsonLd }), 'valid-jsonld.html');
 

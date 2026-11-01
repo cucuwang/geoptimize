@@ -56,13 +56,14 @@ Exit code `0`. This is an excerpt of the actual terminal output, with the closin
 
   Warnings:
   ! JSON-LD could not be parsed: JSON-LD block 1: Expected double-quoted property name in JSON at position 63 (line 2 column 63). This warning does not change the readiness score; fix the block and run audit-build to check structured data syntax.
+  ! examples/tutorial-static-site/guide.html:9: JSON-LD block 1: malformed JSON (Expected double-quoted property name in JSON at position 63 (line 2 column 63))
 
   Per-Page Scores:
    82 Preview guide | Field Notes
    90 Field Notes documentation
 ```
 
-The report flags `noindex`, but the scan still succeeds. `scan` uses exit code `0` for completed scans regardless of the score. Command or input errors can still fail.
+The report flags `noindex`, but the scan still succeeds. `scan` uses exit code `0` for completed scans by default; add `--fail-under` to gate the overall score. Command or input errors can still fail.
 
 The 86/100 score is a versioned heuristic. Review the individual findings before choosing a project baseline. In this version, malformed JSON-LD is omitted by the scoring parser, so this page still receives full schema points. `scan` now lists JSON-LD parse errors as warnings without deducting points and points to `audit-build` for the syntax check. The build audit below detects the syntax error explicitly.
 
@@ -111,7 +112,7 @@ The failing checks on `guide.html` are shown below. Intervening remediation and 
   [FAIL] indexing-directives: An HTML robots or googlebot directive blocks standalone indexing; index does not override noindex.
     Evidence: robots: noindex
   [FAIL] jsonld-syntax: JSON-LD has a syntax or root-shape error.
-    Evidence: Block 1: malformed JSON.
+    Evidence: Line 9, block 1, $: JSON-LD block 1: malformed JSON (Expected double-quoted property name in JSON at position 63 (line 2 column 63))
 ```
 
 `--expect-indexable` treats an HTML `noindex` or `none` directive as a failure for the inspected target. Without it, that directive is a warning. Malformed JSON-LD is a failure independently of that indexing expectation. `--fail-on-error` makes any `FAIL` check produce exit code `1`; warnings remain advisory. Without `--fail-on-error`, reported audit failures do not set a failing exit code.
@@ -180,6 +181,6 @@ The local CLI commands and repair result above were executed against a CLI built
 
 geoptimize scores are versioned heuristics for reviewing content regressions within a project. They do not predict ranking, indexing, rich results, or AI citations. GEO and AI search are secondary contexts for these checks.
 
-The build audit inspects local HTML. It does not render JavaScript or inspect deployed HTTP headers, robots.txt, or actual search indexing. JSON-LD syntax checks cover parsing and root shape; schema vocabulary and agreement with visible content require separate review. A passing audit establishes the named checks within this scope.
+The build audit inspects local HTML. It does not render JavaScript or inspect deployed HTTP headers, robots.txt, or actual search indexing. JSON-LD checks cover parsing, root shape and structural diagnostics; schema vocabulary and agreement with visible content require separate review. A passing audit establishes the named checks within this scope.
 
 Read the [methodology and limitations](../methodology.md) and the [v0.12.0 release notes](../release-notes-v0.12.md) before adopting a blocking policy.

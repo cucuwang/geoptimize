@@ -8,6 +8,7 @@ import { renderVisualReport } from '../visual-report.js';
 import type { ScanReport } from '../types.js';
 
 const DEFAULT_FUZZ_RUNS = 200;
+const HOSTILE_FUZZ_BATCH_SIZE = 10;
 const MAX_FUZZ_RUNS = 5_000;
 const DEFAULT_FUZZ_SEED = 20260911;
 const PROMPT_CONTENT_LIMIT = 8_000;
@@ -23,6 +24,11 @@ function envInteger(name: string, fallback: number, minimum: number, maximum: nu
 const fuzzRuns = envInteger('FUZZ_NUM_RUNS', DEFAULT_FUZZ_RUNS, 1, MAX_FUZZ_RUNS);
 const fuzzSeed = envInteger('FUZZ_SEED', DEFAULT_FUZZ_SEED, -2_147_483_648, 2_147_483_647);
 const fuzzPath = process.env.FUZZ_PATH?.trim();
+// Keep the full generated sequence while bounding each DOM-heavy test's work.
+const hostileFuzzBatches = Array.from({ length: Math.ceil(fuzzRuns / HOSTILE_FUZZ_BATCH_SIZE) }, (_, index) => ({
+  start: index * HOSTILE_FUZZ_BATCH_SIZE,
+  numRuns: Math.min(HOSTILE_FUZZ_BATCH_SIZE, fuzzRuns - index * HOSTILE_FUZZ_BATCH_SIZE),
+}));
 
 function fuzzParameters(): fc.Parameters<unknown> {
   return {
@@ -180,10 +186,15 @@ describe('bounded security properties', () => {
     }), fuzzParameters());
   });
 
-  it('escapes hostile report fields without adding executable DOM nodes', () => {
+  it.each(hostileFuzzBatches)('escapes hostile report fields without adding executable DOM nodes (offset $start)', ({ start, numRuns }) => {
+    const template = fuzzReport();
+    const baseline = cheerio.load(renderVisualReport(template));
+    const executableElements = 'script, img, svg, iframe, object, embed, applet, frame, frameset, math';
+    const baselineExecutableCount = baseline(executableElements).length;
+    const baselineExternalScriptCount = baseline('script[src]').length;
+    // Numeric paths resume the same seed's sequence; a supplied failure path replays directly.
     fc.assert(fc.property(hostileText, (attack) => {
-      const baseline = cheerio.load(renderVisualReport(fuzzReport()));
-      const report = fuzzReport();
+      const report = structuredClone(template);
       const page = report.pages[0];
       page.title = attack;
       page.url = attack;
@@ -201,15 +212,14 @@ describe('bounded security properties', () => {
       });
 
       const $ = cheerio.load(renderVisualReport(report));
-      const executableElements = 'script, img, svg, iframe, object, embed, applet, frame, frameset, math';
-      expect($(executableElements)).toHaveLength(baseline(executableElements).length);
-      expect($('script[src]')).toHaveLength(baseline('script[src]').length);
+      expect($(executableElements)).toHaveLength(baselineExecutableCount);
+      expect($('script[src]')).toHaveLength(baselineExternalScriptCount);
       expect($('script').first().text()).not.toContain(attack);
       expect($('#page-rows small').first().text()).toBe(attack);
       expect($('summary strong').filter((_, element) => $(element).text() === attack)).toHaveLength(1);
       expect($('body *').filter((_, element) =>
         Object.keys(element.attribs ?? {}).some((name) => name.toLowerCase().startsWith('on')),
       )).toHaveLength(0);
-    }), fuzzParameters());
+    }), { ...fuzzParameters(), numRuns, path: fuzzPath || String(start) });
   });
 });
