@@ -21,6 +21,8 @@ npx geoptimize audit https://example.com --json
 npx geoptimize audit-site https://example.com --max-pages 20 --json
 ```
 
+`0.12.0` 版提供引導式終端選單：直接執行 `geoptimize` 且不帶任何參數，並且標準輸入與標準輸出皆為互動式終端（TTY）時，即會啟動。可選擇掃描網站網址、本機 HTML 或 Markdown 檔案，或本機目錄，並儲存離線 HTML 報表。安裝方式與操作細節請見英文[互動式 CLI 指南](../interactive-cli.md)。網址與目錄掃描仍受既有的證據與涵蓋範圍限制；引導式流程不會將有限範圍的掃描變成完整網站稽核。腳本與非 TTY 環境仍可使用明確的命令與旗標。
+
 `scan` 產生版本化的內容就緒度分數。這個分數適合用來追蹤同一專案的回歸，不能當成搜尋排名、收錄、rich result 或 AI 引用機率。
 
 ## 可驗證的網站稽核
