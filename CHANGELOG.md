@@ -13,6 +13,7 @@ All notable user-visible changes will be documented here. The project follows Se
 
 - Propagate directory scan failures, exclude fenced Markdown code from content extraction, fall back from non-string titles, and handle whitespace in robots parameters.
 - Reject oversized Action score thresholds before scanning without integer overflow.
+- The guided CLI asks for another output filename when the chosen report file already exists, instead of exiting. The check runs before the scan, and the existing file is still never overwritten.
 
 - Report JSON-LD parse errors as `scan` warnings instead of the misleading "No JSON-LD structured data found" note, and point to `audit-build` for the syntax check. Readiness scores remain unchanged.
 - Fixed pre-commit scoring of staged HTML and Markdown by preserving temporary file names and extensions; failed scans now emit a warning with the first stderr line instead of silently skipping the file. Staged names with brackets or non-ASCII characters are no longer globbed or quoted away.

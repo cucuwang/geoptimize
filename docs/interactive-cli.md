@@ -14,7 +14,7 @@ npm run build
 node dist/cli/index.js
 ```
 
-The flow lets the operator choose a website URL, a local HTML or Markdown file, or a local directory. It calls the same detailed scanner as `geoptimize scan --details`, then renders the same self-contained visual report used by `geoptimize report`. The default output is `geoptimize-report.html` in the current directory. Output files are created exclusively, so an existing file is never overwritten.
+The flow lets the operator choose a website URL, a local HTML or Markdown file, or a local directory. It calls the same detailed scanner as `geoptimize scan --details`, then renders the same self-contained visual report used by `geoptimize report`. The default output is `geoptimize-report.html` in the current directory. Output files are created exclusively, so an existing file is never overwritten. If the chosen file already exists, the flow says so before scanning and asks for another filename; `b` and `c` still return or cancel at that prompt.
 
 Enter `b` or `back` to return to the previous menu, or `c`, `cancel`, `q`, or `quit` to leave the flow. At any prompt, EOF or Ctrl-C leaves without creating a report. Before scanning starts, the prompt closes; Ctrl-C during the scan is then handled by the normal process interrupt. EOF after that point is no longer a prompt cancellation. A scan that returns no pages is reported as an error and cannot produce an empty success report.
 
