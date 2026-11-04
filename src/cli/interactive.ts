@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline/promises';
 import { extname, resolve } from 'node:path';
-import { writeFile } from 'node:fs/promises';
+import { lstat, writeFile } from 'node:fs/promises';
 import { scan } from '../core/scanner.js';
 import { renderVisualReport } from '../core/visual-report.js';
 import type { ScanOptions, ScanReport, ScanTarget } from '../core/types.js';
@@ -207,6 +207,10 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
             if (isCancel(outputValue)) return cancelled(output);
             if (isBack(outputValue)) break;
             const outputPath = normalizeInteractiveOutputPath(outputValue, cwd);
+            if (await outputPathExists(outputPath)) {
+              writeLine(output, `Error: ${existingOutputMessage(outputPath)}`);
+              continue;
+            }
 
             closePrompt();
             writeLine(output, `\nScanning ${target.path}...`);
@@ -222,7 +226,7 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
               return { status: 'completed', outputPath, pages: report.pages.length };
             } catch (error) {
               const message = isExistingFileError(error)
-                ? `Output file already exists: ${outputPath}. Choose a new filename.`
+                ? existingOutputMessage(outputPath)
                 : errorMessage(error);
               writeLine(output, `Error: ${message}`);
               return { status: 'error', error: toError(error, message) };
@@ -302,6 +306,25 @@ function writeLine(output: NodeJS.WritableStream, line: string): void {
 function cancelled(output: NodeJS.WritableStream, label = 'Cancelled'): InteractiveResult {
   writeLine(output, `${label}. No report was created.`);
   return { status: 'cancelled' };
+}
+
+/**
+ * Check the chosen path before scanning so a collision can be answered with
+ * another filename while the prompt is still open. lstat matches what the
+ * exclusive write rejects, including a dangling symlink. Any other lstat
+ * failure is left to the write, which reports it.
+ */
+async function outputPathExists(outputPath: string): Promise<boolean> {
+  try {
+    await lstat(outputPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function existingOutputMessage(outputPath: string): string {
+  return `Output file already exists: ${outputPath}. Choose a new filename.`;
 }
 
 function isExistingFileError(error: unknown): boolean {

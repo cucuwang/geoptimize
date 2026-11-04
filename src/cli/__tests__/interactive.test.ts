@@ -106,20 +106,77 @@ describe('interactive scan and report flow', () => {
     expect(captured.text()).toContain(`Visual report saved to ${outputPath}`);
   });
 
-  it('uses exclusive creation and leaves an existing report unchanged', async () => {
+  it('leaves an existing report unchanged and does not scan into it', async () => {
     const directory = await temporaryDirectory();
     const outputPath = join(directory, 'existing.html');
     await writeFile(outputPath, 'keep this report', 'utf8');
     const prompt = new ScriptedPrompt(['1', '2', fixture, outputPath]);
     const captured = captureOutput();
+    const runScan = vi.fn<NonNullable<InteractiveDependencies['scan']>>();
 
-    const result = await runInteractive({ prompt, output: captured.output, cwd: directory });
+    const result = await runInteractive({ prompt, output: captured.output, cwd: directory, scan: runScan });
 
-    expect(result.status).toBe('error');
-    expect(result.error?.message).toContain('already exists');
+    expect(result.status).toBe('cancelled');
+    expect(runScan).not.toHaveBeenCalled();
     expect(await readFile(outputPath, 'utf8')).toBe('keep this report');
     expect(captured.text()).toContain('Output file already exists');
     expect(captured.text()).not.toContain('Visual report saved');
+  });
+
+  it('uses exclusive creation when the report appears during the scan', async () => {
+    const directory = await temporaryDirectory();
+    const outputPath = join(directory, 'late.html');
+    const prompt = new ScriptedPrompt(['1', '2', fixture, 'late']);
+    const captured = captureOutput();
+    const runScan = vi.fn(async (target: ScanTarget, options?: ScanOptions) => {
+      await writeFile(outputPath, 'written by another process', 'utf8');
+      return scan(target, options);
+    });
+
+    const result = await runInteractive({ prompt, output: captured.output, cwd: directory, scan: runScan });
+
+    expect(result.status).toBe('error');
+    expect(result.error?.message).toContain('already exists');
+    expect(await readFile(outputPath, 'utf8')).toBe('written by another process');
+    expect(captured.text()).toContain('Output file already exists');
+    expect(captured.text()).not.toContain('Visual report saved');
+  });
+
+  it('asks for another filename after a collision and completes the report', async () => {
+    const directory = await temporaryDirectory();
+    const existingPath = join(directory, 'existing.html');
+    await writeFile(existingPath, 'keep this report', 'utf8');
+    const prompt = new ScriptedPrompt(['1', '2', fixture, 'existing', 'fresh-report']);
+    const captured = captureOutput();
+    const runScan = vi.fn(async (target: ScanTarget, options?: ScanOptions) => scan(target, options));
+
+    const result = await runInteractive({ prompt, output: captured.output, cwd: directory, scan: runScan });
+    const outputPath = join(directory, 'fresh-report.html');
+
+    expect(result).toMatchObject({ status: 'completed', outputPath, pages: 1 });
+    expect(runScan).toHaveBeenCalledTimes(1);
+    expect(await readFile(existingPath, 'utf8')).toBe('keep this report');
+    expect(await readFile(outputPath, 'utf8')).toContain('Content readiness');
+    expect(captured.text()).toContain(`Output file already exists: ${existingPath}. Choose a new filename.`);
+    expect(prompt.questions.filter(question => question.startsWith('Output HTML file'))).toHaveLength(2);
+  });
+
+  it('keeps back-navigation and cancellation at the output prompt after a collision', async () => {
+    const directory = await temporaryDirectory();
+    await writeFile(join(directory, 'existing.html'), 'keep this report', 'utf8');
+    const runScan = vi.fn<NonNullable<InteractiveDependencies['scan']>>();
+
+    const backPrompt = new ScriptedPrompt(['1', '2', fixture, 'existing', 'b', 'c']);
+    const backResult = await runInteractive({ prompt: backPrompt, output: captureOutput().output, cwd: directory, scan: runScan });
+    expect(backResult).toEqual({ status: 'cancelled' });
+    expect(backPrompt.questions.at(-1)).toContain('Local HTML or Markdown path');
+
+    const cancelPrompt = new ScriptedPrompt(['1', '2', fixture, 'existing', 'c']);
+    const cancelResult = await runInteractive({ prompt: cancelPrompt, output: captureOutput().output, cwd: directory, scan: runScan });
+    expect(cancelResult).toEqual({ status: 'cancelled' });
+
+    expect(runScan).not.toHaveBeenCalled();
+    expect(await readFile(join(directory, 'existing.html'), 'utf8')).toBe('keep this report');
   });
 
   it('reports scan failures without rendering or claiming a saved report', async () => {
