@@ -88,96 +88,37 @@ Generated output is a candidate for review, not deployment-ready truth.
 
 ### JSON-LD review checklist
 
-[`generateJsonLd`](../src/core/generator.ts) returns candidates for one parsed
-document. The only types it can add are `Article` and `BreadcrumbList`, at most
-one of each. It does not emit `FAQPage`. Question headings are not a source for
-that type. The `generate` command and the Vite and Next.js plugins, when any
-candidates exist, write them to `_geo/generated-schemas.json` in the output
-directory. Page HTML is left unchanged. The file is a flat list of the
-candidates returned for the parsed pages, and each object omits its source
-path. Copying a candidate onto a published page is optional. A page with no
-JSON-LD is valid, and writing the candidate file does not change the readiness
-score.
+[`generateJsonLd`](../src/core/generator.ts) returns at most one `Article` and
+one `BreadcrumbList`. It does not emit `FAQPage`. Question headings are not a
+source for that type. When any candidates exist, the `generate` command and the
+Vite and Next.js plugins write them to `_geo/generated-schemas.json` and leave
+page HTML unchanged. Publishing a candidate is optional, and writing that file
+does not change the readiness score.
 
-Compare every value with content visible on that page and with the current
-requirements of the target search feature. `scan`, `audit`, and `audit-build`
-do not decide that agreement. The
+Check every value against content visible on that page and against the current
+requirements of the target search feature. The
 [Rich Results Test](https://search.google.com/test/rich-results) and the
 [Schema Markup Validator](https://validator.schema.org/) are optional external
-checks. A passing result still needs the visible-content review below. Valid
-markup does not mean a search feature will be displayed.
+checks. Valid markup does not mean a search feature will be displayed.
 
-#### Article conditions
+An `Article` is emitted only when no JSON-LD `@type` is `Article`,
+`TechArticle`, or `BlogPosting`, the HTML contains an `<article>` element,
+`author` meta is non-empty, `article:published_time` or else `date` meta is
+non-empty, and the document has at least two headings and three paragraphs.
+Fields: `@context` `https://schema.org`, `@type` `Article`, `name` from the
+document title, `description` from description meta or else the first 160
+characters of the first paragraph, `author` as a `Person` named by the author
+meta, and `datePublished` from `article:published_time` or else `date`.
 
-An `Article` object is emitted only when all of the following are true. The
-duplicate check reads `@type` on each object in `doc.jsonLd`, including
-entities that [`parseJsonLdBlocks`](../src/core/json-ld.ts) lifts out of `@graph`.
-[`parseHtml`](../src/core/scanner.ts) fills `doc.metaTags` from a meta `name`
-or, when `name` is absent, from `property`. When several meta tags share a key,
-the last `content` value is kept. The description and date values below are
-read from that same map.
+A `BreadcrumbList` is emitted only when no JSON-LD `@type` is `BreadcrumbList`
+and at least two links have non-empty text and a root-relative `href`. Up to
+the first five matches are used. Those links may be site navigation rather than
+the page's breadcrumb trail. Fields: `@context` `https://schema.org`, `@type`
+`BreadcrumbList`, and `itemListElement` entries of type `ListItem` with a
+1-based `position`, `name` from the link text, and `item` set to the `href`.
 
-- No `@type` is the case-sensitive string `Article`, `TechArticle`, or
-  `BlogPosting`. The comparison uses the whole `@type` value, so an array
-  `@type` does not suppress the candidate. Other strings, such as
-  `NewsArticle`, do not either.
-- `doc.html` matches `/<article\b/i`, a case-insensitive text search for
-  `<article` at a word boundary. The Markdown parser leaves `html` unset, so a
-  Markdown page does not receive an `Article` candidate.
-- `doc.metaTags.author` is non-empty.
-- `doc.metaTags['article:published_time']` is non-empty, or else
-  `doc.metaTags.date` is non-empty.
-- `doc.headings.length` is at least 2 and `doc.paragraphs.length` is at least 3.
-  Counts cover the whole document, not only the `<article>` element. In HTML,
-  headings are every `h1`–`h6`, including empty text. Paragraphs are trimmed
-  `p`, `li`, and `dd` texts longer than 20 characters.
-
-The object contains only these fields:
-
-- `@context` is `https://schema.org`, and `@type` is `Article`.
-- `name` is `doc.title`.
-- `description` is `doc.metaTags.description` when that value is non-empty.
-  Otherwise it is the first 160 characters of the first paragraph
-  (`slice(0, 160)`), or `""` when that result is empty.
-- `author` is a `Person` whose `name` is the `author` meta value.
-- `datePublished` is `article:published_time` when that meta value is non-empty,
-  and the `date` meta value otherwise.
-
-#### BreadcrumbList conditions
-
-A `BreadcrumbList` object is emitted only when no `doc.jsonLd` `@type` is the
-case-sensitive string `BreadcrumbList` (the same comparison as above, including
-`@graph` entities) and at least two `doc.links` entries have text with length
-greater than 0 and an `href` that starts with `/`. That test includes
-root-relative paths and protocol-relative URLs such as `//host/path`. The first
-five matches are kept, in `doc.links` order. In HTML, `doc.links` is every `a`
-element that has an `href`, in document order, with trimmed text, so header,
-footer, and in-content links are eligible on the same rule. Markdown pages use
-the inline links that [`parseMarkdown`](../src/core/scanner.ts) collects
-outside fenced code.
-
-The object contains `@context` `https://schema.org`, `@type` `BreadcrumbList`,
-and `itemListElement`. Each kept link becomes a `ListItem` with `position` set
-to its 1-based index in that filtered list, `name` set to the link text, and
-`item` set to the raw `href`.
-
-#### Checklist
-
-1. For an `Article` candidate, match `name`, `description`, `author.name`, and
-   `datePublished` to the visible title, summary, byline, and publication date.
-   Author and date are copied from meta tags. Leave the candidate unpublished
-   when the page is not an article, the author is not a person, or the date
-   differs from the page.
-2. For a `BreadcrumbList` candidate, match each entry to the breadcrumb trail
-   visible on that page. Leave the candidate unpublished when the list is site
-   navigation or another group of links. Confirm each `item` is the URL the
-   target feature expects.
-3. Look for an existing `Article`, `TechArticle`, `BlogPosting`, or
-   `BreadcrumbList`. A candidate is suppressed only when `@type` is exactly
-   that string.
-4. Leave question headings as headings. `FAQPage` is not inferred from them.
-5. Publish a candidate only after it matches visible content and the target
-   feature's documentation. Omitting it is a valid result.
+Publish a candidate only when its fields match the visible page and the target
+feature's documentation. Omitting it is a valid result.
 
 ## Validation policy
 
