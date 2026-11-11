@@ -86,6 +86,40 @@ Generated output is a candidate for review, not deployment-ready truth.
 - `llms.txt` and `llms-full.txt` are experimental adapters.
 - Crawler suggestions distinguish search, user-initiated browsing, and model-training controls. Allowing a bot does not guarantee crawling, indexing, or citation.
 
+### JSON-LD review checklist
+
+[`generateJsonLd`](../src/core/generator.ts) returns at most one `Article` and
+one `BreadcrumbList`. It does not emit `FAQPage`. Question headings are not a
+source for that type. When any candidates exist, the `generate` command and the
+Vite and Next.js plugins write them to `_geo/generated-schemas.json` and leave
+page HTML unchanged. Publishing a candidate is optional, and writing that file
+does not change the readiness score.
+
+Check every value against content visible on that page and against the current
+requirements of the target search feature. The
+[Rich Results Test](https://search.google.com/test/rich-results) and the
+[Schema Markup Validator](https://validator.schema.org/) are optional external
+checks. Valid markup does not mean a search feature will be displayed.
+
+An `Article` is emitted only when no JSON-LD `@type` is `Article`,
+`TechArticle`, or `BlogPosting`, the HTML contains an `<article>` element,
+`author` meta is non-empty, `article:published_time` or else `date` meta is
+non-empty, and the document has at least two headings and three paragraphs.
+Fields: `@context` `https://schema.org`, `@type` `Article`, `name` from the
+document title, `description` from description meta or else the first 160
+characters of the first paragraph, `author` as a `Person` named by the author
+meta, and `datePublished` from `article:published_time` or else `date`.
+
+A `BreadcrumbList` is emitted only when no JSON-LD `@type` is `BreadcrumbList`
+and at least two links have non-empty text and a root-relative `href`. Up to
+the first five matches are used. Those links may be site navigation rather than
+the page's breadcrumb trail. Fields: `@context` `https://schema.org`, `@type`
+`BreadcrumbList`, and `itemListElement` entries of type `ListItem` with a
+1-based `position`, `name` from the link text, and `item` set to the `href`.
+
+Publish a candidate only when its fields match the visible page and the target
+feature's documentation. Omitting it is a valid result.
+
 ## Validation policy
 
 A scoring-rule change must include:
