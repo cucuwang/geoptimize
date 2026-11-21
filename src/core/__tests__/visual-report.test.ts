@@ -113,4 +113,34 @@ describe('interactive readiness details', () => {
     expect(html).toContain('Rule details were not recorded');
     expect(html).not.toContain('class="source-pair"');
   });
+
+  it('labels a truncated source preview in matched comparisons', () => {
+    const before = detailed('<h1>Before</h1><p>Before copy.</p>');
+    const after = detailed(`<h1>After</h1><p>${'After copy. '.repeat(500)}</p>`);
+    expect(after.pages[0].sourcePreview?.truncated).toBe(true);
+    const html = renderVisualReport(after, { baseline: before });
+    expect(html).toContain('Excerpt truncated by the scanner.');
+    expect(html).toContain('Complete bounded excerpt of the evaluated source.');
+  });
+
+  it('shows the unavailable message when a matched page has no source preview', () => {
+    const before = detailed('<h1>Before</h1><p>Before copy.</p>');
+    const after = detailed('<h1>After</h1><p>After copy.</p>');
+    delete after.pages[0].sourcePreview;
+    const html = renderVisualReport(after, { baseline: before });
+    expect(html).toContain('Source preview unavailable. This report does not include bounded source details.');
+  });
+
+  it('escapes truncated preview text containing HTML-special characters', () => {
+    const attack = '<script>alert(1)</script> & <img src=x onerror=alert(2)>';
+    const before = detailed('<h1>Before</h1><p>Before copy.</p>');
+    const after = detailed('<h1>After</h1><p>After copy.</p>');
+    after.pages[0].sourcePreview = { text: attack, truncated: true, format: 'html', capture: 'provided-html' };
+    const html = renderVisualReport(after, { baseline: before });
+    const $ = parseReportHtml(html);
+    expect(html).toContain('Excerpt truncated by the scanner.');
+    expect(html).not.toContain(attack);
+    expect($('#source-comparisons script')).toHaveLength(0);
+    expect($('#source-comparisons code').filter((_, element) => $(element).text() === attack)).toHaveLength(1);
+  });
 });
