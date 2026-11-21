@@ -86,6 +86,26 @@ Generated output is a candidate for review, not deployment-ready truth.
 - `llms.txt` and `llms-full.txt` are experimental adapters.
 - Crawler suggestions distinguish search, user-initiated browsing, and model-training controls. Allowing a bot does not guarantee crawling, indexing, or citation.
 
+`geoptimize generate <dir>` exposes `generateJsonLd` (`src/core/generator.ts`), which proposes at most two candidate types per page:
+
+- `Article`, only when no existing JSON-LD object has `@type` `Article`, `TechArticle`, or `BlogPosting`; the HTML contains an `<article>` element; `author` and `article:published_time` (or `date`) metadata are present; and the page has at least two headings and at least three extracted `p`, `li`, or `dd` texts longer than 20 characters.
+- `BreadcrumbList`, only when no existing `BreadcrumbList` is present and at least two links have an `href` starting with `/` and non-empty text. The first five such links become list items, in document order.
+
+Print every candidate in full, without writing files:
+
+```bash
+npx geoptimize generate ./dist --json
+```
+
+`--dry-run` shows only the start of the first candidate. Without `--json` or `--dry-run`, the command writes `llms.txt`, `llms-full.txt`, and `_geo/generated-schemas.json` into `--out`, which defaults to the scanned directory.
+
+Review checklist:
+
+1. Confirm the candidate type describes the page. Meeting the conditions above does not make a page an article, and the first links on a page are not necessarily a breadcrumb trail.
+2. Check every field against visible content: `name` comes from the page title, `description` from the description meta tag or the first extracted text, `author` and `datePublished` from metadata, and breadcrumb items from link text and relative `href` values.
+3. Check the candidate against the target feature's current documentation, including required properties and absolute URLs where that feature requires them.
+4. Treat each candidate as optional. Publish it only after editing it to match the page, or discard it.
+
 ## Validation policy
 
 A scoring-rule change must include:
