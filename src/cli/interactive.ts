@@ -140,13 +140,19 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
   const writeReport = dependencies.writeReport ?? writeInteractiveReport;
   const cwd = dependencies.cwd ?? process.cwd();
   let promptClosed = false;
+  let inputEnded = streamHasEnded(input);
+  const onInputEnd = (): void => {
+    inputEnded = true;
+  };
+  input.on('end', onInputEnd);
+  input.on('close', onInputEnd);
   const closePrompt = (): void => {
     if (promptClosed) return;
     promptClosed = true;
     prompt.close();
   };
   const reopenPrompt = (): void => {
-    if (!promptClosed) return;
+    if (!promptClosed || inputEnded) return;
     prompt = dependencies.prompt ?? createReadlinePrompt(input, output);
     promptClosed = false;
   };
@@ -214,8 +220,8 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
             if (isBack(outputValue)) break;
             const outputPath = normalizeInteractiveOutputPath(outputValue, cwd);
 
+            closePrompt();
             if (!rendered) {
-              closePrompt();
               writeLine(output, `\nScanning ${target.path}...`);
               try {
                 const report = await runScan(target, { details: true });
@@ -250,6 +256,8 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
       }
     }
   } finally {
+    input.off('end', onInputEnd);
+    input.off('close', onInputEnd);
     closePrompt();
   }
 }
@@ -320,6 +328,11 @@ function writeLine(output: NodeJS.WritableStream, line: string): void {
 function cancelled(output: NodeJS.WritableStream, label = 'Cancelled'): InteractiveResult {
   writeLine(output, `${label}. No report was created.`);
   return { status: 'cancelled' };
+}
+
+function streamHasEnded(input: NodeJS.ReadableStream): boolean {
+  const stream = input as NodeJS.ReadableStream & { readableEnded?: boolean; destroyed?: boolean };
+  return Boolean(stream.readableEnded) || Boolean(stream.destroyed);
 }
 
 function isExistingFileError(error: unknown): boolean {
