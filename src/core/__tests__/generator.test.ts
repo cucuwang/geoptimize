@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateLlmsTxt, generateLlmsFullTxt, generateJsonLd, generateRobotsTxtSuggestions } from '../generator.js';
+import { generate, generateLlmsTxt, generateLlmsFullTxt, generateJsonLd, generateRobotsTxtSuggestions } from '../generator.js';
 import { parseHtml, scanDocument } from '../scanner.js';
 import type { SiteInfo, ScanReport, ParsedDocument } from '../types.js';
 
@@ -62,6 +62,38 @@ describe('generateLlmsFullTxt', () => {
     const result = generateLlmsFullTxt(report, [doc]);
     expect(result).toContain('## What is Generative Engine Optimization');
     expect(result).toContain('---');
+  });
+
+  it('marks content truncated past 5000 characters with the total length', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Long',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [],
+      rawText: 'a'.repeat(6000),
+    };
+    const result = generateLlmsFullTxt({ pages: [], overall: { structure: 0, citability: 0, schema: 0, aiMetadata: 0, contentDensity: 0, total: 0 }, summary: '', timestamp: '' }, [doc]);
+    expect(result).toContain('a'.repeat(5000));
+    expect(result).not.toContain('a'.repeat(5001));
+    expect(result).toContain('[Content truncated: 6000 chars total, showing first 5000]');
+  });
+
+  it('emits no truncation marker for content at or below the bound', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Short',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [],
+      rawText: 'b'.repeat(5000),
+    };
+    const result = generateLlmsFullTxt({ pages: [], overall: { structure: 0, citability: 0, schema: 0, aiMetadata: 0, contentDensity: 0, total: 0 }, summary: '', timestamp: '' }, [doc]);
+    expect(result).not.toContain('Content truncated');
   });
 });
 
@@ -129,6 +161,88 @@ describe('generateJsonLd', () => {
     expect(faq).toBeUndefined();
   });
 
+  it('builds BreadcrumbList items from internal navigation links', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Site',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [
+        { href: '/', text: 'Home' },
+        { href: '/docs', text: 'Docs' },
+        { href: 'https://external.example/x', text: 'External' },
+        { href: '/guide', text: 'Guide' },
+      ],
+      rawText: 'x',
+    };
+    const result = generateJsonLd(doc);
+    const breadcrumb = result.find((r: any) => r['@type'] === 'BreadcrumbList') as any;
+    expect(breadcrumb).toBeTruthy();
+    expect(breadcrumb.itemListElement.map((i: any) => i.item)).toEqual(['/', '/docs', '/guide']);
+    expect(breadcrumb.itemListElement.map((i: any) => i.position)).toEqual([1, 2, 3]);
+  });
+
+  it('does not count protocol-relative or external links as internal navigation', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Site',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [
+        { href: '/home', text: 'Home' },
+        { href: '//cdn.example.com/x', text: 'CDN link' },
+        { href: '//tracking.example.net/y', text: 'Tracker' },
+      ],
+      rawText: 'x',
+    };
+    // Only one truly internal link: no BreadcrumbList should be generated.
+    expect(generateJsonLd(doc).some((r: any) => r['@type'] === 'BreadcrumbList')).toBe(false);
+  });
+
+  it('limits BreadcrumbList to five items and skips empty link text', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Site',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [
+        { href: '/a', text: 'A' },
+        { href: '/b', text: '' },
+        { href: '/c', text: 'C' },
+        { href: '/d', text: 'D' },
+        { href: '/e', text: 'E' },
+        { href: '/f', text: 'F' },
+        { href: '/g', text: 'G' },
+      ],
+      rawText: 'x',
+    };
+    const breadcrumb = generateJsonLd(doc).find((r: any) => r['@type'] === 'BreadcrumbList') as any;
+    expect(breadcrumb.itemListElement).toHaveLength(5);
+    expect(breadcrumb.itemListElement.map((i: any) => i.item)).toEqual(['/a', '/c', '/d', '/e', '/f']);
+  });
+
+  it('falls back to the first paragraph for the Article description', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Article',
+      html: '<article><p>body</p></article>',
+      headings: [{ level: 1, text: 'T' }, { level: 2, text: 'S' }],
+      paragraphs: ['x'.repeat(200), 'b', 'c'],
+      jsonLd: [],
+      metaTags: { author: 'Jane', date: '2026-01-01' },
+      links: [],
+      rawText: 'x',
+    };
+    const article = generateJsonLd(doc).find((r: any) => r['@type'] === 'Article') as any;
+    expect(article.description).toBe('x'.repeat(160));
+  });
+
   it('does not duplicate existing schema types', async () => {
     const html = await readFile(join(fixtures, 'good-page.html'), 'utf-8');
     const doc = parseHtml(html, 'test');
@@ -170,5 +284,32 @@ describe('generateRobotsTxtSuggestions', () => {
     const text = generateRobotsTxtSuggestions(null).join('\n');
     expect(text).not.toContain('llms.txt');
     expect(text).not.toContain('rel="llms-txt"');
+  });
+
+  it('detects configured crawlers case-insensitively', () => {
+    const existing = 'user-agent: gptbot\nDisallow: /\n\nUser-Agent:   CLAUDEBOT\nAllow: /\n';
+    const result = generateRobotsTxtSuggestions(existing);
+    expect(result.filter((l) => l === 'User-agent: GPTBot')).toHaveLength(0);
+    expect(result.filter((l) => l === 'User-agent: ClaudeBot')).toHaveLength(0);
+    expect(result.join('\n')).toContain('User-agent: PerplexityBot');
+  });
+});
+
+describe('generate', () => {
+  it('combines all output channels', () => {
+    const doc: ParsedDocument = {
+      url: 'https://example.com/', title: 'Home', headings: [], paragraphs: [],
+      jsonLd: [], metaTags: {}, links: [{ href: '/a', text: 'A' }, { href: '/b', text: 'B' }], rawText: 'text',
+    };
+    const report: ScanReport = {
+      pages: [{ url: 'https://example.com/', title: 'Home', scores: { structure: 20, citability: 20, schema: 15, aiMetadata: 10, contentDensity: 10, total: 75 }, issues: [], suggestions: [] }],
+      overall: { structure: 20, citability: 20, schema: 15, aiMetadata: 10, contentDensity: 10, total: 75 },
+      summary: 'Good', timestamp: '2026-04-07T00:00:00Z',
+    };
+    const output = generate(report, [doc], siteInfo, 'User-agent: GPTBot\nAllow: /');
+    expect(output.llmsTxt).toContain('# GEO Guide');
+    expect(output.llmsFullTxt).toContain('## Home');
+    expect(output.jsonLd.some((r: any) => r['@type'] === 'BreadcrumbList')).toBe(true);
+    expect(output.robotsTxtSuggestions.join('\n')).not.toContain('User-agent: GPTBot');
   });
 });

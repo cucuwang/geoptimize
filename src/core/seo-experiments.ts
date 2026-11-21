@@ -134,7 +134,11 @@ function text(value: string, label: string): string {
 }
 
 function dateOnly(value: string, label: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00Z`))) {
+  // Date.parse normalizes nonexistent dates (2026-02-30 becomes March 2),
+  // so the parsed calendar date must round-trip to accept the input.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)
+    || Number.isNaN(Date.parse(`${value}T00:00:00Z`))
+    || new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) !== value) {
     throw new Error(`${label} must use YYYY-MM-DD.`);
   }
   return value;

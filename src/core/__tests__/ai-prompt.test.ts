@@ -64,4 +64,78 @@ describe('parseAiResponse', () => {
     expect(result!.structure).toBe(0);
     expect(result!.insight).toBe('No insight provided');
   });
+
+  it('parses JSON when "score" is mentioned in prose before the object', () => {
+    const raw = 'The "score" field is computed as follows: {"score": 60, "insight": "ok"}';
+    const result = parseAiResponse(raw);
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(60);
+    expect(result!.insight).toBe('ok');
+  });
+
+  it('parses JSON when a prose brace group precedes the object', () => {
+    const raw = 'note {"score" is text}: {"score": 55, "insight": "real"}';
+    const result = parseAiResponse(raw);
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(55);
+    expect(result!.insight).toBe('real');
+  });
+
+  it('parses objects whose string values contain braces', () => {
+    const raw = '{"score": 62, "insight": "closing } and opening { braces"}';
+    const result = parseAiResponse(raw);
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(62);
+    expect(result!.insight).toBe('closing } and opening { braces');
+  });
+
+  it('parses objects whose string values contain escaped quotes and braces', () => {
+    const raw = '{"score": 61, "insight": "use \\"json\\" } carefully"}';
+    const result = parseAiResponse(raw);
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(61);
+    expect(result!.insight).toBe('use "json" } carefully');
+  });
+
+  it('ignores brace groups inside strings that precede "score"', () => {
+    const raw = '{"insight": "a { brace", "score": 70}';
+    const result = parseAiResponse(raw);
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(70);
+    expect(result!.insight).toBe('a { brace');
+  });
+
+  it('uses the first balanced object with a numeric score', () => {
+    const raw = '{"insight": "no score here"} {"score": 33, "insight": "chosen"} {"score": 44}';
+    const result = parseAiResponse(raw);
+    expect(result).not.toBeNull();
+    expect(result!.score).toBe(33);
+  });
+
+  it('accepts boundary scores 0 and 100', () => {
+    expect(parseAiResponse('{"score": 0}')!.score).toBe(0);
+    expect(parseAiResponse('{"score": 100}')!.score).toBe(100);
+  });
+
+  it('falls back to 0 for non-numeric dimension values instead of NaN', () => {
+    const raw = '{"score": 60, "structure": "high", "citability": [], "schema": {}, "insight": "x"}';
+    const result = parseAiResponse(raw);
+    expect(result).not.toBeNull();
+    for (const key of ['structure', 'citability', 'schema', 'aiMetadata', 'contentDensity'] as const) {
+      expect(Number.isFinite(result![key])).toBe(true);
+      expect(result![key]).toBe(0);
+    }
+  });
+
+  it('replaces a non-string insight with the default message', () => {
+    const result = parseAiResponse('{"score": 60, "insight": 42}');
+    expect(result).not.toBeNull();
+    expect(result!.insight).toBe('No insight provided');
+  });
+
+  it('still rejects objects without a numeric score', () => {
+    expect(parseAiResponse('{"score": null}')).toBeNull();
+    expect(parseAiResponse('{"score": "60"}')).toBeNull();
+    expect(parseAiResponse('{"total": 60}')).toBeNull();
+  });
 });

@@ -96,6 +96,9 @@ function runWithStdin(cmd: string, input: string): Promise<string> {
       else reject(new Error(`${cmd} exited with code ${code}: ${stderr.slice(0, 200)}`));
     });
     child.on('error', reject);
+    // A CLI that exits before reading stdin raises EPIPE here; 'close'/'error'
+    // already settles the promise, so the stdin stream error must not escape.
+    child.stdin.on('error', () => {});
     child.stdin.write(input);
     child.stdin.end();
   });

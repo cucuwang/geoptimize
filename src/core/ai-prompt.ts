@@ -71,45 +71,69 @@ export interface AiScoreResponse {
 }
 
 export function parseAiResponse(raw: string): AiScoreResponse | null {
-  try {
-    // Try to extract a balanced JSON object containing "score"
-    // First try: find the last { before "score" and match to its closing }
-    const scoreIdx = raw.indexOf('"score"');
+  // Models sometimes mention "score" in prose or emit braces inside string
+  // values, so try every "score" mention and every earlier opening brace as a
+  // candidate object instead of assuming the first mention sits inside JSON.
+  const maxCandidates = 64;
+  let tried = 0;
+  let searchFrom = 0;
+
+  while (tried < maxCandidates) {
+    const scoreIdx = raw.indexOf('"score"', searchFrom);
     if (scoreIdx === -1) return null;
 
-    // Walk backward to find the opening brace
     let braceStart = raw.lastIndexOf('{', scoreIdx);
-    if (braceStart === -1) return null;
-
-    // Walk forward to find the matching closing brace
-    let depth = 0;
-    let braceEnd = -1;
-    for (let i = braceStart; i < raw.length; i++) {
-      if (raw[i] === '{') depth++;
-      else if (raw[i] === '}') {
-        depth--;
-        if (depth === 0) { braceEnd = i; break; }
+    while (braceStart !== -1 && tried < maxCandidates) {
+      tried++;
+      const braceEnd = findMatchingBrace(raw, braceStart);
+      if (braceEnd !== -1) {
+        try {
+          const parsed = JSON.parse(raw.slice(braceStart, braceEnd + 1));
+          if (parsed && typeof parsed.score === 'number') {
+            return {
+              score: clamp(parsed.score, 0, 100),
+              structure: dimension(parsed.structure, 25),
+              citability: dimension(parsed.citability, 25),
+              schema: dimension(parsed.schema, 20),
+              aiMetadata: dimension(parsed.aiMetadata, 15),
+              contentDensity: dimension(parsed.contentDensity, 15),
+              insight: typeof parsed.insight === 'string' ? parsed.insight : 'No insight provided',
+            };
+          }
+        } catch {
+          // Not a standalone JSON object; try an earlier opening brace.
+        }
       }
+      braceStart = raw.lastIndexOf('{', braceStart - 1);
     }
-    if (braceEnd === -1) return null;
 
-    const parsed = JSON.parse(raw.slice(braceStart, braceEnd + 1));
-
-    // Validate required fields
-    if (typeof parsed.score !== 'number') return null;
-
-    return {
-      score: clamp(parsed.score, 0, 100),
-      structure: clamp(parsed.structure ?? 0, 0, 25),
-      citability: clamp(parsed.citability ?? 0, 0, 25),
-      schema: clamp(parsed.schema ?? 0, 0, 20),
-      aiMetadata: clamp(parsed.aiMetadata ?? 0, 0, 15),
-      contentDensity: clamp(parsed.contentDensity ?? 0, 0, 15),
-      insight: parsed.insight ?? 'No insight provided',
-    };
-  } catch {
-    return null;
+    searchFrom = scoreIdx + 1;
   }
+
+  return null;
+}
+
+function findMatchingBrace(raw: string, start: number): number {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) return i;
+  }
+  return -1;
+}
+
+function dimension(value: unknown, max: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? clamp(value, 0, max) : 0;
 }
 
 function clamp(val: number, min: number, max: number): number {
