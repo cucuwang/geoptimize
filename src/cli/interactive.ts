@@ -152,7 +152,7 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
     prompt.close();
   };
   const reopenPrompt = (): void => {
-    if (!promptClosed || inputEnded) return;
+    if (!promptClosed || inputEnded || streamHasEnded(input)) return;
     prompt = dependencies.prompt ?? createReadlinePrompt(input, output);
     promptClosed = false;
   };
