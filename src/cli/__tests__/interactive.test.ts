@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -106,20 +106,55 @@ describe('interactive scan and report flow', () => {
     expect(captured.text()).toContain(`Visual report saved to ${outputPath}`);
   });
 
-  it('uses exclusive creation and leaves an existing report unchanged', async () => {
+  it('lets the user pick another filename when the report path already exists', async () => {
     const directory = await temporaryDirectory();
     const outputPath = join(directory, 'existing.html');
+    const retryPath = join(directory, 'retry.html');
     await writeFile(outputPath, 'keep this report', 'utf8');
-    const prompt = new ScriptedPrompt(['1', '2', fixture, outputPath]);
+    const prompt = new ScriptedPrompt(['1', '2', fixture, outputPath, 'retry']);
     const captured = captureOutput();
 
     const result = await runInteractive({ prompt, output: captured.output, cwd: directory });
 
-    expect(result.status).toBe('error');
-    expect(result.error?.message).toContain('already exists');
+    expect(result).toMatchObject({ status: 'completed', outputPath: retryPath, pages: 1 });
     expect(await readFile(outputPath, 'utf8')).toBe('keep this report');
-    expect(captured.text()).toContain('Output file already exists');
+    expect(await readFile(retryPath, 'utf8')).toContain('Content readiness');
+    expect(captured.text()).toContain(`Output file already exists: ${outputPath}`);
+    expect(captured.text()).toContain(`Visual report saved to ${retryPath}`);
+  });
+
+  it('cancels cleanly from the retry prompt after a filename collision', async () => {
+    const directory = await temporaryDirectory();
+    const outputPath = join(directory, 'existing.html');
+    await writeFile(outputPath, 'keep this report', 'utf8');
+    const prompt = new ScriptedPrompt(['1', '2', fixture, outputPath, 'c']);
+    const captured = captureOutput();
+
+    const result = await runInteractive({ prompt, output: captured.output, cwd: directory });
+
+    expect(result).toEqual({ status: 'cancelled' });
+    expect(await readFile(outputPath, 'utf8')).toBe('keep this report');
+    expect(await readdir(directory)).toEqual(['existing.html']);
+    expect(captured.text()).toContain(`Output file already exists: ${outputPath}`);
+    expect(captured.text()).toContain('Cancelled. No report was created.');
     expect(captured.text()).not.toContain('Visual report saved');
+  });
+
+  it('returns to the target prompt when the user backs out of the retry prompt', async () => {
+    const directory = await temporaryDirectory();
+    const outputPath = join(directory, 'existing.html');
+    const secondPath = join(directory, 'second.html');
+    await writeFile(outputPath, 'keep this report', 'utf8');
+    const prompt = new ScriptedPrompt(['1', '2', fixture, outputPath, 'b', fixture, 'second']);
+    const captured = captureOutput();
+
+    const result = await runInteractive({ prompt, output: captured.output, cwd: directory });
+
+    expect(result).toMatchObject({ status: 'completed', outputPath: secondPath, pages: 1 });
+    expect(await readFile(outputPath, 'utf8')).toBe('keep this report');
+    expect(await readFile(secondPath, 'utf8')).toContain('Content readiness');
+    expect(captured.text()).toContain(`Output file already exists: ${outputPath}`);
+    expect(captured.text()).toContain(`Visual report saved to ${secondPath}`);
   });
 
   it('reports scan failures without rendering or claiming a saved report', async () => {

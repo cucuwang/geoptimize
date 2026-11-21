@@ -6,6 +6,7 @@ All notable user-visible changes will be documented here. The project follows Se
 
 ### Added
 
+- The guided CLI asks for another filename when the chosen report file already exists, instead of exiting. The existing file stays unchanged and new reports are still created exclusively.
 - Added `scan --fail-under <score>` to gate the deterministic overall score. Complete reports remain on stdout and threshold explanations on stderr.
 - Shared JSON-LD structural diagnostics include source lines, block numbers and object or graph paths. The build audit reports missing context or type and other new structural diagnostics as warnings; malformed JSON and invalid roots remain failures. In `scan` and `audit`, malformed JSON and missing or empty `@context`/`@type` stay warnings, while non-object roots or graph entries and context or type values of the wrong kind (for example a number) are reported as critical issues.
 

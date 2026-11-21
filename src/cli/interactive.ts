@@ -133,7 +133,7 @@ export function createReadlinePrompt(
 export async function runInteractive(dependencies: InteractiveDependencies = {}): Promise<InteractiveResult> {
   const input = dependencies.input ?? process.stdin;
   const output = dependencies.output ?? process.stdout;
-  const prompt = dependencies.prompt ?? createReadlinePrompt(input, output);
+  let prompt = dependencies.prompt ?? createReadlinePrompt(input, output);
   const runScan = dependencies.scan ?? scan;
   const renderReport = dependencies.renderReport ?? renderVisualReport;
   const targetResolver = dependencies.resolveTarget ?? resolveTarget;
@@ -144,6 +144,11 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
     if (promptClosed) return;
     promptClosed = true;
     prompt.close();
+  };
+  const reopenPrompt = (): void => {
+    if (!promptClosed) return;
+    prompt = dependencies.prompt ?? createReadlinePrompt(input, output);
+    promptClosed = false;
   };
 
   try {
@@ -200,6 +205,7 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
             continue;
           }
 
+          let rendered: { html: string; pages: number } | undefined;
           while (true) {
             const outputInput = await prompt.question(`Output HTML file [${DEFAULT_INTERACTIVE_OUTPUT_FILENAME}] (b to return, c to cancel): `);
             if (outputInput === null) return cancelled(output, 'Input ended');
@@ -208,25 +214,37 @@ export async function runInteractive(dependencies: InteractiveDependencies = {})
             if (isBack(outputValue)) break;
             const outputPath = normalizeInteractiveOutputPath(outputValue, cwd);
 
-            closePrompt();
-            writeLine(output, `\nScanning ${target.path}...`);
-            try {
-              const report = await runScan(target, { details: true });
-              if (!Array.isArray(report.pages) || report.pages.length === 0) {
-                throw new Error('The scan returned no pages; no visual report was written.');
+            if (!rendered) {
+              closePrompt();
+              writeLine(output, `\nScanning ${target.path}...`);
+              try {
+                const report = await runScan(target, { details: true });
+                if (!Array.isArray(report.pages) || report.pages.length === 0) {
+                  throw new Error('The scan returned no pages; no visual report was written.');
+                }
+                rendered = { html: renderReport(report), pages: report.pages.length };
+              } catch (error) {
+                const message = errorMessage(error);
+                writeLine(output, `Error: ${message}`);
+                return { status: 'error', error: toError(error, message) };
               }
-              const html = renderReport(report);
-              await writeReport(outputPath, html);
-              writeLine(output, `Visual report saved to ${outputPath}`);
-              writeLine(output, `Scanned ${report.pages.length} page${report.pages.length === 1 ? '' : 's'}.`);
-              return { status: 'completed', outputPath, pages: report.pages.length };
-            } catch (error) {
-              const message = isExistingFileError(error)
-                ? `Output file already exists: ${outputPath}. Choose a new filename.`
-                : errorMessage(error);
-              writeLine(output, `Error: ${message}`);
-              return { status: 'error', error: toError(error, message) };
             }
+
+            try {
+              await writeReport(outputPath, rendered.html);
+            } catch (error) {
+              if (!isExistingFileError(error)) {
+                const message = errorMessage(error);
+                writeLine(output, `Error: ${message}`);
+                return { status: 'error', error: toError(error, message) };
+              }
+              writeLine(output, `Output file already exists: ${outputPath}. Choose a new filename.`);
+              reopenPrompt();
+              continue;
+            }
+            writeLine(output, `Visual report saved to ${outputPath}`);
+            writeLine(output, `Scanned ${rendered.pages} page${rendered.pages === 1 ? '' : 's'}.`);
+            return { status: 'completed', outputPath, pages: rendered.pages };
           }
         }
       }
