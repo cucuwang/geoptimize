@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateLlmsTxt, generateLlmsFullTxt, generateJsonLd, generateRobotsTxtSuggestions } from '../generator.js';
+import { generate, generateLlmsTxt, generateLlmsFullTxt, generateJsonLd, generateRobotsTxtSuggestions } from '../generator.js';
 import { parseHtml, scanDocument } from '../scanner.js';
 import type { SiteInfo, ScanReport, ParsedDocument } from '../types.js';
 
@@ -62,6 +62,23 @@ describe('generateLlmsFullTxt', () => {
     const result = generateLlmsFullTxt(report, [doc]);
     expect(result).toContain('## What is Generative Engine Optimization');
     expect(result).toContain('---');
+  });
+
+  it('truncates rawText longer than 5000 chars and notes the total', () => {
+    const doc = {
+      title: 'Long Page',
+      rawText: 'x'.repeat(6000),
+    } as ParsedDocument;
+    const report: ScanReport = {
+      pages: [],
+      overall: { structure: 0, citability: 0, schema: 0, aiMetadata: 0, contentDensity: 0, total: 0 },
+      summary: 'Test',
+      timestamp: '2026-04-07T00:00:00Z',
+    };
+
+    const result = generateLlmsFullTxt(report, [doc]);
+    expect(result).toContain('Content truncated: 6000 chars total, showing first 5000');
+    expect(result).not.toContain('x'.repeat(5001));
   });
 });
 
@@ -140,6 +157,83 @@ describe('generateJsonLd', () => {
     expect(types).not.toContain('FAQPage');
     expect(types).not.toContain('BreadcrumbList');
   });
+
+  it('builds a BreadcrumbList from internal nav links', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Nav Page',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [
+        { href: '/docs', text: 'Docs' },
+        { href: '/docs/start', text: 'Getting started' },
+      ],
+      rawText: 'Test',
+    };
+
+    const result = generateJsonLd(doc);
+    const breadcrumb = result.find((r: any) => r['@type'] === 'BreadcrumbList') as any;
+    expect(breadcrumb).toBeTruthy();
+    expect(breadcrumb.itemListElement).toHaveLength(2);
+    expect(breadcrumb.itemListElement[0]).toMatchObject({ position: 1, name: 'Docs', item: '/docs' });
+  });
+
+  it('excludes protocol-relative and external links from breadcrumbs', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Nav Page',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [
+        { href: '//cdn.example.com/x', text: 'CDN asset' },
+        { href: 'https://example.com/page', text: 'Absolute link' },
+        { href: '/real', text: 'Real' },
+        { href: '/two', text: 'Two' },
+      ],
+      rawText: 'Test',
+    };
+
+    const result = generateJsonLd(doc);
+    const breadcrumb = result.find((r: any) => r['@type'] === 'BreadcrumbList') as any;
+    expect(breadcrumb).toBeTruthy();
+    expect(breadcrumb.itemListElement.map((i: any) => i.item)).toEqual(['/real', '/two']);
+  });
+
+  it('requires at least two nav links before generating a BreadcrumbList', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Nav Page',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [{ href: '/only', text: 'Only' }],
+      rawText: 'Test',
+    };
+
+    expect(generateJsonLd(doc).some((r: any) => r['@type'] === 'BreadcrumbList')).toBe(false);
+  });
+
+  it('caps breadcrumb items at five', () => {
+    const doc: ParsedDocument = {
+      url: 'test',
+      title: 'Nav Page',
+      headings: [],
+      paragraphs: [],
+      jsonLd: [],
+      metaTags: {},
+      links: [1, 2, 3, 4, 5, 6, 7].map((n) => ({ href: `/p${n}`, text: `Page ${n}` })),
+      rawText: 'Test',
+    };
+
+    const breadcrumb = generateJsonLd(doc).find((r: any) => r['@type'] === 'BreadcrumbList') as any;
+    expect(breadcrumb.itemListElement).toHaveLength(5);
+    expect(breadcrumb.itemListElement[4].item).toBe('/p5');
+  });
 });
 
 describe('generateRobotsTxtSuggestions', () => {
@@ -166,9 +260,34 @@ describe('generateRobotsTxtSuggestions', () => {
     expect(text).toContain('ClaudeBot');
   });
 
+  it('matches existing crawler rules case-insensitively', () => {
+    const existing = 'user-agent: gptbot\nAllow: /\n';
+    const text = generateRobotsTxtSuggestions(existing).join('\n');
+    expect(text).not.toContain('User-agent: GPTBot');
+    expect(text).toContain('ClaudeBot');
+  });
+
   it('does not claim that robots.txt should point crawlers to llms.txt', () => {
     const text = generateRobotsTxtSuggestions(null).join('\n');
     expect(text).not.toContain('llms.txt');
     expect(text).not.toContain('rel="llms-txt"');
+  });
+});
+
+describe('generate', () => {
+  it('assembles all four output sections', () => {
+    const report: ScanReport = {
+      pages: [],
+      overall: { structure: 0, citability: 0, schema: 0, aiMetadata: 0, contentDensity: 0, total: 0 },
+      summary: 'Test',
+      timestamp: '2026-04-07T00:00:00Z',
+    };
+
+    const result = generate(report, [], siteInfo, 'User-agent: GPTBot\nAllow: /');
+    expect(result.llmsTxt).toContain('# GEO Guide');
+    expect(result.llmsFullTxt).toBe('');
+    expect(result.jsonLd).toEqual([]);
+    expect(result.robotsTxtSuggestions.join('\n')).not.toContain('User-agent: GPTBot');
+    expect(result.robotsTxtSuggestions.join('\n')).toContain('ClaudeBot');
   });
 });

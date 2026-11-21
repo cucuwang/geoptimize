@@ -76,7 +76,7 @@ export function generateJsonLd(doc: ParsedDocument): object[] {
 
   // Add BreadcrumbList from nav links if not present
   if (!existing.has('BreadcrumbList')) {
-    const navLinks = doc.links.filter((l) => l.href.startsWith('/') && l.text.length > 0).slice(0, 5);
+    const navLinks = doc.links.filter((l) => l.href.startsWith('/') && !l.href.startsWith('//') && l.text.length > 0).slice(0, 5);
     if (navLinks.length >= 2) {
       generated.push({
         '@context': 'https://schema.org',

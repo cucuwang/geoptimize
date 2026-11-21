@@ -34,7 +34,7 @@ export function mergeScores(ruleReport: ScanReport, aiScores: AiScorerResult[]):
   if (aiDims) {
     const dims: (keyof Omit<DimensionScores, 'total'>)[] = ['structure', 'citability', 'schema', 'aiMetadata', 'contentDensity'];
     for (const dim of dims) {
-      mergedOverall[dim] = Math.min(dimMax[dim], Math.round(ruleReport.overall[dim] * ruleWeight + aiDims[dim] * aiWeight));
+      mergedOverall[dim] = Math.min(dimMax[dim], Math.max(0, Math.round(ruleReport.overall[dim] * ruleWeight + aiDims[dim] * aiWeight)));
     }
   }
 

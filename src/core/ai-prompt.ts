@@ -70,46 +70,74 @@ export interface AiScoreResponse {
   insight: string;
 }
 
+const MAX_PARSE_ATTEMPTS = 64;
+const MAX_CANDIDATE_SCAN = 1024;
+
 export function parseAiResponse(raw: string): AiScoreResponse | null {
   try {
-    // Try to extract a balanced JSON object containing "score"
-    // First try: find the last { before "score" and match to its closing }
-    const scoreIdx = raw.indexOf('"score"');
-    if (scoreIdx === -1) return null;
-
-    // Walk backward to find the opening brace
-    let braceStart = raw.lastIndexOf('{', scoreIdx);
-    if (braceStart === -1) return null;
-
-    // Walk forward to find the matching closing brace
-    let depth = 0;
-    let braceEnd = -1;
-    for (let i = braceStart; i < raw.length; i++) {
-      if (raw[i] === '{') depth++;
-      else if (raw[i] === '}') {
-        depth--;
-        if (depth === 0) { braceEnd = i; break; }
+    // Scan each { in order and keep the first balanced object that parses and
+    // carries a finite numeric "score". Earlier braces may belong to prose,
+    // code samples, or malformed attempts, so failures keep scanning forward.
+    let braceStart = raw.indexOf('{');
+    let scanned = 0;
+    let tried = 0;
+    while (braceStart !== -1 && scanned < MAX_CANDIDATE_SCAN && tried < MAX_PARSE_ATTEMPTS) {
+      scanned++;
+      const braceEnd = findMatchingBrace(raw, braceStart);
+      if (braceEnd !== -1) {
+        const candidate = raw.slice(braceStart, braceEnd + 1);
+        if (candidate.includes('"score"')) {
+          tried++;
+          try {
+            const parsed = JSON.parse(candidate) as Partial<Record<keyof AiScoreResponse, unknown>>;
+            if (typeof parsed.score === 'number' && Number.isFinite(parsed.score)) {
+              return {
+                score: clamp(parsed.score, 0, 100),
+                structure: clamp(dimension(parsed.structure), 0, 25),
+                citability: clamp(dimension(parsed.citability), 0, 25),
+                schema: clamp(dimension(parsed.schema), 0, 20),
+                aiMetadata: clamp(dimension(parsed.aiMetadata), 0, 15),
+                contentDensity: clamp(dimension(parsed.contentDensity), 0, 15),
+                insight: typeof parsed.insight === 'string' ? parsed.insight : 'No insight provided',
+              };
+            }
+          } catch {
+            // Not valid JSON — keep scanning later candidates.
+          }
+        }
       }
+      braceStart = raw.indexOf('{', braceStart + 1);
     }
-    if (braceEnd === -1) return null;
-
-    const parsed = JSON.parse(raw.slice(braceStart, braceEnd + 1));
-
-    // Validate required fields
-    if (typeof parsed.score !== 'number') return null;
-
-    return {
-      score: clamp(parsed.score, 0, 100),
-      structure: clamp(parsed.structure ?? 0, 0, 25),
-      citability: clamp(parsed.citability ?? 0, 0, 25),
-      schema: clamp(parsed.schema ?? 0, 0, 20),
-      aiMetadata: clamp(parsed.aiMetadata ?? 0, 0, 15),
-      contentDensity: clamp(parsed.contentDensity ?? 0, 0, 15),
-      insight: parsed.insight ?? 'No insight provided',
-    };
+    return null;
   } catch {
     return null;
   }
+}
+
+function findMatchingBrace(raw: string, start: number): number {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+    } else if (ch === '"') {
+      inString = true;
+    } else if (ch === '{') {
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function dimension(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
 function clamp(val: number, min: number, max: number): number {

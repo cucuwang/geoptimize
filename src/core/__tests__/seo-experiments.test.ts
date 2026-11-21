@@ -10,6 +10,7 @@ import {
   reviewSeoExperiment,
   selectSeoExperimentCandidate,
   startSeoExperiment,
+  summarizeSeoExperiments,
 } from '../seo-experiments.js';
 
 const temporaryDirectories: string[] = [];
@@ -158,5 +159,163 @@ describe('SEO experiment ledger', () => {
     await expect(reviewSeoExperiment(directory, {
       keyword: 'first', outcome: 'improved', observationId: mobile.id, date: '2026-09-17',
     })).rejects.toThrow('same source, country, device, and search type');
+  });
+
+  it('rejects nonexistent calendar dates instead of normalizing them', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    // Date.parse normalizes 2026-02-30 to March 2; the ledger must not accept it.
+    await expect(recordSeoObservation(directory, {
+      keyword: 'k', targetPath: '/k', source: 'gsc', position: 5, impressions: 10, clicks: 0,
+      startDate: '2026-02-30', endDate: '2026-03-05', country: 'TWN', device: 'DESKTOP',
+    })).rejects.toThrow('YYYY-MM-DD');
+  });
+
+  it('accepts a real leap day but rejects February 29 in a non-leap year', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    const leap = await recordSeoObservation(directory, {
+      keyword: 'k', targetPath: '/k', source: 'gsc', position: 5, impressions: 10, clicks: 0,
+      startDate: '2024-02-29', endDate: '2024-03-05', country: 'TWN', device: 'DESKTOP',
+    });
+    expect(leap.window.startDate).toBe('2024-02-29');
+    await expect(recordSeoObservation(directory, {
+      keyword: 'k', targetPath: '/k', source: 'gsc', position: 5, impressions: 10, clicks: 0,
+      startDate: '2026-02-29', endDate: '2026-03-05', country: 'TWN', device: 'DESKTOP',
+    })).rejects.toThrow('YYYY-MM-DD');
+  });
+
+  it('rejects a nonexistent experiment start date', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    await expect(startSeoExperiment(directory, {
+      keyword: 'k', date: '2026-04-31', searchIntent: 's', gap: 'g', change: 'c',
+    })).rejects.toThrow('YYYY-MM-DD');
+  });
+
+  it('rejects a start date that is not YYYY-MM-DD shaped', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    await expect(startSeoExperiment(directory, {
+      keyword: 'k', date: '10/05/2026', searchIntent: 's', gap: 'g', change: 'c',
+    })).rejects.toThrow('YYYY-MM-DD');
+  });
+
+  it('rejects observations for queries that were never added', async () => {
+    const directory = await repository();
+    await expect(recordSeoObservation(directory, {
+      keyword: 'ghost', targetPath: '/ghost', source: 'gsc', position: 5, impressions: 10, clicks: 0,
+      startDate: '2026-08-01', endDate: '2026-08-28', country: 'TWN', device: 'DESKTOP',
+    })).rejects.toThrow('Add the query before recording');
+  });
+
+  it('rejects observations whose clicks exceed impressions', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    await expect(recordSeoObservation(directory, {
+      keyword: 'k', targetPath: '/k', source: 'gsc', position: 5, impressions: 10, clicks: 11,
+      startDate: '2026-08-01', endDate: '2026-08-28', country: 'TWN', device: 'DESKTOP',
+    })).rejects.toThrow('clicks must not exceed impressions');
+  });
+
+  it('rejects negative metric values and reversed windows', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    await expect(recordSeoObservation(directory, {
+      keyword: 'k', targetPath: '/k', source: 'gsc', position: -1, impressions: 10, clicks: 0,
+      startDate: '2026-08-01', endDate: '2026-08-28', country: 'TWN', device: 'DESKTOP',
+    })).rejects.toThrow('non-negative');
+    await expect(recordSeoObservation(directory, {
+      keyword: 'k', targetPath: '/k', source: 'gsc', position: 5, impressions: 10, clicks: 0,
+      startDate: '2026-08-28', endDate: '2026-08-01', country: 'TWN', device: 'DESKTOP',
+    })).rejects.toThrow('must not be after endDate');
+  });
+
+  it('rejects observation sources outside the contract enum', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    await expect(recordSeoObservation(directory, {
+      keyword: 'k', targetPath: '/k', source: 'analytics' as 'gsc', position: 5, impressions: 10, clicks: 0,
+      startDate: '2026-08-01', endDate: '2026-08-28', country: 'TWN', device: 'DESKTOP',
+    })).rejects.toThrow('gsc or serp');
+  });
+
+  it('rejects queries with invalid priority or empty keyword', async () => {
+    const directory = await repository();
+    await expect(addSeoQuery(directory, {
+      keyword: 'k', targetPath: '/k', priority: 'urgent' as 'high',
+    })).rejects.toThrow('high, medium, or low');
+    await expect(addSeoQuery(directory, { keyword: '   ', targetPath: '/k' }))
+      .rejects.toThrow('must not be empty');
+  });
+
+  it('defaults new queries to medium priority', async () => {
+    const directory = await repository();
+    const query = await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    expect(query.priority).toBe('medium');
+    expect(query.status).toBe('eligible');
+    expect(query.nextReviewDate).toBeNull();
+  });
+
+  it('refuses to load a state whose contract version changed', async () => {
+    const directory = await repository();
+    await writeFile(join(directory, 'data/seo/queries.json'), '{"contractVersion":"9.9","queries":[]}\n');
+    await expect(loadSeoExperiments(directory)).rejects.toThrow('contractVersion must be 1.0');
+  });
+
+  it('selects no candidate while another query is monitoring', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'first', targetPath: '/first', priority: 'high' });
+    await addSeoQuery(directory, { keyword: 'second', targetPath: '/second', priority: 'high' });
+    await startSeoExperiment(directory, {
+      keyword: 'first', date: '2026-09-10', searchIntent: 's', gap: 'g', change: 'c',
+    });
+    expect(selectSeoExperimentCandidate(await loadSeoExperiments(directory))).toBeNull();
+  });
+
+  it('prefers the higher-impressions candidate inside positions 11-20', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'low demand', targetPath: '/low', priority: 'high' });
+    await addSeoQuery(directory, { keyword: 'high demand', targetPath: '/high', priority: 'low' });
+    await recordSeoObservation(directory, {
+      keyword: 'low demand', targetPath: '/low', source: 'gsc', position: 12, impressions: 30, clicks: 0,
+      startDate: '2026-08-01', endDate: '2026-08-28', country: 'TWN', device: 'DESKTOP', observedAt: '2026-08-29T00:00:00Z',
+    });
+    await recordSeoObservation(directory, {
+      keyword: 'high demand', targetPath: '/high', source: 'gsc', position: 15, impressions: 900, clicks: 0,
+      startDate: '2026-08-01', endDate: '2026-08-28', country: 'TWN', device: 'DESKTOP', observedAt: '2026-08-29T00:00:00Z',
+    });
+    const selected = selectSeoExperimentCandidate(await loadSeoExperiments(directory));
+    expect(selected?.query.keyword).toBe('high demand');
+    expect(selected?.reason).toContain('11–20');
+  });
+
+  it('refuses to start an experiment for a keyword that was not selected', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'chosen', targetPath: '/chosen', priority: 'high' });
+    await addSeoQuery(directory, { keyword: 'other', targetPath: '/other', priority: 'low' });
+    await expect(startSeoExperiment(directory, {
+      keyword: 'other', date: '2026-09-10', searchIntent: 's', gap: 'g', change: 'c',
+    })).rejects.toThrow('Selected query is chosen');
+  });
+
+  it('rejects reviews for unknown or non-monitoring queries', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k' });
+    await expect(reviewSeoExperiment(directory, {
+      keyword: 'ghost', outcome: 'improved', observationId: 'x', date: '2026-09-17',
+    })).rejects.toThrow('Unknown query');
+    await expect(reviewSeoExperiment(directory, {
+      keyword: 'k', outcome: 'amazing' as 'improved', observationId: 'x', date: '2026-09-17',
+    })).rejects.toThrow('not currently monitoring');
+  });
+
+  it('summarizes counts and surfaces the selected candidate', async () => {
+    const directory = await repository();
+    await addSeoQuery(directory, { keyword: 'k', targetPath: '/k', priority: 'high' });
+    const summary = summarizeSeoExperiments(await loadSeoExperiments(directory));
+    expect(summary.contractVersion).toBe('1.0');
+    expect(summary.counts).toEqual({ eligible: 1, monitoring: 0, completed: 0, observations: 0 });
+    expect(summary.candidate?.query.keyword).toBe('k');
   });
 });

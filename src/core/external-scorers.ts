@@ -96,6 +96,9 @@ function runWithStdin(cmd: string, input: string): Promise<string> {
       else reject(new Error(`${cmd} exited with code ${code}: ${stderr.slice(0, 200)}`));
     });
     child.on('error', reject);
+    // The child may exit before draining a large prompt; the close handler still
+    // decides the outcome, so a stdin EPIPE is not itself a failure.
+    child.stdin.on('error', () => {});
     child.stdin.write(input);
     child.stdin.end();
   });

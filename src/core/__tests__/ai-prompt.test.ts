@@ -64,4 +64,58 @@ describe('parseAiResponse', () => {
     expect(result!.structure).toBe(0);
     expect(result!.insight).toBe('No insight provided');
   });
+
+  it('skips objects whose score is missing or not a number', () => {
+    expect(parseAiResponse('{"score": null} {"score": 33, "insight": "chosen"}')!.score).toBe(33);
+    expect(parseAiResponse('{"score": "abc"} {"score": 44}')!.score).toBe(44);
+  });
+
+  it('continues after a malformed leading candidate', () => {
+    const raw = '{"score" is text}: {"score": 55, "insight": "real"}';
+    expect(parseAiResponse(raw)!.score).toBe(55);
+  });
+
+  it('ignores a nested score-like string and uses the real score object', () => {
+    const raw = '{"rubric": {"score": "0-100"}} {"score": 80, "insight": "ok"}';
+    expect(parseAiResponse(raw)!.score).toBe(80);
+  });
+
+  it('rejects non-finite scores instead of clamping Infinity to 100', () => {
+    expect(parseAiResponse('{"score": 1e500}')).toBeNull();
+    expect(parseAiResponse('{"score": 1e500} {"score": 42}')!.score).toBe(42);
+  });
+
+  it('tolerates braces inside string values', () => {
+    const raw = '{"score": 77, "insight": "see } and { inside text"}';
+    expect(parseAiResponse(raw)!.score).toBe(77);
+  });
+
+  it('handles escaped quotes before braces inside strings', () => {
+    // The } inside the value follows an odd number of escaped quotes; a scanner
+    // without escape handling would mistake it for the closing brace.
+    const raw = '{"score": 61, "insight": "use \\" } and \\"json\\" carefully"}';
+    const result = parseAiResponse(raw);
+    expect(result!.score).toBe(61);
+    expect(result!.insight).toBe('use " } and "json" carefully');
+  });
+
+  it('handles escaped backslashes before closing quotes', () => {
+    const raw = '{"score": 61, "insight": "trailing \\\\"} extra }';
+    const result = parseAiResponse(raw);
+    expect(result!.score).toBe(61);
+    expect(result!.insight).toBe('trailing \\');
+  });
+
+  it('treats non-numeric dimensions as zero', () => {
+    const raw = '{"score": 55, "structure": "20", "citability": "abc", "schema": 19}';
+    const result = parseAiResponse(raw)!;
+    expect(result.structure).toBe(0);
+    expect(result.citability).toBe(0);
+    expect(result.schema).toBe(19);
+  });
+
+  it('finds the score object after unrelated prose braces', () => {
+    const raw = 'note { stray } {"score": 55, "insight": "real"}';
+    expect(parseAiResponse(raw)!.score).toBe(55);
+  });
 });
