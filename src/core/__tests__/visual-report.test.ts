@@ -113,4 +113,28 @@ describe('interactive readiness details', () => {
     expect(html).toContain('Rule details were not recorded');
     expect(html).not.toContain('class="source-pair"');
   });
+
+  it('labels truncated previews and keeps their text escaped', () => {
+    const longCopy = '<h1>Long page</h1><img src=x onerror=alert(1)><p>' + 'Lorem ipsum dolor sit amet. '.repeat(260) + '</p>';
+    const before = detailed(longCopy);
+    const after = detailed(longCopy.replace('Long page', 'Long page revised'));
+    expect(before.pages[0].sourcePreview?.truncated).toBe(true);
+    const html = renderVisualReport(after, { baseline: before });
+    expect(html).toContain('id="source-comparisons"');
+    expect(html).toContain('Excerpt truncated by the scanner.');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(html).not.toContain('<img src=x onerror=alert(1)>');
+    const $ = parseReportHtml(html);
+    expect($('img')).toHaveLength(0);
+  });
+
+  it('shows the unavailable message when a page has no source preview', () => {
+    const before = detailed('<h1>Before</h1><p>Before copy.</p>');
+    const after = detailed('<h1>After</h1><p>After copy.</p>');
+    delete after.pages[0].sourcePreview;
+    const html = renderVisualReport(after, { baseline: before });
+    expect(html).toContain('id="source-comparisons"');
+    expect(html).toContain('Source preview unavailable.');
+    expect(html).toContain('Complete bounded excerpt of the evaluated source.');
+  });
 });
